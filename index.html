@@ -448,6 +448,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     <p id="authHint" style="font-size:12.5px;color:var(--text-dim);margin:0 0 12px;">Your tests and goals sync through your account.</p>
     <div class="field"><label>Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div>
     <div class="field" style="margin-top:10px;"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="Password"></div>
+    <button type="button" class="ghost" id="forgotPasswordBtn" style="margin-top:10px;display:block;">Forgot password?</button>
     <div id="authStatus" style="font-size:12px;margin-top:10px;min-height:18px;"></div>
     <div class="modalFoot" style="justify-content:space-between;">
       <button type="button" class="ghost" id="authModeBtn">Create account</button>
@@ -609,9 +610,14 @@ Mistakes: Physics: sign error in kinematics"></textarea>
 
   function openAuth(mode){
     state.authMode = mode || "signin";
-    document.getElementById("authTitle").textContent = state.authMode === "signup" ? "Create account" : "Sign in";
-    document.getElementById("authSubmitBtn").textContent = state.authMode === "signup" ? "Create account" : "Sign in";
-    document.getElementById("authModeBtn").textContent = state.authMode === "signup" ? "I already have an account" : "Create account";
+    var isSignup = state.authMode === "signup";
+    var isReset = state.authMode === "reset";
+    document.getElementById("authTitle").textContent = isSignup ? "Create account" : (isReset ? "Set new password" : "Sign in");
+    document.getElementById("authSubmitBtn").textContent = isSignup ? "Create account" : (isReset ? "Set new password" : "Sign in");
+    document.getElementById("authModeBtn").textContent = isReset ? "Back to sign in" : (isSignup ? "I already have an account" : "Create account");
+    document.getElementById("forgotPasswordBtn").style.display = (!isSignup && !isReset) ? "block" : "none";
+    document.getElementById("authPassword").placeholder = isReset ? "New password" : "Password";
+    document.getElementById("authHint").textContent = isReset ? "Enter a new password for your account." : "Your tests and goals sync through your account.";
     document.getElementById("authStatus").textContent = "";
     document.getElementById("authModalBg").classList.add("open");
   }
@@ -622,6 +628,14 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     var email = document.getElementById("authEmail").value.trim();
     var password = document.getElementById("authPassword").value;
     var status = document.getElementById("authStatus");
+    if (state.authMode === "reset") {
+      if (password.length < 6) { status.textContent = "Enter a new password of at least 6 characters."; return; }
+      status.textContent = "Updating password…";
+      var resetRes = await sb.auth.updateUser({ password: password });
+      if (resetRes.error) status.textContent = resetRes.error.message;
+      else { closeAuth(); toast("Password updated. You can now sign in with your new password."); }
+      return;
+    }
     if (!email || password.length < 6) { status.textContent = "Enter an email and a password of at least 6 characters."; return; }
     status.textContent = "Working…";
     var res;
@@ -634,6 +648,17 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       if (!res.error && res.data && res.data.user) { closeAuth(); await onSignedIn(res.data.user); }
     }
     if (res && res.error) status.textContent = res.error.message;
+  }
+
+  async function sendPasswordReset(){
+    if (!sb) { toast("Add Supabase config first"); return; }
+    var email = document.getElementById("authEmail").value.trim();
+    var status = document.getElementById("authStatus");
+    if (!email) { status.textContent = "Enter your account email first."; return; }
+    status.textContent = "Sending reset email…";
+    var redirectTo = window.location.origin + window.location.pathname;
+    var res = await sb.auth.resetPasswordForEmail(email, { redirectTo: redirectTo });
+    status.textContent = res.error ? res.error.message : "Reset email sent. Check your inbox and spam folder.";
   }
 
   async function signOut(){
@@ -1567,7 +1592,8 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       if (ok) signOut();
     } else { openAuth("signin"); }
   });
-  document.getElementById("authModeBtn").addEventListener("click", function(){ openAuth(state.authMode === "signup" ? "signin" : "signup"); });
+  document.getElementById("authModeBtn").addEventListener("click", function(){ openAuth(state.authMode === "reset" ? "signin" : (state.authMode === "signup" ? "signin" : "signup")); });
+  document.getElementById("forgotPasswordBtn").addEventListener("click", sendPasswordReset);
   document.getElementById("authSubmitBtn").addEventListener("click", handleAuth);
   document.getElementById("authCancelBtn").addEventListener("click", closeAuth);
   document.getElementById("authModalBg").addEventListener("click", function(e){ if (e.target === this) closeAuth(); });
