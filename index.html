@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Test Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f7f7f5;
+    --surface: #ffffff;
+    --border: #e4e2dd;
+    --text: #1e1c1a;
+    --text-dim: #6b6862;
+    --accent: #b45309;
+    --accent-soft: #fdf1e0;
+    --good: #16794f;
+    --bad: #b3261e;
+    --warn: #a3690a;
+    --radius: 12px;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #171512;
+      --surface: #211f1c;
+      --border: #37342f;
+      --text: #f1efec;
+      --text-dim: #a39d93;
+      --accent: #e29a4d;
+      --accent-soft: #2e2418;
+      --good: #4ade80;
+      --bad: #f87171;
+      --warn: #fbbf24;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #171512;
+    --surface: #211f1c;
+    --border: #37342f;
+    --text: #f1efec;
+    --text-dim: #a39d93;
+    --accent: #e29a4d;
+    --accent-soft: #2e2418;
+    --good: #4ade80;
+    --bad: #f87171;
+    --warn: #fbbf24;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 20px 16px 60px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+  .sub { color: var(--text-dim); font-size: 13px; margin-top: 2px; }
+  .btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
+  button {
+    font: inherit; cursor: pointer; border-radius: 9px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); padding: 9px 14px; font-size: 13.5px;
+    transition: background .12s;
+  }
+  button:hover { background: var(--accent-soft); }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button.primary:hover { filter: brightness(1.06); }
+  button.ghost { background: transparent; }
+  button.small { padding: 5px 10px; font-size: 12.5px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; margin-bottom: 16px;
+  }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px,1fr)); gap: 10px; margin-bottom: 16px; }
+  .tabnav { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 16px; overflow-x: auto; }
+  .tabnav.subnav { border-bottom: none; margin-bottom: 12px; }
+  .tabbtn, .subjectbtn { background: transparent; border: none; border-bottom: 2px solid transparent; border-radius: 0; padding: 9px 4px; margin-right: 14px; font-size: 13.5px; color: var(--text-dim); white-space: nowrap; }
+  .tabbtn:hover, .subjectbtn:hover { background: transparent; color: var(--text); }
+  .tabbtn.active, .subjectbtn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+  .subjectbtn { padding: 6px 10px; border: 1px solid var(--border); border-radius: 999px; margin-right: 8px; }
+  .subjectbtn.active { background: var(--accent-soft); border-color: var(--accent); }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+  .kpi .label { font-size: 11.5px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .04em; }
+  .kpi .value { font-size: 22px; font-weight: 650; margin-top: 3px; }
+  .kpi .delta { font-size: 12px; margin-top: 2px; }
+  .up { color: var(--good); } .down { color: var(--bad); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
+  .sectionTitle { font-size: 15px; font-weight: 650; margin: 0 0 10px; }
+  canvas { max-width: 100%; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); }
+  th { color: var(--text-dim); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: .03em; }
+  tr:last-child td { border-bottom: none; }
+  .tablewrap { overflow-x: auto; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+  .pill.good { background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--good); }
+  .pill.bad { background: color-mix(in srgb, var(--bad) 15%, transparent); color: var(--bad); }
+  .pill.warn { background: color-mix(in srgb, var(--warn) 15%, transparent); color: var(--warn); }
+  .empty { color: var(--text-dim); font-size: 13.5px; text-align: center; padding: 30px 10px; }
+  .modalBg { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: none; align-items: flex-start; justify-content: center; z-index: 50; overflow-y: auto; padding: 30px 14px; }
+  .modalBg.open { display: flex; }
+  .modal { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); width: 100%; max-width: 640px; padding: 20px; margin-bottom: 40px; }
+  .modal h2 { margin: 0 0 4px; font-size: 17px; }
+  .modal .hint { color: var(--text-dim); font-size: 12.5px; margin-bottom: 14px; }
+  .formgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .formgrid.thirds { grid-template-columns: repeat(3,1fr); }
+  @media (max-width: 500px) { .formgrid, .formgrid.thirds { grid-template-columns: 1fr 1fr; } }
+  .field { display: flex; flex-direction: column; gap: 3px; margin-bottom: 4px; }
+  .field.full { grid-column: 1 / -1; }
+  label { font-size: 11.5px; color: var(--text-dim); }
+  input, textarea, select {
+    font: inherit; padding: 8px 9px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text); width: 100%;
+  }
+  textarea { resize: vertical; min-height: 56px; }
+  .sectionBlock { border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin-top: 10px; }
+  .sectionBlock h4 { margin: 0 0 8px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .03em; color: var(--accent); }
+  .modalFoot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+  .toast { position: fixed; bottom: calc(20px + env(safe-area-inset-bottom,0px)); left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 999px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 100; }
+  .toast.show { opacity: 1; }
+  .planText { font-size: 13.5px; line-height: 1.55; }
+  .planText b { color: var(--accent); }
+  .tag { display: inline-block; background: var(--accent-soft); color: var(--accent); font-size: 11px; padding: 1px 7px; border-radius: 6px; margin-right: 4px; }
+  .rowbtns { display: flex; gap: 6px; }
+  code { background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Test Tracker</h1>
+      <div class="sub" id="subhead">Loading…</div>
+    </div>
+    <div class="btnrow">
+      <button class="ghost" id="accountBtn">Account</button>
+      <button class="ghost" id="pasteBtn">Paste Results</button>
+      <button class="ghost" id="compareBtn">Compare</button>
+      <button class="primary" id="addBtn">+ Add Test</button>
+    </div>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="tabnav" id="mainTabNav">
+    <button class="tabbtn active" data-tab="overview">Overview</button>
+    <button class="tabbtn" data-tab="subjects">Subjects</button>
+    <button class="tabbtn" data-tab="analysis">Analysis</button>
+    <button class="tabbtn" data-tab="plan">Plan &amp; Mistakes</button>
+    <button class="tabbtn" data-tab="tests">All Tests</button>
+  </div>
+
+  <div class="tabpanel" data-panel="overview">
+    <div class="card">
+      <div class="sectionTitle" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>Percentile goals</span>
+        <button class="small ghost" id="editGoalsBtn">Edit</button>
+      </div>
+      <div id="goalsContent"></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="sectionTitle" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>Score trend</span>
+          <select id="seriesFilter" style="width:auto;padding:4px 8px;font-size:12px;"><option value="__all">All series</option></select>
+        </div>
+        <div id="seriesLegend" style="font-size:11.5px;color:var(--text-dim);margin-bottom:6px;"></div>
+        <canvas id="scoreChart" height="200"></canvas>
+      </div>
+      <div class="card">
+        <div class="sectionTitle">Section accuracy (avg)</div>
+        <canvas id="accChart" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabpanel" data-panel="subjects" style="display:none;">
+    <div class="tabnav subnav" id="subjectSubNav">
+      <button class="subjectbtn active" data-subject="physics">Physics</button>
+      <button class="subjectbtn" data-subject="chemistry">Chemistry</button>
+      <button class="subjectbtn" data-subject="maths">Maths</button>
+    </div>
+
+    <div class="kpis" id="subjectKpis"></div>
+
+    <div class="card">
+      <div class="sectionTitle" id="subjectTrendTitle">Accuracy &amp; percentile trend</div>
+      <canvas id="subjectTrendChart" height="180"></canvas>
+      <div class="empty" id="subjectTrendEmpty" style="display:none">No tests with this section logged yet.</div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="sectionTitle">Attempt breakdown per test</div>
+        <canvas id="subjectAttemptChart" height="200"></canvas>
+      </div>
+      <div class="card">
+        <div class="sectionTitle">Time spent per test</div>
+        <canvas id="subjectTimeChart" height="200"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sectionTitle" id="subjectTableTitle">Test-by-test comparison</div>
+      <div class="tablewrap"><table id="subjectTable"></table></div>
+      <div class="empty" id="subjectTableEmpty" style="display:none">No tests logged for this subject yet.</div>
+    </div>
+  </div>
+
+  <div class="tabpanel" data-panel="analysis" style="display:none;">
+    <div class="card">
+      <div class="sectionTitle">Tier comparison</div>
+      <div class="hint" style="color:var(--text-dim);font-size:12px;margin-bottom:8px;">Average percentile and accuracy per difficulty tier, so you can see which level you're actually strongest at.</div>
+      <canvas id="tierChart" height="150"></canvas>
+      <div class="empty" id="tierEmpty" style="display:none">Tag a few tests with a difficulty tier to see this.</div>
+    </div>
+
+    <div class="card">
+      <div class="sectionTitle">Completion / skip-rate trend</div>
+      <canvas id="skipChart" height="150"></canvas>
+    </div>
+
+    <div class="card">
+      <div class="sectionTitle">Time management</div>
+      <div class="tablewrap"><table id="timeTable"></table></div>
+      <div class="empty" id="timeEmpty" style="display:none">Log a couple of tests with section-wise time to see this.</div>
+    </div>
+
+    <div class="card">
+      <div class="sectionTitle">Fatigue analysis</div>
+      <div class="hint" style="color:var(--text-dim);font-size:12px;margin-bottom:8px;">Tag same-day papers with a shared Session group and a Paper order (1, 2…) to see how accuracy holds up across a sitting.</div>
+      <div id="fatigueContent"></div>
+      <div class="empty" id="fatigueEmpty" style="display:none">No linked sessions yet — set a Session group on 2+ same-day tests to see this.</div>
+    </div>
+  </div>
+
+  <div class="tabpanel" data-panel="plan" style="display:none;">
+    <div class="card">
+      <div class="sectionTitle">Suggested plan for your next test</div>
+      <div class="planText" id="planText"></div>
+    </div>
+
+    <div class="card">
+      <div class="sectionTitle">Mistake log</div>
+      <div id="mistakeList"></div>
+      <div class="empty" id="mistakeEmpty" style="display:none">No mistakes logged yet.</div>
+    </div>
+  </div>
+
+  <div class="tabpanel" data-panel="tests" style="display:none;">
+    <div class="card">
+      <div class="sectionTitle">All tests</div>
+      <div class="tablewrap"><table id="historyTable"></table></div>
+      <div class="empty" id="historyEmpty" style="display:none">No tests logged yet — add your first one above.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit modal -->
+<div class="modalBg" id="modalBg">
+  <div class="modal">
+    <h2 id="modalTitle">Add a test</h2>
+    <div class="hint">Percentage and accuracy are calculated automatically.</div>
+    <form id="testForm">
+      <input type="hidden" id="f_id">
+      <div class="formgrid">
+        <div class="field"><label>Test name</label><input id="f_name" required placeholder="Full Syllabus Test 5"></div>
+        <div class="field"><label>Date</label><input id="f_date" type="date" required></div>
+        <div class="field"><label>Type / series</label><input id="f_type" placeholder="PW Batch Mains / JRTS Advanced / AITS"></div>
+        <div class="field">
+          <label>Difficulty tier</label>
+          <select id="f_difficulty">
+            <option value="1">Tier 1 — PW Batch Mains (easiest)</option>
+            <option value="2">Tier 2 — JRTS Mains</option>
+            <option value="3">Tier 3 — PW Batch Advanced</option>
+            <option value="4">Tier 4 — AITS (Mains &amp; Advanced)</option>
+            <option value="5">Tier 5 — JRTS Advanced (hardest)</option>
+            <option value="0">Other / not sure</option>
+          </select>
+        </div>
+        <div class="field full"><label>Marking scheme</label><input id="f_markingScheme" placeholder="e.g. MCQ +4/-1, Integer +4/0, Numerical +3/-1"></div>
+        <div class="field"><label>Total marks</label><input id="f_totalMarks" type="number" step="0.01" required placeholder="300"></div>
+        <div class="field"><label>Marks obtained</label><input id="f_marksObtained" type="number" step="0.01" required placeholder="187"></div>
+        <div class="field"><label>Total questions</label><input id="f_totalQ" type="number" step="0.01" placeholder="75"></div>
+        <div class="field"><label>Correct</label><input id="f_correct" type="number" step="0.01" placeholder="52"></div>
+        <div class="field"><label>Incorrect</label><input id="f_incorrect" type="number" step="0.01" placeholder="18"></div>
+        <div class="field"><label>Unattempted</label><input id="f_unattempted" type="number" step="0.01" placeholder="5"></div>
+        <div class="field">
+          <label><input type="checkbox" id="f_accOverride" style="width:auto;margin-right:5px;vertical-align:-1px;">Override accuracy</label>
+          <input id="f_manualAccuracy" type="number" step="0.01" placeholder="e.g. 68.38" disabled>
+        </div>
+        <div class="field"><label>India rank</label><input id="f_rank" type="number" step="0.01" placeholder="3421"></div>
+        <div class="field"><label>Percentile</label><input id="f_percentile" type="number" step="0.01" placeholder="61.28"></div>
+        <div class="field"><label>Out of (candidates)</label><input id="f_candidates" type="number" step="0.01" placeholder="45000"></div>
+        <div class="field"><label>Total time spent (min)</label><input id="f_totalTime" type="number" step="0.01" placeholder="175"></div>
+        <div class="field"><label>Total time allotted (min)</label><input id="f_totalTimeAllotted" type="number" step="0.01" placeholder="180"></div>
+      </div>
+
+      <div class="sectionBlock">
+        <h4>Physics</h4>
+        <div class="formgrid thirds">
+          <div class="field"><label>Correct</label><input id="p_correct" type="number" step="0.01"></div>
+          <div class="field"><label>Incorrect</label><input id="p_incorrect" type="number" step="0.01"></div>
+          <div class="field"><label>Unattempted</label><input id="p_unattempted" type="number" step="0.01"></div>
+          <div class="field"><label>Time spent (min)</label><input id="p_time" type="number" step="0.01"></div>
+          <div class="field"><label>Percentile</label><input id="p_percentile" type="number" step="0.01"></div>
+        </div>
+      </div>
+      <div class="sectionBlock">
+        <h4>Chemistry</h4>
+        <div class="formgrid thirds">
+          <div class="field"><label>Correct</label><input id="c_correct" type="number" step="0.01"></div>
+          <div class="field"><label>Incorrect</label><input id="c_incorrect" type="number" step="0.01"></div>
+          <div class="field"><label>Unattempted</label><input id="c_unattempted" type="number" step="0.01"></div>
+          <div class="field"><label>Time spent (min)</label><input id="c_time" type="number" step="0.01"></div>
+          <div class="field"><label>Percentile</label><input id="c_percentile" type="number" step="0.01"></div>
+        </div>
+      </div>
+      <div class="sectionBlock">
+        <h4>Maths</h4>
+        <div class="formgrid thirds">
+          <div class="field"><label>Correct</label><input id="m_correct" type="number" step="0.01"></div>
+          <div class="field"><label>Incorrect</label><input id="m_incorrect" type="number" step="0.01"></div>
+          <div class="field"><label>Unattempted</label><input id="m_unattempted" type="number" step="0.01"></div>
+          <div class="field"><label>Time spent (min)</label><input id="m_time" type="number" step="0.01"></div>
+          <div class="field"><label>Percentile</label><input id="m_percentile" type="number" step="0.01"></div>
+        </div>
+      </div>
+
+      <div class="formgrid" style="margin-top:10px">
+        <div class="field full">
+          <label>Tags (comma separated — e.g. fatigue, hard-paper, careless-error, time-pressure, content-gap, guess-heavy)</label>
+          <input id="f_tags" placeholder="e.g. fatigue, careless-error">
+        </div>
+        <div class="field"><label>Session group (same value = same sitting)</label><input id="f_sessionGroup" placeholder="e.g. AITS-2 30 Aug"></div>
+        <div class="field"><label>Paper order in session</label><input id="f_sessionOrder" type="number" step="1" placeholder="1, 2, 3…"></div>
+      </div>
+
+      <div class="field full" style="margin-top:10px">
+        <label>Mistakes / notes (one per line, e.g. "Physics: sign error in kinematics")</label>
+        <textarea id="f_mistakes" placeholder="Physics: sign error in NLM question&#10;Maths: forgot identity for sin3x&#10;Chemistry: mixed up SN1/SN2 conditions"></textarea>
+      </div>
+
+      <div class="modalFoot">
+        <button type="button" class="ghost" id="cancelBtn">Cancel</button>
+        <button type="submit" class="primary">Save test</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Paste modal -->
+<div class="modalBg" id="pasteModalBg">
+  <div class="modal">
+    <h2>Paste results</h2>
+    <div class="hint">Paste your marks/rank in this format (from a screenshot or PDF) — any lines you skip are just left blank. Ask Claude in chat to read your screenshot and produce this block for you, then paste it here.</div>
+    <textarea id="pasteArea" style="min-height:220px; font-family:monospace; font-size:12.5px;" placeholder="Test: Full Syllabus Test 5
+Date: 2026-09-21
+Type: PW Major Test
+Marking Scheme: MCQ +4/-1, Integer +4/0
+Total Marks: 300
+Marks Obtained: 187
+Total Questions: 75
+Correct: 52
+Incorrect: 18
+Unattempted: 5
+India Rank: 3421
+Total Candidates: 45000
+Total Time: 175
+Total Time Allotted: 180
+Physics Correct: 18
+Physics Incorrect: 5
+Physics Unattempted: 2
+Physics Time: 55
+Chemistry Correct: 20
+Chemistry Incorrect: 4
+Chemistry Unattempted: 1
+Chemistry Time: 48
+Maths Correct: 14
+Maths Incorrect: 9
+Maths Unattempted: 2
+Maths Time: 72
+Mistakes: Physics: sign error in kinematics"></textarea>
+    <div class="modalFoot">
+      <button type="button" class="ghost" id="pasteCancelBtn">Cancel</button>
+      <button type="button" class="ghost" id="pasteClearBtn">Clear</button>
+      <button type="button" class="primary" id="pasteParseBtn">Parse &amp; open form</button>
+    </div>
+  </div>
+</div>
+
+<!-- Goals modal -->
+<div class="modalBg" id="goalsModalBg">
+  <div class="modal">
+    <h2>Edit percentile goals</h2>
+    <div class="hint">JEE runs on percentile, not raw marks — these targets show up on the dashboard and as a dashed line on the trend chart.</div>
+    <div class="formgrid">
+      <div class="field full"><label>Target percentile (both exams)</label><input id="g_target" type="number" step="0.01" placeholder="99.9"></div>
+      <div class="field"><label>JEE Main date</label><input id="g_mainDate" type="date"></div>
+      <div class="field"><label>JEE Advanced date</label><input id="g_advDate" type="date"></div>
+    </div>
+    <div class="modalFoot">
+      <button type="button" class="ghost" id="goalsCancelBtn">Cancel</button>
+      <button type="button" class="primary" id="goalsSaveBtn">Save goals</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail modal -->
+<div class="modalBg" id="detailModalBg">
+  <div class="modal" style="max-width:760px;">
+    <h2 id="detailTitle">Test detail</h2>
+    <div class="hint" id="detailSub"></div>
+    <div class="kpis" id="detailKpis" style="margin-bottom:14px;"></div>
+    <div class="grid2">
+      <div>
+        <div class="sectionTitle" style="font-size:13px;">Section performance</div>
+        <canvas id="detailSectionChart" height="180"></canvas>
+        <div id="detailSectionPercentile" style="font-size:11.5px;color:var(--text-dim);margin-top:6px;"></div>
+      </div>
+      <div>
+        <div class="sectionTitle" style="font-size:13px;">Time distribution</div>
+        <canvas id="detailTimeChart" height="180"></canvas>
+      </div>
+    </div>
+    <div style="margin-top:16px;">
+      <div class="sectionTitle" style="font-size:13px;">Mistakes logged</div>
+      <div id="detailMistakes" style="font-size:13px;"></div>
+    </div>
+    <div class="modalFoot">
+      <button type="button" class="ghost" id="detailCloseBtn">Close</button>
+      <button type="button" class="primary" id="detailEditBtn">Edit this test</button>
+    </div>
+  </div>
+</div>
+
+<!-- Account modal -->
+<div class="modalBg" id="authModalBg">
+  <div class="modal" style="max-width:430px;">
+    <h2 id="authTitle">Sign in</h2>
+    <p id="authHint" style="font-size:12.5px;color:var(--text-dim);margin:0 0 12px;">Your tests and goals sync through your account.</p>
+    <div class="field"><label>Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div>
+    <div class="field" style="margin-top:10px;"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="Password"></div>
+    <div id="authStatus" style="font-size:12px;margin-top:10px;min-height:18px;"></div>
+    <div class="modalFoot" style="justify-content:space-between;">
+      <button type="button" class="ghost" id="authModeBtn">Create account</button>
+      <div class="rowbtns"><button type="button" class="ghost" id="authCancelBtn">Cancel</button><button type="button" class="primary" id="authSubmitBtn">Sign in</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Compare modal -->
+<div class="modalBg" id="compareModalBg">
+  <div class="modal" style="max-width:760px;">
+    <h2>Compare two tests</h2>
+    <div class="formgrid">
+      <div class="field"><label>Test A</label><select id="cmp_a"></select></div>
+      <div class="field"><label>Test B</label><select id="cmp_b"></select></div>
+    </div>
+    <div class="tablewrap" style="margin-top:14px;"><table id="compareTable"></table></div>
+    <div class="modalFoot">
+      <button type="button" class="ghost" id="compareCloseBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+  "use strict";
+  var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, authMode: "signin", realtime: null };
+  var LS_KEY = "jee_test_tracker_v1";
+
+  // ===== ONLINE CONFIG =====
+  // Put your Supabase project URL and PUBLISHABLE key here once.
+  // Never put a Supabase secret/service-role key in this file.
+  var SUPABASE_URL = "https://isbhjnezkqiazrtbcrdi.supabase.co";
+  var SUPABASE_PUBLISHABLE_KEY = "sb_publishable_TdkiN3P82zEpA7jmlO_KxQ_Ds5hf0g2";
+  var sb = null;
+  if (window.supabase && SUPABASE_URL.indexOf("PASTE_") !== 0 && SUPABASE_PUBLISHABLE_KEY.indexOf("PASTE_") !== 0) {
+    try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }); } catch(e) { sb = null; }
+  }
+
+  function toast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    setTimeout(function(){ t.classList.remove("show"); }, 1800);
+  }
+
+  function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
+
+  var GOALS_KEY = "jee_goals_v1";
+  var DEFAULT_GOALS = { targetPercentile: 99.9, mainDate: "2028-01-31", advDate: "2028-05-31" };
+  function loadGoals(){
+    try {
+      var raw = localStorage.getItem(GOALS_KEY);
+      return raw ? Object.assign({}, DEFAULT_GOALS, JSON.parse(raw)) : Object.assign({}, DEFAULT_GOALS);
+    } catch(e){ return Object.assign({}, DEFAULT_GOALS); }
+  }
+  function saveGoals(g){
+    try { localStorage.setItem(GOALS_KEY, JSON.stringify(g)); } catch(e){}
+  }
+  async function loadCloudGoals(){
+    if (!sb || !state.user) return loadGoals();
+    var res = await sb.from("tracker_goals").select("data").eq("user_id", state.user.id).maybeSingle();
+    if (res.error) throw res.error;
+    var g = res.data && res.data.data ? Object.assign({}, DEFAULT_GOALS, res.data.data) : Object.assign({}, DEFAULT_GOALS);
+    saveGoals(g);
+    return g;
+  }
+  async function persistGoalsCloud(g){
+    saveGoals(g);
+    if (!sb || !state.user) return;
+    var res = await sb.from("tracker_goals").upsert({ user_id: state.user.id, data: g, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+    if (res.error) throw res.error;
+  }
+  function daysUntil(dateStr){
+    var d = new Date(dateStr + "T00:00:00");
+    var now = new Date();
+    return Math.ceil((d - now) / 86400000);
+  }
+
+  function renderGoals(tests){
+    var el = document.getElementById("goalsContent");
+    if (!el) return;
+    var goals = loadGoals();
+    var withPctile = tests.filter(function(t){ return typeof t.percentile === "number"; });
+    var best = withPctile.length ? Math.max.apply(null, withPctile.map(function(t){ return t.percentile; })) : null;
+    var recent = withPctile.length ? withPctile[withPctile.length-1].percentile : null;
+    function row(examName, dateStr){
+      var days = daysUntil(dateStr);
+      var gap = best !== null ? (goals.targetPercentile - best) : null;
+      var pillClass = gap === null ? "warn" : (gap <= 0 ? "good" : (gap < 5 ? "warn" : "bad"));
+      var gapText = gap === null ? "No percentile logged yet" : (gap <= 0 ? "Target met on your best test" : gap.toFixed(2) + " percentile to close");
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:6px;">' +
+        '<div><b>'+examName+'</b><div style="font-size:12px;color:var(--text-dim)">Target '+goals.targetPercentile+' percentile by '+dateStr+' ('+(days>=0?days+' days left':'date passed')+')</div></div>' +
+        '<span class="pill '+pillClass+'">'+gapText+'</span>' +
+        '</div>';
+    }
+    el.innerHTML = row("JEE Main", goals.mainDate) + row("JEE Advanced", goals.advDate) +
+      '<div style="font-size:12px;color:var(--text-dim);margin-top:8px;">Best percentile logged: '+(best!==null?best.toFixed(2):"—")+' &nbsp;·&nbsp; Most recent: '+(recent!==null?recent.toFixed(2):"—")+'</div>';
+  }
+  var SERIES_COLORS = ["#b45309","#16794f","#2563eb","#7c5cbf","#be185d","#0d9488","#a3690a","#475569"];
+  var seriesColorCache = {};
+  function colorForSeries(type){
+    var key = ((type||"Untagged").trim() || "Untagged").toLowerCase();
+    if (!seriesColorCache[key]){
+      var idx = Object.keys(seriesColorCache).length % SERIES_COLORS.length;
+      seriesColorCache[key] = SERIES_COLORS[idx];
+    }
+    return seriesColorCache[key];
+  }
+
+  var DIFFICULTY_LABELS = { 0:"Not sure", 1:"PW Batch Mains", 2:"JRTS Mains", 3:"PW Batch Advanced", 4:"AITS", 5:"JRTS Advanced" };
+  var DIFFICULTY_GUESS = [
+    { re: /jrts.*adv|jee\s*real.*advanced/i, tier: 5 },
+    { re: /aits|all india test/i, tier: 4 },
+    { re: /pw.*batch.*adv|batch.*advanced/i, tier: 3 },
+    { re: /jrts/i, tier: 2 },
+    { re: /pw.*batch.*main|batch.*mains/i, tier: 1 }
+  ];
+  function guessDifficulty(typeText){
+    var t = (typeText||"");
+    for (var i=0;i<DIFFICULTY_GUESS.length;i++){
+      if (DIFFICULTY_GUESS[i].re.test(t)) return DIFFICULTY_GUESS[i].tier;
+    }
+    return null;
+  }
+
+  function pct(a,b){ return b > 0 ? (a/b*100) : 0; }
+
+  function calcDerived(t){
+    t.percentage = t.totalMarks > 0 ? pct(t.marksObtained, t.totalMarks) : 0;
+    if (t.accuracyOverride && typeof t.manualAccuracy === "number" && !isNaN(t.manualAccuracy)) {
+      t.accuracy = t.manualAccuracy;
+    } else {
+      var attempted = (t.correct||0) + (t.incorrect||0);
+      t.accuracy = attempted > 0 ? pct(t.correct, attempted) : 0;
+    }
+    return t;
+  }
+
+  // ---------- persistence ----------
+  function loadLocal(){
+    try {
+      var raw = localStorage.getItem(LS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch(e){ return []; }
+  }
+  function saveLocal(tests){
+    try { localStorage.setItem(LS_KEY, JSON.stringify(tests)); } catch(e){}
+  }
+
+  function setAccountButton(){
+    var b = document.getElementById("accountBtn");
+    if (!b) return;
+    if (state.user) b.textContent = "Account: " + ((state.user.email || "").split("@")[0] || "Signed in");
+    else b.textContent = sb ? "Sign in" : "Account";
+  }
+
+  function openAuth(mode){
+    state.authMode = mode || "signin";
+    document.getElementById("authTitle").textContent = state.authMode === "signup" ? "Create account" : "Sign in";
+    document.getElementById("authSubmitBtn").textContent = state.authMode === "signup" ? "Create account" : "Sign in";
+    document.getElementById("authModeBtn").textContent = state.authMode === "signup" ? "I already have an account" : "Create account";
+    document.getElementById("authStatus").textContent = "";
+    document.getElementById("authModalBg").classList.add("open");
+  }
+  function closeAuth(){ document.getElementById("authModalBg").classList.remove("open"); }
+
+  async function handleAuth(){
+    if (!sb) { toast("Add Supabase config first"); return; }
+    var email = document.getElementById("authEmail").value.trim();
+    var password = document.getElementById("authPassword").value;
+    var status = document.getElementById("authStatus");
+    if (!email || password.length < 6) { status.textContent = "Enter an email and a password of at least 6 characters."; return; }
+    status.textContent = "Working…";
+    var res;
+    if (state.authMode === "signup") {
+      res = await sb.auth.signUp({ email: email, password: password });
+      if (!res.error && res.data && res.data.session) { closeAuth(); await onSignedIn(res.data.session.user); }
+      else if (!res.error) status.textContent = "Account created. Check your email if confirmation is enabled, then sign in.";
+    } else {
+      res = await sb.auth.signInWithPassword({ email: email, password: password });
+      if (!res.error && res.data && res.data.user) { closeAuth(); await onSignedIn(res.data.user); }
+    }
+    if (res && res.error) status.textContent = res.error.message;
+  }
+
+  async function signOut(){
+    if (sb) await sb.auth.signOut();
+    state.user = null; state.cloud = false; state.tests = loadLocal().map(normalizeTest);
+    if (state.realtime) { try { await sb.removeChannel(state.realtime); } catch(e){} state.realtime = null; }
+    setAccountButton(); render(); toast("Signed out");
+  }
+
+  async function loadCloudTests(){
+    var res = await sb.from("tracker_tests").select("id,data,updated_at").eq("user_id", state.user.id).order("updated_at", { ascending: true });
+    if (res.error) throw res.error;
+    return (res.data || []).map(function(row){ return normalizeTest(Object.assign({}, row.data || {}, { id: row.id })); });
+  }
+
+  async function migrateLocalToCloud(){
+    var local = loadLocal().map(normalizeTest);
+    if (!local.length) return;
+    var rows = local.map(function(t){ return { id: t.id || ("t_" + Date.now() + "_" + Math.random().toString(36).slice(2,7)), user_id: state.user.id, data: t, updated_at: new Date().toISOString() }; });
+    var res = await sb.from("tracker_tests").upsert(rows, { onConflict: "id" });
+    if (res.error) throw res.error;
+  }
+
+  function subscribeRealtime(){
+    if (!sb || !state.user) return;
+    if (state.realtime) { try { sb.removeChannel(state.realtime); } catch(e){} }
+    state.realtime = sb.channel("tracker-tests-" + state.user.id)
+      .on("postgres_changes", { event: "*", schema: "public", table: "tracker_tests", filter: "user_id=eq." + state.user.id }, async function(){
+        try { state.tests = await loadCloudTests(); saveLocal(state.tests); render(); } catch(e){}
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "tracker_goals", filter: "user_id=eq." + state.user.id }, async function(){
+        try { await loadCloudGoals(); render(); } catch(e){}
+      })
+      .subscribe();
+  }
+
+  async function onSignedIn(user){
+    state.user = user; state.cloud = true; setAccountButton();
+    try {
+      await migrateLocalToCloud();
+      state.tests = await loadCloudTests();
+      saveLocal(state.tests);
+      await loadCloudGoals();
+      subscribeRealtime();
+      state.ready = true; render(); toast("Cloud sync enabled");
+    } catch(e) {
+      state.cloud = false; state.tests = loadLocal().map(normalizeTest);
+      state.ready = true; render();
+      toast("Cloud setup error: " + (e.message || "check Supabase setup"));
+    }
+  }
+
+  async function initDb(){
+    state.tests = loadLocal().map(normalizeTest);
+    if (!sb) {
+      state.ready = true; setAccountButton(); render();
+      return;
+    }
+    try {
+      var sessionRes = await sb.auth.getSession();
+      if (sessionRes.data && sessionRes.data.session && sessionRes.data.session.user) await onSignedIn(sessionRes.data.session.user);
+      else { state.ready = true; setAccountButton(); render(); }
+      sb.auth.onAuthStateChange(function(event, session){
+        setTimeout(async function(){
+          if (session && session.user) await onSignedIn(session.user);
+          else { state.user = null; state.cloud = false; setAccountButton(); state.tests = loadLocal().map(normalizeTest); render(); }
+        }, 0);
+      });
+    } catch(e) { state.ready = true; setAccountButton(); render(); }
+  }
+
+  function normalizeTest(t){
+    t.totalMarks = num(t.totalMarks);
+    t.marksObtained = num(t.marksObtained);
+    t.correct = num(t.correct);
+    t.incorrect = num(t.incorrect);
+    t.unattempted = num(t.unattempted);
+    t.sections = t.sections && t.sections.physics ? t.sections : emptySections();
+    ["physics","chemistry","maths"].forEach(function(s){
+      var sec = t.sections[s] || {};
+      t.sections[s] = { correct:num(sec.correct), incorrect:num(sec.incorrect), unattempted:num(sec.unattempted), time:num(sec.time), percentile: (typeof sec.percentile === "number" ? sec.percentile : (sec.percentile ? num(sec.percentile) : null)) };
+    });
+    t.mistakes = Array.isArray(t.mistakes) ? t.mistakes : [];
+    t.tags = Array.isArray(t.tags) ? t.tags : [];
+    return calcDerived(t);
+  }
+
+  async function persistTest(t){
+    if (!t.id) t.id = "t_" + Date.now() + "_" + Math.random().toString(36).slice(2,7);
+    t = normalizeTest(t);
+    var idx = state.tests.findIndex(function(x){ return x.id === t.id; });
+    if (idx >= 0) state.tests[idx] = t; else state.tests.push(t);
+    saveLocal(state.tests);
+    if (state.cloud && sb && state.user) {
+      var res = await sb.from("tracker_tests").upsert({ id: t.id, user_id: state.user.id, data: t, updated_at: new Date().toISOString() }, { onConflict: "id" });
+      if (res.error) throw res.error;
+    }
+  }
+
+  async function deleteTest(id){
+    state.tests = state.tests.filter(function(x){ return x.id !== id; });
+    saveLocal(state.tests);
+    if (state.cloud && sb && state.user) {
+      var res = await sb.from("tracker_tests").delete().eq("id", id).eq("user_id", state.user.id);
+      if (res.error) throw res.error;
+    }
+  }
+
+  // ---------- rendering ----------
+  var scoreChartInst = null, accChartInst = null, detailSectionChartInst = null, detailTimeChartInst = null;
+  var subjectTrendChartInst = null, subjectAttemptChartInst = null, subjectTimeChartInst = null;
+  var SUBJECT_LABELS = { physics: "Physics", chemistry: "Chemistry", maths: "Maths" };
+
+  function sortedTests(){
+    return state.tests.slice().sort(function(a,b){ return new Date(a.date) - new Date(b.date); });
+  }
+
+  function render(){
+    var tests = sortedTests();
+    var syncText = state.user ? " • Cloud synced" : (sb ? " • Local until you sign in" : " • Local mode");
+    document.getElementById("subhead").textContent = tests.length
+      ? tests.length + " test" + (tests.length>1?"s":"") + " logged" + syncText
+      : "No tests yet — add your first one" + syncText;
+
+    var steps = [renderKpis, renderGoals, renderScoreChart, renderAccChart, renderSubjects, renderTierChart, renderSkipChart, renderFatigue, renderTimeTable, renderPlan, renderMistakes, renderHistory];
+    var errors = [];
+    steps.forEach(function(fn){
+      try { fn(tests); } catch(e) { errors.push(fn.name + ": " + e.message); }
+    });
+    var banner = document.getElementById("errBanner");
+    if (errors.length) {
+      if (!banner) {
+        banner = document.createElement("div");
+        banner.id = "errBanner";
+        banner.style.cssText = "background:#fee2e2;color:#991b1b;padding:10px 14px;border-radius:10px;font-size:12.5px;margin-bottom:14px;";
+        document.querySelector(".wrap").insertBefore(banner, document.querySelector(".kpis"));
+      }
+      banner.textContent = "Some sections couldn't render: " + errors.join(" | ");
+    } else if (banner) {
+      banner.remove();
+    }
+  }
+
+  function renderKpis(tests){
+    var el = document.getElementById("kpis");
+    if (!tests.length){ el.innerHTML = ""; return; }
+    var last = tests[tests.length-1];
+    var prev = tests.length > 1 ? tests[tests.length-2] : null;
+    var withPctile = tests.filter(function(t){ return typeof t.percentile === "number" && !isNaN(t.percentile); });
+    var avgPctile = withPctile.length ? withPctile.reduce(function(s,t){ return s + t.percentile; },0) / withPctile.length : null;
+    var bestPctile = withPctile.length ? Math.max.apply(null, withPctile.map(function(t){ return t.percentile; })) : null;
+    var prevPctile = null;
+    for (var i = tests.length-2; i>=0; i--){ if (typeof tests[i].percentile === "number"){ prevPctile = tests[i].percentile; break; } }
+    function deltaHtml(cur, prevVal, lowerIsBetter){
+      if (prevVal === null || prevVal === undefined) return "";
+      var d = cur - prevVal;
+      if (Math.abs(d) < 0.01) return '<div class="delta">no change</div>';
+      var better = lowerIsBetter ? d < 0 : d > 0;
+      return '<div class="delta ' + (better?"up":"down") + '">' + (d>0?"+":"") + d.toFixed(2) + ' vs last</div>';
+    }
+    var cards = [
+      { label:"Latest percentile", value: typeof last.percentile === "number" ? last.percentile.toFixed(2) : "—", delta: (typeof last.percentile === "number" && prevPctile !== null) ? deltaHtml(last.percentile, prevPctile) : "" },
+      { label:"Latest score", value: last.totalMarks ? (last.marksObtained + "/" + last.totalMarks) : "—", delta: prev ? deltaHtml(last.percentage, prev.percentage) : "" },
+      { label:"Latest accuracy", value: (last.correct+last.incorrect) ? (last.accuracy.toFixed(2) + "%") : "—", delta: prev ? deltaHtml(last.accuracy, prev.accuracy) : "" },
+      { label:"Latest India rank", value: last.rank ? ("#" + last.rank) : "—", delta: prev && last.rank && prev.rank ? deltaHtml(prev.rank - last.rank, 0) : "" },
+      { label:"Average percentile", value: avgPctile !== null ? avgPctile.toFixed(2) : "—", delta: "" },
+      { label:"Best percentile", value: bestPctile !== null ? bestPctile.toFixed(2) : "—", delta: "" }
+    ];
+    el.innerHTML = cards.map(function(c){
+      return '<div class="kpi"><div class="label">'+c.label+'</div><div class="value">'+c.value+'</div>'+(c.delta||'')+'</div>';
+    }).join("");
+  }
+
+  function renderScoreChart(allTests){
+    var sel = document.getElementById("seriesFilter");
+    var seriesKeys = {};
+    allTests.forEach(function(t){
+      var label = (t.type||"Untagged").trim() || "Untagged";
+      seriesKeys[label.toLowerCase()] = label;
+    });
+    var wantedOptions = ["__all"].concat(Object.keys(seriesKeys).sort());
+    var currentOptions = Array.prototype.map.call(sel.options, function(o){ return o.value; });
+    if (currentOptions.join("|") !== wantedOptions.join("|")) {
+      var prevVal = sel.value;
+      sel.innerHTML = '<option value="__all">All series</option>' + Object.keys(seriesKeys).sort().map(function(k){ return '<option value="'+k+'">'+seriesKeys[k]+'</option>'; }).join("");
+      if (wantedOptions.indexOf(prevVal) !== -1) sel.value = prevVal;
+    }
+    var filterVal = sel.value;
+    var tests = filterVal === "__all" ? allTests : allTests.filter(function(t){ return ((t.type||"Untagged").trim() || "Untagged").toLowerCase() === filterVal; });
+
+    var ctx = document.getElementById("scoreChart").getContext("2d");
+    var labels = tests.map(function(t){ return t.name.length > 14 ? t.name.slice(0,13)+"…" : t.name; });
+    if (scoreChartInst) scoreChartInst.destroy();
+    if (!tests.length){ return; }
+    var pointColors = tests.map(function(t){ return colorForSeries(t.type); });
+    var hasPctile = tests.some(function(t){ return typeof t.percentile === "number"; });
+    var goals = loadGoals();
+    var datasets = [];
+    if (hasPctile) {
+      datasets.push({ label: "Percentile", data: tests.map(function(t){ return typeof t.percentile === "number" ? +t.percentile.toFixed(2) : null; }), spanGaps: true, borderColor: "#b45309", backgroundColor: "rgba(180,83,9,.12)", tension: .3, fill: true, yAxisID: "y", pointBackgroundColor: pointColors, pointRadius: 5, pointHoverRadius: 7 });
+      datasets.push({ label: "Target (" + goals.targetPercentile + ")", data: tests.map(function(){ return goals.targetPercentile; }), borderColor: "#94a3b8", borderDash: [6,4], pointRadius: 0, yAxisID: "y" });
+    }
+    datasets.push({ label: "Percentage", data: tests.map(function(t){ return +t.percentage.toFixed(2); }), borderColor: hasPctile ? "#2563eb" : "#b45309", backgroundColor: hasPctile ? "transparent" : "rgba(180,83,9,.12)", fill: !hasPctile, tension: .3, yAxisID: "y", pointBackgroundColor: hasPctile ? "#2563eb" : pointColors, pointRadius: hasPctile ? 3 : 5 });
+    datasets.push({ label: "Accuracy", data: tests.map(function(t){ return +t.accuracy.toFixed(2); }), borderColor: "#16794f", tension: .3, yAxisID: "y", pointBackgroundColor: pointColors, pointRadius: hasPctile ? 3 : 4 });
+    scoreChartInst = new Chart(ctx, {
+      type: "line",
+      data: { labels: labels, datasets: datasets },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { labels: { color: getComputedStyle(document.body).color } },
+          tooltip: {
+            callbacks: {
+              afterLabel: function(ctx){
+                var t = tests[ctx.dataIndex];
+                return t && t.type ? ("Series: " + t.type) : "";
+              }
+            }
+          }
+        },
+        scales: {
+          y: { min:0, max:100, ticks: { color: getComputedStyle(document.body).color } },
+          x: { ticks: { color: getComputedStyle(document.body).color } }
+        }
+      }
+    });
+    renderSeriesLegend(tests);
+  }
+
+  function renderSeriesLegend(tests){
+    var types = {};
+    tests.forEach(function(t){
+      var label = (t.type||"Untagged").trim() || "Untagged";
+      var key = label.toLowerCase();
+      if (!types[key]) types[key] = label;
+    });
+    var keys = Object.keys(types);
+    var el = document.getElementById("seriesLegend");
+    if (!el) return;
+    if (keys.length <= 1 && keys[0] === "untagged"){ el.innerHTML = ""; return; }
+    el.innerHTML = "Point colour = test series: " + keys.map(function(k){
+      return '<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;"><span style="width:9px;height:9px;border-radius:50%;background:'+colorForSeries(types[k])+';display:inline-block;"></span>'+types[k]+'</span>';
+    }).join("");
+  }
+
+  function sectionAverages(tests){
+    var secs = ["physics","chemistry","maths"];
+    var out = {};
+    secs.forEach(function(s){
+      var withData = tests.filter(function(t){ return t.sections && t.sections[s] && ((t.sections[s].correct||0)+(t.sections[s].incorrect||0) > 0); });
+      if (!withData.length){ out[s] = null; return; }
+      var accSum = 0, timeSum = 0, correctSum = 0, attemptedSum = 0;
+      withData.forEach(function(t){
+        var sec = t.sections[s];
+        var attempted = (sec.correct||0)+(sec.incorrect||0);
+        attemptedSum += attempted; correctSum += (sec.correct||0);
+        timeSum += (sec.time||0);
+      });
+      out[s] = {
+        accuracy: attemptedSum > 0 ? pct(correctSum, attemptedSum) : 0,
+        avgTime: timeSum / withData.length,
+        efficiency: timeSum > 0 ? correctSum / timeSum : 0
+      };
+    });
+    return out;
+  }
+
+  function renderAccChart(tests){
+    var ctx = document.getElementById("accChart").getContext("2d");
+    var avgs = sectionAverages(tests);
+    var labels = ["Physics","Chemistry","Maths"];
+    var keys = ["physics","chemistry","maths"];
+    var data = keys.map(function(k){ return avgs[k] ? +avgs[k].accuracy.toFixed(2) : 0; });
+    if (accChartInst) accChartInst.destroy();
+    if (!tests.length){ return; }
+    accChartInst = new Chart(ctx, {
+      type: "bar",
+      data: { labels: labels, datasets: [{ label: "Avg accuracy %", data: data, backgroundColor: ["#b45309","#16794f","#7c5cbf"] }] },
+      options: {
+        responsive: true,
+        plugins: { legend: { display:false } },
+        scales: {
+          y: { min:0, max:100, ticks: { color: getComputedStyle(document.body).color } },
+          x: { ticks: { color: getComputedStyle(document.body).color } }
+        }
+      }
+    });
+  }
+
+  function renderSubjects(tests){
+    var subj = state.subjectTab || "physics";
+    var withData = tests.filter(function(t){
+      var sec = t.sections && t.sections[subj];
+      return sec && ((sec.correct||0)+(sec.incorrect||0)+(sec.unattempted||0) > 0);
+    });
+
+    var kpiEl = document.getElementById("subjectKpis");
+    if (!withData.length){
+      kpiEl.innerHTML = "";
+    } else {
+      var last = withData[withData.length-1];
+      var lastSec = last.sections[subj];
+      var lastAttempted = (lastSec.correct||0)+(lastSec.incorrect||0);
+      var lastAcc = lastAttempted>0 ? pct(lastSec.correct, lastAttempted) : null;
+      var accSum=0, accN=0, pctileSum=0, pctileN=0, timeSum=0, timeN=0, bestPctile=null;
+      withData.forEach(function(t){
+        var sec = t.sections[subj];
+        var attempted = (sec.correct||0)+(sec.incorrect||0);
+        if (attempted>0){ accSum += pct(sec.correct, attempted); accN++; }
+        if (typeof sec.percentile === "number"){ pctileSum += sec.percentile; pctileN++; if (bestPctile===null || sec.percentile>bestPctile) bestPctile = sec.percentile; }
+        if (sec.time){ timeSum += sec.time; timeN++; }
+      });
+      var cards = [
+        { label:"Latest accuracy", value: lastAcc!==null ? lastAcc.toFixed(2)+"%" : "—" },
+        { label:"Latest percentile", value: typeof lastSec.percentile === "number" ? lastSec.percentile.toFixed(2) : "—" },
+        { label:"Average accuracy", value: accN ? (accSum/accN).toFixed(2)+"%" : "—" },
+        { label:"Best percentile", value: bestPctile!==null ? bestPctile.toFixed(2) : "—" },
+        { label:"Avg time spent", value: timeN ? (timeSum/timeN).toFixed(0)+" min" : "—" }
+      ];
+      kpiEl.innerHTML = cards.map(function(c){ return '<div class="kpi"><div class="label">'+c.label+'</div><div class="value">'+c.value+'</div></div>'; }).join("");
+    }
+
+    document.getElementById("subjectTrendTitle").textContent = SUBJECT_LABELS[subj] + " — accuracy & percentile trend";
+    document.getElementById("subjectTableTitle").textContent = SUBJECT_LABELS[subj] + " — test-by-test comparison";
+
+    var trendCanvas = document.getElementById("subjectTrendChart"), trendEmpty = document.getElementById("subjectTrendEmpty");
+    if (subjectTrendChartInst) subjectTrendChartInst.destroy();
+    if (!withData.length){
+      trendCanvas.style.display = "none"; trendEmpty.style.display = "block";
+    } else {
+      trendCanvas.style.display = "block"; trendEmpty.style.display = "none";
+      var labels = withData.map(function(t){ return t.name.length > 14 ? t.name.slice(0,13)+"…" : t.name; });
+      var accData = withData.map(function(t){
+        var sec = t.sections[subj]; var attempted = (sec.correct||0)+(sec.incorrect||0);
+        return attempted>0 ? +pct(sec.correct, attempted).toFixed(2) : null;
+      });
+      var pctileData = withData.map(function(t){ var sec = t.sections[subj]; return typeof sec.percentile === "number" ? +sec.percentile.toFixed(2) : null; });
+      var hasPctile = pctileData.some(function(v){ return v !== null; });
+      var datasets = [{ label:"Accuracy %", data: accData, spanGaps:true, borderColor:"#16794f", backgroundColor:"rgba(22,121,79,.12)", fill:true, tension:.3, pointRadius:5 }];
+      if (hasPctile) datasets.push({ label:"Percentile", data: pctileData, spanGaps:true, borderColor:"#b45309", backgroundColor:"transparent", tension:.3, pointRadius:4 });
+      subjectTrendChartInst = new Chart(trendCanvas.getContext("2d"), {
+        type: "line",
+        data: { labels: labels, datasets: datasets },
+        options: {
+          responsive:true,
+          plugins:{ legend:{ labels:{ color: getComputedStyle(document.body).color } } },
+          scales:{ y:{ min:0, max:100, ticks:{ color: getComputedStyle(document.body).color } }, x:{ ticks:{ color: getComputedStyle(document.body).color } } }
+        }
+      });
+    }
+
+    var attemptCanvas = document.getElementById("subjectAttemptChart");
+    if (subjectAttemptChartInst) subjectAttemptChartInst.destroy();
+    if (withData.length){
+      var labels2 = withData.map(function(t){ return t.name.length > 14 ? t.name.slice(0,13)+"…" : t.name; });
+      subjectAttemptChartInst = new Chart(attemptCanvas.getContext("2d"), {
+        type:"bar",
+        data:{ labels: labels2, datasets:[
+          { label:"Correct", data: withData.map(function(t){ return t.sections[subj].correct||0; }), backgroundColor:"#16794f" },
+          { label:"Incorrect", data: withData.map(function(t){ return t.sections[subj].incorrect||0; }), backgroundColor:"#b3261e" },
+          { label:"Unattempted", data: withData.map(function(t){ return t.sections[subj].unattempted||0; }), backgroundColor:"#94a3b8" }
+        ]},
+        options:{ responsive:true, plugins:{ legend:{ labels:{ color: getComputedStyle(document.body).color, boxWidth:10, font:{size:10} } } },
+          scales:{ x:{ stacked:true, ticks:{ color: getComputedStyle(document.body).color } }, y:{ stacked:true, ticks:{ color: getComputedStyle(document.body).color } } } }
+      });
+    }
+
+    var timeCanvas = document.getElementById("subjectTimeChart");
+    if (subjectTimeChartInst) subjectTimeChartInst.destroy();
+    if (withData.length){
+      var labels3 = withData.map(function(t){ return t.name.length > 14 ? t.name.slice(0,13)+"…" : t.name; });
+      subjectTimeChartInst = new Chart(timeCanvas.getContext("2d"), {
+        type:"line",
+        data:{ labels: labels3, datasets:[{ label:"Time spent (min)", data: withData.map(function(t){ return t.sections[subj].time||0; }), borderColor:"#7c5cbf", backgroundColor:"rgba(124,92,191,.12)", fill:true, tension:.3, pointRadius:5 }] },
+        options:{ responsive:true, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ color: getComputedStyle(document.body).color } }, x:{ ticks:{ color: getComputedStyle(document.body).color } } } }
+      });
+    }
+
+    var tbl = document.getElementById("subjectTable"), tblEmpty = document.getElementById("subjectTableEmpty");
+    if (!withData.length){
+      tbl.innerHTML = ""; tblEmpty.style.display = "block";
+    } else {
+      tblEmpty.style.display = "none";
+      var rows = withData.slice().reverse().map(function(t){
+        var sec = t.sections[subj];
+        var attempted = (sec.correct||0)+(sec.incorrect||0);
+        var acc = attempted>0 ? pct(sec.correct, attempted) : null;
+        return "<tr><td>"+t.name+"</td><td>"+t.date+"</td><td>"+sec.correct+"</td><td>"+sec.incorrect+"</td><td>"+sec.unattempted+"</td><td>"+(acc!==null?acc.toFixed(2)+"%":"—")+"</td><td>"+(typeof sec.percentile==="number"?sec.percentile.toFixed(2):"—")+"</td><td>"+(sec.time?sec.time+" min":"—")+"</td></tr>";
+      }).join("");
+      tbl.innerHTML = "<thead><tr><th>Test</th><th>Date</th><th>Correct</th><th>Incorrect</th><th>Unatt.</th><th>Accuracy</th><th>Percentile</th><th>Time</th></tr></thead><tbody>"+rows+"</tbody>";
+    }
+  }
+
+  var tierChartInst = null;
+  function renderTierChart(tests){
+    var tiered = tests.filter(function(t){ return t.difficulty; });
+    var canvas = document.getElementById("tierChart"), empty = document.getElementById("tierEmpty");
+    if (tiered.length < 1){
+      if (tierChartInst){ tierChartInst.destroy(); tierChartInst = null; }
+      canvas.style.display = "none"; empty.style.display = "block";
+      return;
+    }
+    canvas.style.display = "block"; empty.style.display = "none";
+    var byTier = {};
+    tiered.forEach(function(t){
+      if (!byTier[t.difficulty]) byTier[t.difficulty] = { pctileSum:0, pctileN:0, accSum:0, pctSum:0, n:0 };
+      var b = byTier[t.difficulty];
+      b.accSum += t.accuracy; b.pctSum += t.percentage; b.n++;
+      if (typeof t.percentile === "number"){ b.pctileSum += t.percentile; b.pctileN++; }
+    });
+    var tierNums = Object.keys(byTier).map(Number).sort();
+    var labels = tierNums.map(function(n){ return "T"+n+" "+(DIFFICULTY_LABELS[n]||""); });
+    var pctileData = tierNums.map(function(n){ var b = byTier[n]; return b.pctileN ? +(b.pctileSum/b.pctileN).toFixed(2) : null; });
+    var accData = tierNums.map(function(n){ var b = byTier[n]; return +(byTier[n].accSum/byTier[n].n).toFixed(2); });
+    var pctData = tierNums.map(function(n){ return +(byTier[n].pctSum/byTier[n].n).toFixed(2); });
+    var ctx = canvas.getContext("2d");
+    if (tierChartInst) tierChartInst.destroy();
+    var datasets = [
+      { label:"Avg accuracy %", data: accData, backgroundColor:"#16794f" },
+      { label:"Avg percentage", data: pctData, backgroundColor:"#2563eb" }
+    ];
+    if (pctileData.some(function(v){ return v !== null; })) {
+      datasets.push({ label:"Avg percentile", data: pctileData, backgroundColor:"#b45309" });
+    }
+    tierChartInst = new Chart(ctx, {
+      type: "bar",
+      data: { labels: labels, datasets: datasets },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: getComputedStyle(document.body).color, boxWidth:10, font:{size:10} } } },
+        scales: {
+          y: { min:0, max:100, ticks: { color: getComputedStyle(document.body).color } },
+          x: { ticks: { color: getComputedStyle(document.body).color } }
+        }
+      }
+    });
+  }
+
+  var skipChartInst = null;
+  function renderSkipChart(tests){
+    var canvas = document.getElementById("skipChart");
+    if (skipChartInst) skipChartInst.destroy();
+    if (!tests.length){ return; }
+    var labels = tests.map(function(t){ return t.name.length > 14 ? t.name.slice(0,13)+"…" : t.name; });
+    var completion = tests.map(function(t){
+      var totalQ = t.totalQuestions || (t.correct+t.incorrect+t.unattempted);
+      return totalQ ? +((t.correct+t.incorrect)/totalQ*100).toFixed(2) : null;
+    });
+    var pointColors = tests.map(function(t){ return colorForSeries(t.type); });
+    skipChartInst = new Chart(canvas.getContext("2d"), {
+      type: "line",
+      data: { labels: labels, datasets: [{ label:"Completion %", data: completion, spanGaps:true, borderColor:"#7c5cbf", backgroundColor:"rgba(124,92,191,.12)", fill:true, tension:.3, pointBackgroundColor: pointColors, pointRadius:5 }] },
+      options: {
+        responsive: true,
+        plugins: { legend: { display:false } },
+        scales: {
+          y: { min:0, max:100, ticks: { color: getComputedStyle(document.body).color } },
+          x: { ticks: { color: getComputedStyle(document.body).color } }
+        }
+      }
+    });
+  }
+
+  function renderFatigue(tests){
+    var el = document.getElementById("fatigueContent"), empty = document.getElementById("fatigueEmpty");
+    var groups = {};
+    tests.forEach(function(t){
+      if (!t.sessionGroup) return;
+      if (!groups[t.sessionGroup]) groups[t.sessionGroup] = [];
+      groups[t.sessionGroup].push(t);
+    });
+    var multi = Object.keys(groups).filter(function(g){ return groups[g].length >= 2; });
+    if (!multi.length){ el.innerHTML = ""; empty.style.display = "block"; return; }
+    empty.style.display = "none";
+    el.innerHTML = multi.map(function(g){
+      var papers = groups[g].slice().sort(function(a,b){ return (a.sessionOrder||0) - (b.sessionOrder||0); });
+      var first = papers[0], last = papers[papers.length-1];
+      var accDrop = first.accuracy - last.accuracy;
+      var pctileDrop = (typeof first.percentile === "number" && typeof last.percentile === "number") ? first.percentile - last.percentile : null;
+      var verdict = accDrop > 10 ? '<span class="pill bad">Accuracy dropped '+accDrop.toFixed(2)+' pts — likely fatigue</span>' : (accDrop < -5 ? '<span class="pill good">Accuracy improved into later papers</span>' : '<span class="pill warn">Roughly stable across papers</span>');
+      var rows = papers.map(function(p,i){
+        return '<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:3px 0;"><span>Paper '+(p.sessionOrder||(i+1))+': '+p.name+'</span><span>Accuracy '+p.accuracy.toFixed(2)+'%'+(typeof p.percentile==="number"?(', Percentile '+p.percentile.toFixed(2)):'')+'</span></div>';
+      }).join("");
+      return '<div style="padding:9px 0;border-bottom:1px solid var(--border);"><b>'+g+'</b> '+verdict+(pctileDrop!==null?' <span style="font-size:12px;color:var(--text-dim)">(percentile change: '+(pctileDrop>0?'-':'+')+Math.abs(pctileDrop).toFixed(2)+')</span>':'')+rows+'</div>';
+    }).join("");
+  }
+
+  function renderTimeTable(tests){
+    var withTime = tests.filter(function(t){ return t.sections && (t.sections.physics.time||t.sections.chemistry.time||t.sections.maths.time); });
+    var tbl = document.getElementById("timeTable"), empty = document.getElementById("timeEmpty");
+    if (!withTime.length){ tbl.innerHTML = ""; empty.style.display = "block"; return; }
+    empty.style.display = "none";
+    var avgs = sectionAverages(withTime);
+    var secs = [["physics","Physics"],["chemistry","Chemistry"],["maths","Maths"]];
+    var rows = secs.map(function(pair){
+      var a = avgs[pair[0]];
+      if (!a) return "";
+      var effLabel = a.efficiency >= 0.4 ? '<span class="pill good">Efficient</span>' : (a.efficiency >= 0.25 ? '<span class="pill warn">OK</span>' : '<span class="pill bad">Slow</span>');
+      return "<tr><td>"+pair[1]+"</td><td>"+a.avgTime.toFixed(0)+" min avg</td><td>"+a.accuracy.toFixed(2)+"%</td><td>"+(a.efficiency*60).toFixed(2)+" correct/hr</td><td>"+effLabel+"</td></tr>";
+    }).join("");
+    tbl.innerHTML = "<thead><tr><th>Section</th><th>Avg time spent</th><th>Accuracy</th><th>Speed</th><th>Read</th></tr></thead><tbody>"+rows+"</tbody>";
+  }
+
+  function renderPlan(tests){
+    var el = document.getElementById("planText");
+    if (tests.length < 1){ el.innerHTML = '<span style="color:var(--text-dim)">Log at least one test to get a plan.</span>'; return; }
+    var avgs = sectionAverages(tests);
+    var secs = [["physics","Physics"],["chemistry","Chemistry"],["maths","Maths"]];
+    var withData = secs.filter(function(p){ return avgs[p[0]]; });
+    if (!withData.length){
+      el.innerHTML = "Log section-wise correct/incorrect and time for a couple of tests, and I'll suggest a time budget and focus areas here.";
+      return;
+    }
+    // total time budget: average of totalTimeAllotted, default 180
+    var budgets = tests.filter(function(t){ return t.totalTimeAllotted > 0; }).map(function(t){ return t.totalTimeAllotted; });
+    var totalBudget = budgets.length ? budgets.reduce(function(a,b){return a+b;},0)/budgets.length : 180;
+
+    // weakest by accuracy
+    var byAcc = withData.slice().sort(function(a,b){ return avgs[a[0]].accuracy - avgs[b[0]].accuracy; });
+    var weakest = byAcc[0];
+    var strongest = byAcc[byAcc.length-1];
+
+    // suggested time allocation: inverse of efficiency, normalized to totalBudget
+    var effs = withData.map(function(p){ return avgs[p[0]].efficiency || 0.01; });
+    var invEffs = effs.map(function(e){ return 1/Math.max(e,0.05); });
+    var sumInv = invEffs.reduce(function(a,b){return a+b;},0);
+    var alloc = withData.map(function(p,i){ return { name:p[1], key:p[0], minutes: Math.round(totalBudget * invEffs[i] / sumInv) }; });
+
+    var lines = [];
+    lines.push("<b>Weakest section:</b> " + weakest[1] + " (" + avgs[weakest[0]].accuracy.toFixed(2) + "% accuracy). Prioritise revision and PYQs here before the next test.");
+    lines.push("<b>Strongest section:</b> " + strongest[1] + " (" + avgs[strongest[0]].accuracy.toFixed(2) + "% accuracy) — keep it warm with a light PYQ set, don't over-invest exam time here.");
+    lines.push("<b>Suggested time budget for a " + totalBudget.toFixed(0) + "-min test:</b> " + alloc.map(function(a){ return a.name + " ~" + a.minutes + " min"; }).join(", ") + ".");
+
+    var lowAccHighAttempt = withData.filter(function(p){ return avgs[p[0]].accuracy < 55; });
+    if (lowAccHighAttempt.length){
+      lines.push("<b>Attempt discipline:</b> in " + lowAccHighAttempt.map(function(p){return p[1];}).join(" & ") + ", accuracy is under 55% — attempt fewer guesses and skip questions you're unsure of rather than risking negative marking.");
+    }
+    var overTime = tests.filter(function(t){ return t.totalTime && t.totalTimeAllotted && t.totalTime > t.totalTimeAllotted; });
+    if (overTime.length){
+      lines.push("<b>Pacing:</b> you ran over time in " + overTime.length + " of " + tests.length + " test(s) — practise timed sectional tests for the weaker section to build speed.");
+    }
+    var tiered = tests.filter(function(t){ return t.difficulty; });
+    if (tiered.length >= 2){
+      var last3 = tiered.slice(-3);
+      var avgTier = last3.reduce(function(s,t){return s+t.difficulty;},0)/last3.length;
+      var avgPctRecent = last3.reduce(function(s,t){return s+t.percentage;},0)/last3.length;
+      lines.push("<b>Difficulty context:</b> your last " + last3.length + " tagged test(s) averaged tier " + avgTier.toFixed(2) + " (1=PW Batch Mains, 5=JRTS Advanced) at " + avgPctRecent.toFixed(2) + "%. Read the raw percentage trend alongside this — a dip on a harder tier isn't the same as a real decline.");
+    }
+    el.innerHTML = lines.map(function(l){ return "<p>"+l+"</p>"; }).join("");
+  }
+
+  function renderMistakes(tests){
+    var list = document.getElementById("mistakeList"), empty = document.getElementById("mistakeEmpty");
+    var rows = [];
+    var secCounts = { Physics:0, Chemistry:0, Maths:0, Other:0 };
+    tests.slice().reverse().forEach(function(t){
+      (t.mistakes||[]).forEach(function(m){
+        rows.push({ test:t.name, date:t.date, text:m });
+        var lower = m.toLowerCase();
+        if (lower.indexOf("physics") === 0) secCounts.Physics++;
+        else if (lower.indexOf("chemistry") === 0) secCounts.Chemistry++;
+        else if (lower.indexOf("maths") === 0 || lower.indexOf("math") === 0) secCounts.Maths++;
+        else secCounts.Other++;
+      });
+    });
+    if (!rows.length){ list.innerHTML = ""; empty.style.display = "block"; return; }
+    empty.style.display = "none";
+    var breakdown = '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">By section: Physics '+secCounts.Physics+' · Chemistry '+secCounts.Chemistry+' · Maths '+secCounts.Maths+(secCounts.Other?(' · Other '+secCounts.Other):'')+'</div>';
+    list.innerHTML = breakdown + rows.map(function(r){
+      return '<div style="padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span class="tag">'+r.date+'</span>'+r.text+' <span style="color:var(--text-dim)">— '+r.test+'</span></div>';
+    }).join("");
+  }
+
+  function divergenceFlag(t){
+    if (typeof t.percentile !== "number") return "";
+    var diff = t.percentile - t.accuracy;
+    if (diff > 20) return '<span class="pill warn" title="Percentile much higher than accuracy — likely a hard paper">Hard paper</span>';
+    if (diff < -20) return '<span class="pill" style="background:#94a3b822;color:#64748b" title="Percentile lower than accuracy suggests — likely an easy paper (everyone scored high)">Easy paper</span>';
+    return "";
+  }
+
+  function renderHistory(tests){
+    var tbl = document.getElementById("historyTable"), empty = document.getElementById("historyEmpty");
+    if (!tests.length){ tbl.innerHTML = ""; empty.style.display = "block"; return; }
+    empty.style.display = "none";
+    var rows = tests.slice().reverse().map(function(t){
+      var typeLabel = (t.type||"").trim();
+      var pill = typeLabel ? '<span class="pill" style="background:'+colorForSeries(typeLabel)+'22;color:'+colorForSeries(typeLabel)+'" title="'+(t.markingScheme?("Marking: "+t.markingScheme):"")+'">'+typeLabel+"</span>" : "—";
+      var tierBadge = t.difficulty ? ' <span class="pill" style="background:var(--accent-soft);color:var(--accent)">T'+t.difficulty+'</span>' : "";
+      var tagPills = (t.tags||[]).map(function(tag){ return '<span class="pill" style="background:#7c5cbf22;color:#7c5cbf;margin-right:3px;">'+tag+'</span>'; }).join("");
+      var flags = divergenceFlag(t) + (tagPills ? " " + tagPills : "");
+      return "<tr>" +
+        "<td>"+t.date+"</td>" +
+        "<td>"+t.name+"</td>" +
+        "<td>"+pill+tierBadge+"</td>" +
+        "<td>"+t.marksObtained+"/"+t.totalMarks+"</td>" +
+        "<td>"+t.percentage.toFixed(2)+"%</td>" +
+        "<td>"+(typeof t.percentile === "number" ? t.percentile.toFixed(2) : "—")+"</td>" +
+        "<td>"+t.accuracy.toFixed(2)+"%"+(t.accuracyOverride?' <span title="Manually entered" style="color:var(--text-dim)">✎</span>':"")+"</td>" +
+        "<td>"+(t.rank ? "#"+t.rank : "—")+"</td>" +
+        "<td>"+(flags||"—")+"</td>" +
+        '<td class="rowbtns"><button class="small ghost" onclick="TT.view(\''+t.id+'\')">View</button><button class="small ghost" onclick="TT.edit(\''+t.id+'\')">Edit</button><button class="small ghost" onclick="TT.del(\''+t.id+'\')">Delete</button></td>' +
+        "</tr>";
+    }).join("");
+    tbl.innerHTML = "<thead><tr><th>Date</th><th>Test</th><th>Series</th><th>Marks</th><th>%</th><th>Percentile</th><th>Accuracy</th><th>Rank</th><th>Flags</th><th></th></tr></thead><tbody>"+rows+"</tbody>";
+  }
+
+  // ---------- form handling ----------
+  function emptySections(){
+    return { physics:{correct:0,incorrect:0,unattempted:0,time:0}, chemistry:{correct:0,incorrect:0,unattempted:0,time:0}, maths:{correct:0,incorrect:0,unattempted:0,time:0} };
+  }
+
+  function openModal(test){
+    document.getElementById("modalTitle").textContent = test ? "Edit test" : "Add a test";
+    var f = function(id){ return document.getElementById(id); };
+    f("f_id").value = test ? test.id : "";
+    f("f_name").value = test ? test.name : "";
+    f("f_date").value = test ? test.date : new Date().toISOString().slice(0,10);
+    f("f_type").value = test ? (test.type||"") : "";
+    f("f_difficulty").value = test && test.difficulty !== undefined && test.difficulty !== null ? String(test.difficulty) : "0";
+    f("f_markingScheme").value = test ? (test.markingScheme||"") : "";
+    f("f_totalMarks").value = test ? test.totalMarks : "";
+    f("f_marksObtained").value = test ? test.marksObtained : "";
+    f("f_totalQ").value = test ? (test.totalQuestions||"") : "";
+    f("f_correct").value = test ? (test.correct||"") : "";
+    f("f_incorrect").value = test ? (test.incorrect||"") : "";
+    f("f_unattempted").value = test ? (test.unattempted||"") : "";
+    document.getElementById("f_accOverride").checked = !!(test && test.accuracyOverride);
+    f("f_manualAccuracy").disabled = !(test && test.accuracyOverride);
+    f("f_manualAccuracy").value = test && test.manualAccuracy !== undefined && test.manualAccuracy !== null ? test.manualAccuracy : "";
+    f("f_rank").value = test ? (test.rank||"") : "";
+    f("f_percentile").value = test && test.percentile !== undefined && test.percentile !== null ? test.percentile : "";
+    f("f_candidates").value = test ? (test.candidates||"") : "";
+    f("f_totalTime").value = test ? (test.totalTime||"") : "";
+    f("f_totalTimeAllotted").value = test ? (test.totalTimeAllotted||"") : "";
+    var secs = test && test.sections ? test.sections : emptySections();
+    ["physics","chemistry","maths"].forEach(function(s, i){
+      var prefix = ["p","c","m"][i];
+      f(prefix+"_correct").value = secs[s].correct || "";
+      f(prefix+"_incorrect").value = secs[s].incorrect || "";
+      f(prefix+"_unattempted").value = secs[s].unattempted || "";
+      f(prefix+"_time").value = secs[s].time || "";
+      f(prefix+"_percentile").value = (secs[s].percentile !== undefined && secs[s].percentile !== null) ? secs[s].percentile : "";
+    });
+    f("f_tags").value = test && test.tags ? test.tags.join(", ") : "";
+    f("f_sessionGroup").value = test ? (test.sessionGroup||"") : "";
+    f("f_sessionOrder").value = test && test.sessionOrder ? test.sessionOrder : "";
+    f("f_mistakes").value = test && test.mistakes ? test.mistakes.join("\n") : "";
+    document.getElementById("modalBg").classList.add("open");
+  }
+  function closeModal(){ document.getElementById("modalBg").classList.remove("open"); }
+
+  document.getElementById("editGoalsBtn").onclick = function(){
+    var g = loadGoals();
+    document.getElementById("g_target").value = g.targetPercentile;
+    document.getElementById("g_mainDate").value = g.mainDate;
+    document.getElementById("g_advDate").value = g.advDate;
+    document.getElementById("goalsModalBg").classList.add("open");
+  };
+  document.getElementById("goalsCancelBtn").onclick = function(){ document.getElementById("goalsModalBg").classList.remove("open"); };
+  document.getElementById("goalsModalBg").addEventListener("click", function(e){ if (e.target === this) this.classList.remove("open"); });
+  document.getElementById("goalsSaveBtn").onclick = function(){
+    var g = {
+      targetPercentile: num(document.getElementById("g_target").value) || 99.9,
+      mainDate: document.getElementById("g_mainDate").value || "2028-01-31",
+      advDate: document.getElementById("g_advDate").value || "2028-05-31"
+    };
+    persistGoalsCloud(g).then(function(){
+      document.getElementById("goalsModalBg").classList.remove("open");
+      render();
+      toast(state.cloud ? "Goals saved and synced" : "Goals saved");
+    }).catch(function(e){
+      document.getElementById("goalsModalBg").classList.remove("open");
+      render();
+      toast("Goals saved locally; cloud sync failed");
+    });
+  };
+
+  document.getElementById("seriesFilter").addEventListener("change", function(){ renderScoreChart(sortedTests()); });
+
+  document.getElementById("compareBtn").onclick = function(){
+    var tests = sortedTests();
+    var opts = tests.map(function(t){ return '<option value="'+t.id+'">'+t.date+' — '+t.name+'</option>'; }).join("");
+    document.getElementById("cmp_a").innerHTML = opts;
+    document.getElementById("cmp_b").innerHTML = opts;
+    if (tests.length >= 2) {
+      document.getElementById("cmp_a").value = tests[tests.length-2].id;
+      document.getElementById("cmp_b").value = tests[tests.length-1].id;
+    }
+    renderCompare();
+    document.getElementById("compareModalBg").classList.add("open");
+  };
+  document.getElementById("compareCloseBtn").onclick = function(){ document.getElementById("compareModalBg").classList.remove("open"); };
+  document.getElementById("compareModalBg").addEventListener("click", function(e){ if (e.target === this) this.classList.remove("open"); });
+  document.getElementById("cmp_a").addEventListener("change", renderCompare);
+  document.getElementById("cmp_b").addEventListener("change", renderCompare);
+
+  function renderCompare(){
+    var idA = document.getElementById("cmp_a").value, idB = document.getElementById("cmp_b").value;
+    var a = state.tests.find(function(t){ return t.id === idA; });
+    var b = state.tests.find(function(t){ return t.id === idB; });
+    var tbl = document.getElementById("compareTable");
+    if (!a || !b){ tbl.innerHTML = ""; return; }
+    function fmt(v, suffix){ return (typeof v === "number") ? v.toFixed(2)+(suffix||"") : "—"; }
+    function deltaCell(av, bv, lowerBetter){
+      if (typeof av !== "number" || typeof bv !== "number") return "";
+      var d = bv - av;
+      if (Math.abs(d) < 0.01) return '<span style="color:var(--text-dim)">no change</span>';
+      var better = lowerBetter ? d < 0 : d > 0;
+      return '<span class="'+(better?"up":"down")+'">'+(d>0?"+":"")+d.toFixed(2)+'</span>';
+    }
+    var rows = [
+      ["Marks", a.marksObtained+"/"+a.totalMarks, b.marksObtained+"/"+b.totalMarks, deltaCell(a.percentage,b.percentage)],
+      ["Percentage", fmt(a.percentage,"%"), fmt(b.percentage,"%"), deltaCell(a.percentage,b.percentage)],
+      ["Percentile", fmt(a.percentile), fmt(b.percentile), deltaCell(a.percentile,b.percentile)],
+      ["Accuracy", fmt(a.accuracy,"%"), fmt(b.accuracy,"%"), deltaCell(a.accuracy,b.accuracy)],
+      ["India rank", a.rank?"#"+a.rank:"—", b.rank?"#"+b.rank:"—", deltaCell(a.rank,b.rank,true)]
+    ];
+    ["physics","chemistry","maths"].forEach(function(s){
+      var label = s.charAt(0).toUpperCase()+s.slice(1);
+      var aAcc = (a.sections[s].correct+a.sections[s].incorrect) ? pct(a.sections[s].correct, a.sections[s].correct+a.sections[s].incorrect) : null;
+      var bAcc = (b.sections[s].correct+b.sections[s].incorrect) ? pct(b.sections[s].correct, b.sections[s].correct+b.sections[s].incorrect) : null;
+      rows.push([label+" accuracy", fmt(aAcc,"%"), fmt(bAcc,"%"), deltaCell(aAcc,bAcc)]);
+      rows.push([label+" skipped", a.sections[s].unattempted, b.sections[s].unattempted, deltaCell(a.sections[s].unattempted,b.sections[s].unattempted,true)]);
+    });
+    tbl.innerHTML = "<thead><tr><th>Metric</th><th>A: "+a.name+"</th><th>B: "+b.name+"</th><th>Change</th></tr></thead><tbody>" +
+      rows.map(function(r){ return "<tr><td>"+r[0]+"</td><td>"+r[1]+"</td><td>"+r[2]+"</td><td>"+r[3]+"</td></tr>"; }).join("") +
+      "</tbody>";
+  }
+  document.getElementById("addBtn").onclick = function(){ openModal(null); };
+  document.getElementById("cancelBtn").onclick = closeModal;
+  document.getElementById("modalBg").addEventListener("click", function(e){ if (e.target === this) closeModal(); });
+  document.getElementById("f_accOverride").addEventListener("change", function(){
+    document.getElementById("f_manualAccuracy").disabled = !this.checked;
+  });
+  document.getElementById("f_type").addEventListener("input", function(){
+    var guess = guessDifficulty(this.value);
+    if (guess !== null) document.getElementById("f_difficulty").value = String(guess);
+  });
+
+  document.getElementById("testForm").addEventListener("submit", async function(e){
+    e.preventDefault();
+    var f = function(id){ return document.getElementById(id).value; };
+    var t = {
+      id: f("f_id") || null,
+      name: f("f_name") || "Untitled test",
+      date: f("f_date"),
+      type: f("f_type"),
+      difficulty: parseInt(f("f_difficulty"),10) || 0,
+      markingScheme: f("f_markingScheme"),
+      totalMarks: num(f("f_totalMarks")),
+      marksObtained: num(f("f_marksObtained")),
+      totalQuestions: num(f("f_totalQ")),
+      correct: num(f("f_correct")),
+      incorrect: num(f("f_incorrect")),
+      unattempted: num(f("f_unattempted")),
+      accuracyOverride: document.getElementById("f_accOverride").checked,
+      manualAccuracy: document.getElementById("f_accOverride").checked ? num(f("f_manualAccuracy")) : null,
+      rank: num(f("f_rank")) || null,
+      percentile: f("f_percentile") ? num(f("f_percentile")) : null,
+      candidates: num(f("f_candidates")) || null,
+      totalTime: num(f("f_totalTime")) || null,
+      totalTimeAllotted: num(f("f_totalTimeAllotted")) || null,
+      sections: {
+        physics: { correct:num(f("p_correct")), incorrect:num(f("p_incorrect")), unattempted:num(f("p_unattempted")), time:num(f("p_time")), percentile: f("p_percentile") ? num(f("p_percentile")) : null },
+        chemistry: { correct:num(f("c_correct")), incorrect:num(f("c_incorrect")), unattempted:num(f("c_unattempted")), time:num(f("c_time")), percentile: f("c_percentile") ? num(f("c_percentile")) : null },
+        maths: { correct:num(f("m_correct")), incorrect:num(f("m_incorrect")), unattempted:num(f("m_unattempted")), time:num(f("m_time")), percentile: f("m_percentile") ? num(f("m_percentile")) : null }
+      },
+      mistakes: f("f_mistakes").split("\n").map(function(x){return x.trim();}).filter(Boolean),
+      tags: f("f_tags").split(",").map(function(x){return x.trim();}).filter(Boolean),
+      sessionGroup: f("f_sessionGroup").trim(),
+      sessionOrder: num(f("f_sessionOrder")) || null
+    };
+    calcDerived(t);
+    await persistTest(t);
+    if (state.db) {
+      try {
+        var snap = await state.db.collection("tests").get();
+        state.tests = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); }).map(normalizeTest);
+      } catch(e){}
+    }
+    closeModal();
+    render();
+    toast("Test saved");
+  });
+
+  window.TT = {
+    edit: function(id){
+      var t = state.tests.find(function(x){ return x.id === id; });
+      if (t) openModal(t);
+    },
+    del: async function(id){
+      if (!confirm("Delete this test?")) return;
+      await deleteTest(id);
+      render();
+      toast("Deleted");
+    },
+    view: function(id){
+      var t = state.tests.find(function(x){ return x.id === id; });
+      if (t) openDetail(t);
+    }
+  };
+
+  function openDetail(t){
+    document.getElementById("detailTitle").textContent = t.name;
+    document.getElementById("detailSub").textContent = t.date + (t.type ? " · " + t.type : "") + (t.markingScheme ? " · " + t.markingScheme : "") + (t.sessionGroup ? " · Session: " + t.sessionGroup + (t.sessionOrder?" (paper "+t.sessionOrder+")":"") : "") + (t.tags && t.tags.length ? " · Tags: " + t.tags.join(", ") : "");
+    document.getElementById("detailKpis").innerHTML = [
+      { label:"Marks", value: t.marksObtained + "/" + t.totalMarks },
+      { label:"Percentage", value: t.percentage.toFixed(2) + "%" },
+      { label:"Percentile", value: typeof t.percentile === "number" ? t.percentile.toFixed(2) : "—" },
+      { label:"Accuracy", value: t.accuracy.toFixed(2) + "%" },
+      { label:"India rank", value: t.rank ? "#"+t.rank : "—" }
+    ].map(function(c){ return '<div class="kpi"><div class="label">'+c.label+'</div><div class="value" style="font-size:17px;">'+c.value+'</div></div>'; }).join("");
+
+    var secs = ["physics","chemistry","maths"];
+    var secLabels = ["Physics","Chemistry","Maths"];
+    var sc = document.getElementById("detailSectionChart").getContext("2d");
+    if (detailSectionChartInst) detailSectionChartInst.destroy();
+    detailSectionChartInst = new Chart(sc, {
+      type: "bar",
+      data: {
+        labels: secLabels,
+        datasets: [
+          { label:"Correct", data: secs.map(function(s){ return t.sections[s].correct; }), backgroundColor:"#16794f" },
+          { label:"Incorrect", data: secs.map(function(s){ return t.sections[s].incorrect; }), backgroundColor:"#b3261e" },
+          { label:"Unattempted", data: secs.map(function(s){ return t.sections[s].unattempted; }), backgroundColor:"#94a3b8" }
+        ]
+      },
+      options: { responsive:true, plugins:{ legend:{ labels:{ color: getComputedStyle(document.body).color, boxWidth:10, font:{size:10} } } },
+        scales:{ x:{ stacked:true, ticks:{ color: getComputedStyle(document.body).color } }, y:{ stacked:true, ticks:{ color: getComputedStyle(document.body).color } } } }
+    });
+    var pctileNote = secs.map(function(s,i){ var p = t.sections[s].percentile; return typeof p === "number" ? secLabels[i]+" "+p.toFixed(2) : null; }).filter(Boolean).join(" · ");
+    document.getElementById("detailSectionPercentile").textContent = pctileNote ? "Section percentile: " + pctileNote : "";
+
+    var tc = document.getElementById("detailTimeChart").getContext("2d");
+    if (detailTimeChartInst) detailTimeChartInst.destroy();
+    var times = secs.map(function(s){ return t.sections[s].time || 0; });
+    var hasTime = times.some(function(x){ return x > 0; });
+    if (hasTime) {
+      detailTimeChartInst = new Chart(tc, {
+        type: "doughnut",
+        data: { labels: secLabels, datasets: [{ data: times, backgroundColor: ["#b45309","#16794f","#2563eb"] }] },
+        options: { responsive:true, plugins:{ legend:{ position:"bottom", labels:{ color: getComputedStyle(document.body).color, boxWidth:10, font:{size:10} } } } }
+      });
+    }
+
+    var mEl = document.getElementById("detailMistakes");
+    if (t.mistakes && t.mistakes.length) {
+      mEl.innerHTML = t.mistakes.map(function(m){ return '<div style="padding:5px 0;border-bottom:1px solid var(--border);">'+m+'</div>'; }).join("");
+    } else {
+      mEl.innerHTML = '<span style="color:var(--text-dim)">None logged for this test.</span>';
+    }
+
+    document.getElementById("detailEditBtn").onclick = function(){
+      document.getElementById("detailModalBg").classList.remove("open");
+      openModal(t);
+    };
+    document.getElementById("detailModalBg").classList.add("open");
+  }
+  document.getElementById("detailCloseBtn").onclick = function(){ document.getElementById("detailModalBg").classList.remove("open"); };
+  document.getElementById("detailModalBg").addEventListener("click", function(e){ if (e.target === this) this.classList.remove("open"); });
+
+  // ---------- paste parser ----------
+  document.getElementById("pasteBtn").onclick = function(){
+    document.getElementById("pasteArea").value = "";
+    document.getElementById("pasteModalBg").classList.add("open");
+  };
+  document.getElementById("pasteCancelBtn").onclick = function(){ document.getElementById("pasteModalBg").classList.remove("open"); };
+  document.getElementById("pasteModalBg").addEventListener("click", function(e){ if (e.target === this) this.classList.remove("open"); });
+  var pasteClearBtn = document.getElementById("pasteClearBtn");
+  if (pasteClearBtn) pasteClearBtn.onclick = function(){ document.getElementById("pasteArea").value = ""; };
+
+  function parseKV(text){
+    var map = {};
+    text.split("\n").forEach(function(line){
+      var idx = line.indexOf(":");
+      if (idx === -1) return;
+      var key = line.slice(0,idx).trim().toLowerCase();
+      var val = line.slice(idx+1).trim();
+      if (key && val) map[key] = val;
+    });
+    return map;
+  }
+
+  document.getElementById("pasteParseBtn").onclick = function(){
+    var text = document.getElementById("pasteArea").value;
+    var map = parseKV(text);
+    openModal(null);
+    function set(id, key){ if (map[key] !== undefined) document.getElementById(id).value = map[key]; }
+    set("f_name","test"); set("f_date","date"); set("f_type","type");
+    set("f_markingScheme","marking scheme");
+    set("f_tags","tags"); set("f_sessionGroup","session group"); set("f_sessionOrder","session order");
+    if (map["accuracy"] !== undefined) {
+      document.getElementById("f_accOverride").checked = true;
+      document.getElementById("f_manualAccuracy").disabled = false;
+      document.getElementById("f_manualAccuracy").value = parseFloat(map["accuracy"]) || "";
+    }
+    if (map["difficulty"] !== undefined || map["difficulty tier"] !== undefined) {
+      document.getElementById("f_difficulty").value = (map["difficulty"] || map["difficulty tier"]).match(/\d/) ? (map["difficulty"]||map["difficulty tier"]).match(/\d/)[0] : "0";
+    } else {
+      var guess = guessDifficulty(map["type"] || "");
+      if (guess !== null) document.getElementById("f_difficulty").value = String(guess);
+    }
+    set("f_totalMarks","total marks"); set("f_marksObtained","marks obtained");
+    set("f_totalQ","total questions"); set("f_correct","correct"); set("f_incorrect","incorrect");
+    set("f_unattempted","unattempted"); set("f_rank","india rank"); set("f_percentile","percentile"); set("f_candidates","total candidates");
+    set("f_totalTime","total time"); set("f_totalTimeAllotted","total time allotted");
+    set("p_correct","physics correct"); set("p_incorrect","physics incorrect"); set("p_unattempted","physics unattempted"); set("p_time","physics time"); set("p_percentile","physics percentile");
+    set("c_correct","chemistry correct"); set("c_incorrect","chemistry incorrect"); set("c_unattempted","chemistry unattempted"); set("c_time","chemistry time"); set("c_percentile","chemistry percentile");
+    set("m_correct","maths correct"); set("m_incorrect","maths incorrect"); set("m_unattempted","maths unattempted"); set("m_time","maths time"); set("m_percentile","maths percentile");
+    if (map["mistakes"]) document.getElementById("f_mistakes").value = map["mistakes"].replace(/;\s*/g, "\n");
+    document.getElementById("pasteModalBg").classList.remove("open");
+    toast("Parsed — check the fields, then save");
+  };
+
+  document.querySelectorAll("#mainTabNav .tabbtn").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      document.querySelectorAll("#mainTabNav .tabbtn").forEach(function(b){ b.classList.remove("active"); });
+      btn.classList.add("active");
+      var target = btn.getAttribute("data-tab");
+      document.querySelectorAll(".tabpanel").forEach(function(p){
+        p.style.display = (p.getAttribute("data-panel") === target) ? "" : "none";
+      });
+      if (state.ready) render();
+    });
+  });
+
+  document.getElementById("accountBtn").addEventListener("click", function(){
+    if (state.user) {
+      var ok = confirm("Signed in as " + state.user.email + "\n\nPress OK to sign out.");
+      if (ok) signOut();
+    } else { openAuth("signin"); }
+  });
+  document.getElementById("authModeBtn").addEventListener("click", function(){ openAuth(state.authMode === "signup" ? "signin" : "signup"); });
+  document.getElementById("authSubmitBtn").addEventListener("click", handleAuth);
+  document.getElementById("authCancelBtn").addEventListener("click", closeAuth);
+  document.getElementById("authModalBg").addEventListener("click", function(e){ if (e.target === this) closeAuth(); });
+
+  document.querySelectorAll("#subjectSubNav .subjectbtn").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      document.querySelectorAll("#subjectSubNav .subjectbtn").forEach(function(b){ b.classList.remove("active"); });
+      btn.classList.add("active");
+      state.subjectTab = btn.getAttribute("data-subject");
+      if (state.ready) renderSubjects(sortedTests());
+    });
+  });
+
+  initDb().catch(function(){
+    state.tests = loadLocal().map(normalizeTest);
+    state.ready = true;
+    setAccountButton();
+    render();
+  });
+})();
+</script>
+</body>
+</html>
