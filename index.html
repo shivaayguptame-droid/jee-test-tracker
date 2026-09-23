@@ -3,9 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Test Tracker v0.0.2</title>
-<!-- VERSION: 0.0.2 | Chart/auth refresh fix. AI image pipeline fix is planned as 0.0.3. -->
+<title>Test Tracker v0.1.0</title>
+<!-- VERSION: 0.1.0 | Google Calendar Schedule integration. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root {
     --bg: #f7f7f5;
@@ -136,7 +137,7 @@
 <div class="wrap">
   <header>
     <div>
-      <h1>Test Tracker <span id="appVersion" style="font-size:11px;font-weight:500;color:var(--text-dim);vertical-align:middle;">v0.0.2</span></h1>
+      <h1>Test Tracker <span id="appVersion" style="font-size:11px;font-weight:500;color:var(--text-dim);vertical-align:middle;">v0.1.0</span></h1>
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow">
@@ -156,6 +157,7 @@
     <button class="tabbtn" data-tab="analysis">Analysis</button>
     <button class="tabbtn" data-tab="plan">Plan &amp; Mistakes</button>
     <button class="tabbtn" data-tab="tests">All Tests</button>
+    <button class="tabbtn" data-tab="schedule">Schedule</button>
   </div>
 
   <div class="tabpanel" data-panel="overview">
@@ -266,6 +268,30 @@
       <div class="sectionTitle">All tests</div>
       <div class="tablewrap"><table id="historyTable"></table></div>
       <div class="empty" id="historyEmpty" style="display:none">No tests logged yet — add your first one above.</div>
+    </div>
+  </div>
+
+  <div class="tabpanel" data-panel="schedule" style="display:none;">
+    <div class="card">
+      <div class="sectionTitle" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span>Google Calendar schedule</span>
+        <div class="rowbtns">
+          <button class="ghost small" id="openGoogleCalendarBtn">Open Google Calendar</button>
+          <button class="primary small" id="connectGoogleCalendarBtn">Connect Google Calendar</button>
+        </div>
+      </div>
+      <div id="googleCalendarStatus" style="font-size:12.5px;color:var(--text-dim);margin-bottom:12px;">Not connected. Connect your Google Calendar to load your real schedule here.</div>
+      <div class="formgrid" style="grid-template-columns:auto 1fr auto;align-items:end;">
+        <button class="ghost" id="schedulePrevBtn">←</button>
+        <div class="field" style="margin:0;"><label>Week</label><input id="scheduleWeekInput" type="date"></div>
+        <button class="ghost" id="scheduleNextBtn">→</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sectionTitle" id="scheduleRangeTitle">This week</div>
+      <div id="scheduleDays"></div>
+      <div class="empty" id="scheduleEmpty" style="display:none">No calendar events found for this week.</div>
     </div>
   </div>
 </div>
@@ -516,11 +542,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "0.0.2";
-  var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, authMode: "signin", realtime: null, renderedPanels: {} };
-  // Dashboard charts should appear immediately. This is also a safeguard
-  // against browser visibility/resize events replaying Chart.js animations.
-  if (window.Chart) Chart.defaults.animation = false;
+  var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, authMode: "signin", realtime: null, renderedPanels: {}, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], scheduleWeekStart: null };
   var LS_KEY = "jee_test_tracker_v1";
 
   // ===== ONLINE CONFIG =====
@@ -528,6 +550,12 @@ Mistakes: Physics: sign error in kinematics"></textarea>
   // Never put a Supabase secret/service-role key in this file.
   var SUPABASE_URL = "https://isbhjnezkqiazrtbcrdi.supabase.co";
   var SUPABASE_PUBLISHABLE_KEY = "sb_publishable_TdkiN3P82zEpA7jmlO_KxQ_Ds5hf0g2";
+
+  // ===== GOOGLE CALENDAR CONFIG =====
+  // OAuth Client ID created for the GitHub Pages origin:
+  // https://shivaayguptame-droid.github.io
+  var GOOGLE_CLIENT_ID = "447831086514.apps.googleusercontent.com";
+  var GOOGLE_CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
   var sb = null;
   var migrationPayload = null;
   if (window.supabase && SUPABASE_URL.indexOf("PASTE_") !== 0 && SUPABASE_PUBLISHABLE_KEY.indexOf("PASTE_") !== 0) {
@@ -831,25 +859,8 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       else { state.ready = true; setAccountButton(); render(); }
       sb.auth.onAuthStateChange(function(event, session){
         setTimeout(async function(){
-          // Do not rebuild the dashboard on token refresh. Supabase commonly
-          // emits TOKEN_REFRESHED when a background browser tab becomes active,
-          // and rebuilding the charts here makes every Chart.js animation restart.
-          if (event === "SIGNED_OUT") {
-            state.user = null;
-            state.cloud = false;
-            setAccountButton();
-            state.tests = loadLocal().map(normalizeTest);
-            render();
-            return;
-          }
-
-          // Initial sign-in is already handled by handleAuth()/onSignedIn().
-          // Only handle a genuinely new signed-in user here (for example,
-          // another tab signed in) so auth refresh events stay invisible.
-          if (event === "SIGNED_IN" && session && session.user &&
-              (!state.user || state.user.id !== session.user.id)) {
-            await onSignedIn(session.user);
-          }
+          if (session && session.user) await onSignedIn(session.user);
+          else { state.user = null; state.cloud = false; setAccountButton(); state.tests = loadLocal().map(normalizeTest); render(); }
         }, 0);
       });
     } catch(e) { state.ready = true; setAccountButton(); render(); }
@@ -901,6 +912,139 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     return state.tests.slice().sort(function(a,b){ return new Date(a.date) - new Date(b.date); });
   }
 
+  function startOfWeek(date){
+    var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    var day = d.getDay();
+    var diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    return d;
+  }
+
+  function isoLocalDate(d){
+    var y = d.getFullYear();
+    var m = String(d.getMonth()+1).padStart(2,"0");
+    var day = String(d.getDate()).padStart(2,"0");
+    return y+"-"+m+"-"+day;
+  }
+
+  function formatDateLabel(d){
+    return d.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+  }
+
+  function formatEventTime(ev){
+    if (ev.start && ev.start.date) return "All day";
+    var value = ev.start && ev.start.dateTime;
+    if (!value) return "";
+    return new Date(value).toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+  }
+
+  function calendarEventEndTime(ev){
+    if (ev.end && ev.end.date) return "";
+    var value = ev.end && ev.end.dateTime;
+    return value ? new Date(value).toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}) : "";
+  }
+
+  function initGoogleCalendarClient(){
+    if (state.gcalTokenClient) return state.gcalTokenClient;
+    if (!window.google || !google.accounts || !google.accounts.oauth2) return null;
+    state.gcalTokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: GOOGLE_CALENDAR_SCOPE,
+      callback: async function(response){
+        if (response && response.error) {
+          document.getElementById("googleCalendarStatus").textContent = "Google Calendar authorization failed: " + response.error;
+          return;
+        }
+        state.gcalAccessToken = response.access_token;
+        var expires = response.expires_in ? Number(response.expires_in) * 1000 : 3600000;
+        setTimeout(function(){ state.gcalAccessToken = null; }, Math.max(30000, expires - 30000));
+        document.getElementById("googleCalendarStatus").textContent = "Connected. Loading your Google Calendar…";
+        await loadGoogleCalendarWeek();
+      }
+    });
+    return state.gcalTokenClient;
+  }
+
+  function connectGoogleCalendar(){
+    var client = initGoogleCalendarClient();
+    if (!client) {
+      document.getElementById("googleCalendarStatus").textContent = "Google Calendar sign-in is still loading. Wait a moment and try again.";
+      return;
+    }
+    client.requestAccessToken({prompt:"consent"});
+  }
+
+  async function loadGoogleCalendarWeek(){
+    if (!state.gcalAccessToken) return;
+    if (!state.scheduleWeekStart) state.scheduleWeekStart = startOfWeek(new Date());
+    var start = new Date(state.scheduleWeekStart);
+    var end = new Date(start);
+    end.setDate(end.getDate()+7);
+    end.setHours(0,0,0,0);
+    var url = "https://www.googleapis.com/calendar/v3/calendars/primary/events" +
+      "?singleEvents=true&orderBy=startTime&showDeleted=false" +
+      "&timeMin=" + encodeURIComponent(start.toISOString()) +
+      "&timeMax=" + encodeURIComponent(end.toISOString());
+    try {
+      var res = await fetch(url, {headers:{Authorization:"Bearer "+state.gcalAccessToken}});
+      var data = await res.json().catch(function(){return {};});
+      if (!res.ok) {
+        state.gcalAccessToken = null;
+        document.getElementById("googleCalendarStatus").textContent = "Calendar access expired or was denied. Click Connect Google Calendar again.";
+        return;
+      }
+      state.gcalEvents = Array.isArray(data.items) ? data.items : [];
+      document.getElementById("googleCalendarStatus").textContent = "Connected to your primary Google Calendar. Your calendar remains the source of truth.";
+      state.renderedPanels.schedule = false;
+      renderPanel("schedule", sortedTests());
+    } catch(e) {
+      document.getElementById("googleCalendarStatus").textContent = "Could not load Google Calendar: " + (e.message || "network error");
+    }
+  }
+
+  function renderSchedule(){
+    var input = document.getElementById("scheduleWeekInput");
+    var title = document.getElementById("scheduleRangeTitle");
+    var daysEl = document.getElementById("scheduleDays");
+    var empty = document.getElementById("scheduleEmpty");
+    if (!input || !daysEl) return;
+    if (!state.scheduleWeekStart) state.scheduleWeekStart = startOfWeek(new Date());
+    input.value = isoLocalDate(state.scheduleWeekStart);
+    var start = new Date(state.scheduleWeekStart);
+    var end = new Date(start); end.setDate(end.getDate()+6);
+    title.textContent = formatDateLabel(start) + " – " + formatDateLabel(end);
+    var byDay = {};
+    state.gcalEvents.forEach(function(ev){
+      var dateValue = ev.start && (ev.start.date || ev.start.dateTime);
+      if (!dateValue) return;
+      var d = ev.start.date ? new Date(dateValue+"T00:00:00") : new Date(dateValue);
+      var key = isoLocalDate(d);
+      (byDay[key] || (byDay[key]=[])).push(ev);
+    });
+    var html = [];
+    for (var i=0;i<7;i++){
+      var d = new Date(start); d.setDate(d.getDate()+i);
+      var key = isoLocalDate(d);
+      var events = byDay[key] || [];
+      html.push('<div style="padding:12px 0;border-bottom:1px solid var(--border);">');
+      html.push('<div style="font-weight:650;margin-bottom:7px;">'+formatDateLabel(d)+'</div>');
+      if (!events.length) html.push('<div style="font-size:12.5px;color:var(--text-dim);">No events</div>');
+      events.forEach(function(ev){
+        var time = formatEventTime(ev);
+        var endTime = calendarEventEndTime(ev);
+        var timeText = time && endTime ? time+" – "+endTime : time;
+        html.push('<div style="padding:8px 10px;margin:5px 0;background:var(--accent-soft);border-radius:8px;border-left:3px solid var(--accent);">' +
+          '<div style="font-weight:600;">'+(ev.summary || "Untitled event")+'</div>' +
+          (timeText ? '<div style="font-size:12px;color:var(--text-dim);margin-top:2px;">'+timeText+'</div>' : '') +
+          (ev.location ? '<div style="font-size:11.5px;color:var(--text-dim);margin-top:2px;">'+ev.location+'</div>' : '') +
+          '</div>');
+      });
+      html.push('</div>');
+    }
+    daysEl.innerHTML = html.join("");
+    empty.style.display = state.gcalAccessToken && !state.gcalEvents.length ? "block" : "none";
+  }
+
   function renderPanel(panel, tests){
     if (!panel || state.renderedPanels[panel]) return;
     var stepsByPanel = {
@@ -908,7 +1052,8 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       subjects: [renderSubjects],
       analysis: [renderTierChart, renderSkipChart, renderFatigue, renderTimeTable],
       plan: [renderPlan, renderMistakes],
-      tests: [renderHistory]
+      tests: [renderHistory],
+      schedule: [renderSchedule]
     };
     var steps = stepsByPanel[panel] || [];
     var errors = [];
@@ -1845,6 +1990,28 @@ Mistakes: Physics: sign error in kinematics"></textarea>
         renderPanel(target, sortedTests());
       }
     });
+  });
+
+  document.getElementById("connectGoogleCalendarBtn").addEventListener("click", connectGoogleCalendar);
+  document.getElementById("openGoogleCalendarBtn").addEventListener("click", function(){ window.open("https://calendar.google.com/", "_blank", "noopener"); });
+  document.getElementById("schedulePrevBtn").addEventListener("click", async function(){
+    if (!state.scheduleWeekStart) state.scheduleWeekStart = startOfWeek(new Date());
+    state.scheduleWeekStart.setDate(state.scheduleWeekStart.getDate()-7);
+    if (state.gcalAccessToken) await loadGoogleCalendarWeek();
+    else { state.renderedPanels.schedule=false; renderPanel("schedule", sortedTests()); }
+  });
+  document.getElementById("scheduleNextBtn").addEventListener("click", async function(){
+    if (!state.scheduleWeekStart) state.scheduleWeekStart = startOfWeek(new Date());
+    state.scheduleWeekStart.setDate(state.scheduleWeekStart.getDate()+7);
+    if (state.gcalAccessToken) await loadGoogleCalendarWeek();
+    else { state.renderedPanels.schedule=false; renderPanel("schedule", sortedTests()); }
+  });
+  document.getElementById("scheduleWeekInput").addEventListener("change", async function(){
+    var chosen = new Date(this.value+"T00:00:00");
+    if (isNaN(chosen.getTime())) return;
+    state.scheduleWeekStart = startOfWeek(chosen);
+    if (state.gcalAccessToken) await loadGoogleCalendarWeek();
+    else { state.renderedPanels.schedule=false; renderPanel("schedule", sortedTests()); }
   });
 
   document.getElementById("importLocalBtn").addEventListener("click", openMigration);
