@@ -249,6 +249,11 @@
     </div>
 
     <div class="card">
+      <div class="sectionTitle">AI mistake analysis</div>
+      <div class="planText" id="aiInsightContent"><span style="color:var(--text-dim)">No AI analysis yet. Add mistake images to a test and save it.</span></div>
+    </div>
+
+    <div class="card">
       <div class="sectionTitle">Mistake log</div>
       <div id="mistakeList"></div>
       <div class="empty" id="mistakeEmpty" style="display:none">No mistakes logged yet.</div>
@@ -347,6 +352,12 @@
       <div class="field full" style="margin-top:10px">
         <label>Mistakes / notes (one per line, e.g. "Physics: sign error in kinematics")</label>
         <textarea id="f_mistakes" placeholder="Physics: sign error in NLM question&#10;Maths: forgot identity for sin3x&#10;Chemistry: mixed up SN1/SN2 conditions"></textarea>
+      </div>
+
+      <div class="field full" style="margin-top:10px">
+        <label>Mistake question images (optional — select multiple)</label>
+        <input id="f_mistakeImages" type="file" accept="image/*" multiple>
+        <div style="font-size:11.5px;color:var(--text-dim);margin-top:3px;">Use filenames like q12_physics.jpg, q27_maths.png when possible. All selected images from this test will be analyzed together by AI.</div>
       </div>
 
       <div class="modalFoot">
@@ -795,7 +806,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       saveLocal(state.tests);
       await loadCloudGoals();
       subscribeRealtime();
-      state.ready = true; render(); toast("Cloud sync enabled");
+      state.ready = true; render(); refreshAIInsights(); toast("Cloud sync enabled");
     } catch(e) {
       state.cloud = false; state.tests = loadLocal().map(normalizeTest);
       state.ready = true; render();
@@ -1302,6 +1313,68 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     el.innerHTML = lines.map(function(l){ return "<p>"+l+"</p>"; }).join("");
   }
 
+  async function uploadMistakeImages(testId, files){
+    if (!state.user || !sb || !files || !files.length) return 0;
+    var count = 0;
+    for (var i=0; i<files.length; i++) {
+      var file = files[i];
+      if (!file.type || file.type.indexOf("image/") !== 0) continue;
+      var ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (!ext) ext = "jpg";
+      var mistakeId = "m_" + Date.now() + "_" + i + "_" + Math.random().toString(36).slice(2,7);
+      var safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0,80) || ("mistake_"+i+"."+ext);
+      var path = state.user.id + "/" + testId + "/" + mistakeId + "_" + safeName;
+      var up = await sb.storage.from("mistake-images").upload(path, file, { upsert:false, contentType:file.type });
+      if (up.error) throw up.error;
+      var base = safeName.toLowerCase();
+      var q = (base.match(/(?:q|question)[-_ ]?(\d+)/i) || [])[1] || String(i+1);
+      var subject = /physics|phy/i.test(base) ? "Physics" : (/chem/i.test(base) ? "Chemistry" : (/math/i.test(base) ? "Maths" : ""));
+      var row = { id:mistakeId, user_id:state.user.id, test_id:testId, question_number:q, subject:subject, image_path:path };
+      var ins = await sb.from("tracker_mistakes").insert(row);
+      if (ins.error) throw ins.error;
+      count++;
+    }
+    return count;
+  }
+
+  async function analyzeTestAI(testId){
+    if (!state.user || !sb || !testId) return null;
+    var sessionRes = await sb.auth.getSession();
+    var token = sessionRes.data && sessionRes.data.session ? sessionRes.data.session.access_token : null;
+    if (!token) throw new Error("No active session");
+    var res = await fetch(SUPABASE_URL + "/functions/v1/analyze-test", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+token, "apikey":SUPABASE_PUBLISHABLE_KEY },
+      body:JSON.stringify({test_id:testId})
+    });
+    var data = await res.json().catch(function(){return {};});
+    if (!res.ok) throw new Error(data.error || "AI analysis failed");
+    return data;
+  }
+
+  async function refreshAIInsights(){
+    var el = document.getElementById("aiInsightContent");
+    if (!el || !state.user || !sb) return;
+    var res = await sb.from("tracker_ai_insights").select("test_id,mistakes_analysis,plan_analysis,updated_at").eq("user_id",state.user.id).order("updated_at",{ascending:false});
+    if (res.error) return;
+    var rows = res.data || [];
+    if (!rows.length){ el.innerHTML = '<span style="color:var(--text-dim)">No AI analysis yet. Add mistake images to a test and save it.</span>'; return; }
+    var html = rows.slice(0,5).map(function(r){
+      var test = state.tests.find(function(t){return t.id===r.test_id;});
+      var title = test ? test.name : r.test_id;
+      var ma = Array.isArray(r.mistakes_analysis) ? r.mistakes_analysis : [];
+      var pa = r.plan_analysis || {};
+      var patterns = Array.isArray(pa.patterns) ? pa.patterns : [];
+      var plan = Array.isArray(pa.plan) ? pa.plan : [];
+      var out = '<div style="padding:10px 0;border-bottom:1px solid var(--border)"><b>'+title+'</b>';
+      if (patterns.length) out += '<div style="margin-top:7px"><span class="tag">Patterns</span>'+patterns.map(function(x){return '<div style="margin:4px 0">'+(x.topic||'Pattern')+': '+(x.observation||'')+'</div>';}).join('')+'</div>';
+      if (ma.length) out += '<div style="margin-top:7px"><span class="tag">Mistakes</span>'+ma.map(function(x){return '<div style="margin:4px 0">'+(x.subject?'<b>'+x.subject+'</b> — ':'')+(x.topic||'')+(x.observation?' — '+x.observation:'')+(x.action?' <span style="color:var(--text-dim)">→ '+x.action+'</span>':'')+'</div>';}).join('')+'</div>';
+      if (plan.length) out += '<div style="margin-top:7px"><span class="tag">Plan</span>'+plan.map(function(x){return '<div style="margin:4px 0"><b>'+((x.priority||'').toUpperCase())+'</b> — '+(x.topic||'')+': '+(x.action||'')+'</div>';}).join('')+'</div>';
+      return out+'</div>';
+    }).join('');
+    el.innerHTML = html;
+  }
+
   function renderMistakes(tests){
     var list = document.getElementById("mistakeList"), empty = document.getElementById("mistakeEmpty");
     var rows = [];
@@ -1399,6 +1472,8 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     f("f_sessionGroup").value = test ? (test.sessionGroup||"") : "";
     f("f_sessionOrder").value = test && test.sessionOrder ? test.sessionOrder : "";
     f("f_mistakes").value = test && test.mistakes ? test.mistakes.join("\n") : "";
+    var imageInput = document.getElementById("f_mistakeImages");
+    if (imageInput) imageInput.value = "";
     document.getElementById("modalBg").classList.add("open");
   }
   function closeModal(){ document.getElementById("modalBg").classList.remove("open"); }
@@ -1526,6 +1601,15 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     };
     calcDerived(t);
     await persistTest(t);
+    var imageFiles = document.getElementById("f_mistakeImages").files;
+    if (imageFiles && imageFiles.length && state.user) {
+      toast("Uploading mistake images…");
+      var uploaded = await uploadMistakeImages(t.id, imageFiles);
+      if (uploaded) {
+        toast("Images uploaded — analyzing all mistakes together…");
+        try { await analyzeTestAI(t.id); } catch(aiErr) { toast("Test saved, but AI analysis failed: " + (aiErr.message || "unknown error")); }
+      }
+    }
     if (state.db) {
       try {
         var snap = await state.db.collection("tests").get();
@@ -1534,6 +1618,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     }
     closeModal();
     render();
+    if (state.user) refreshAIInsights();
     toast("Test saved");
   });
 
