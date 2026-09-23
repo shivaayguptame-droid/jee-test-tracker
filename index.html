@@ -1313,6 +1313,15 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     el.innerHTML = lines.map(function(l){ return "<p>"+l+"</p>"; }).join("");
   }
 
+  function withTimeout(promise, ms, message){
+    return Promise.race([
+      promise,
+      new Promise(function(_, reject){
+        setTimeout(function(){ reject(new Error(message || "Operation timed out")); }, ms);
+      })
+    ]);
+  }
+
   async function uploadMistakeImages(testId, files){
     if (!state.user || !sb || !files || !files.length) return 0;
     var count = 0;
@@ -1324,13 +1333,23 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       var mistakeId = "m_" + Date.now() + "_" + i + "_" + Math.random().toString(36).slice(2,7);
       var safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0,80) || ("mistake_"+i+"."+ext);
       var path = state.user.id + "/" + testId + "/" + mistakeId + "_" + safeName;
-      var up = await sb.storage.from("mistake-images").upload(path, file, { upsert:false, contentType:file.type });
+
+      var up = await withTimeout(
+        sb.storage.from("mistake-images").upload(path, file, { upsert:false, contentType:file.type }),
+        20000,
+        "Image upload timed out. Check the Supabase Storage bucket/policies and your internet connection."
+      );
       if (up.error) throw up.error;
+
       var base = safeName.toLowerCase();
       var q = (base.match(/(?:q|question)[-_ ]?(\d+)/i) || [])[1] || String(i+1);
       var subject = /physics|phy/i.test(base) ? "Physics" : (/chem/i.test(base) ? "Chemistry" : (/math/i.test(base) ? "Maths" : ""));
       var row = { id:mistakeId, user_id:state.user.id, test_id:testId, question_number:q, subject:subject, image_path:path };
-      var ins = await sb.from("tracker_mistakes").insert(row);
+      var ins = await withTimeout(
+        sb.from("tracker_mistakes").insert(row),
+        15000,
+        "Saving the mistake record timed out."
+      );
       if (ins.error) throw ins.error;
       count++;
     }
@@ -1568,6 +1587,12 @@ Mistakes: Physics: sign error in kinematics"></textarea>
 
   document.getElementById("testForm").addEventListener("submit", async function(e){
     e.preventDefault();
+    var form = this;
+    if (form.dataset.saving === "1") return;
+    form.dataset.saving = "1";
+    var saveButton = form.querySelector('button[type="submit"]');
+    var oldSaveText = saveButton ? saveButton.textContent : "Save test";
+    if (saveButton) { saveButton.disabled = true; saveButton.textContent = "Saving…"; }
     var f = function(id){ return document.getElementById(id).value; };
     var t = {
       id: f("f_id") || null,
@@ -1600,15 +1625,30 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       sessionOrder: num(f("f_sessionOrder")) || null
     };
     calcDerived(t);
-    await persistTest(t);
-    var imageFiles = document.getElementById("f_mistakeImages").files;
-    if (imageFiles && imageFiles.length && state.user) {
-      toast("Uploading mistake images…");
-      var uploaded = await uploadMistakeImages(t.id, imageFiles);
-      if (uploaded) {
-        toast("Images uploaded — analyzing all mistakes together…");
-        try { await analyzeTestAI(t.id); } catch(aiErr) { toast("Test saved, but AI analysis failed: " + (aiErr.message || "unknown error")); }
+    try {
+      await persistTest(t);
+      var imageFiles = document.getElementById("f_mistakeImages").files;
+      if (imageFiles && imageFiles.length && state.user) {
+        toast("Uploading mistake images…");
+        try {
+          var uploaded = await uploadMistakeImages(t.id, imageFiles);
+          if (uploaded) {
+            toast("Images uploaded — analyzing all mistakes together…");
+            try {
+              await withTimeout(analyzeTestAI(t.id), 30000, "AI analysis timed out. The test was saved and the images were uploaded.");
+            } catch(aiErr) {
+              toast("Test saved, but AI analysis failed: " + (aiErr.message || "unknown error"));
+            }
+          }
+        } catch(uploadErr) {
+          toast("Test saved, but image upload failed: " + (uploadErr.message || "unknown error"));
+        }
       }
+    } catch(saveErr) {
+      toast("Could not save test: " + (saveErr.message || "unknown error"));
+      form.dataset.saving = "";
+      if (saveButton) { saveButton.disabled = false; saveButton.textContent = oldSaveText; }
+      return;
     }
     if (state.db) {
       try {
@@ -1620,6 +1660,8 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     render();
     if (state.user) refreshAIInsights();
     toast("Test saved");
+    form.dataset.saving = "";
+    if (saveButton) { saveButton.disabled = false; saveButton.textContent = oldSaveText; }
   });
 
   window.TT = {
