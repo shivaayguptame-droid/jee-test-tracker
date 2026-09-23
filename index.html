@@ -516,6 +516,9 @@ Mistakes: Physics: sign error in kinematics"></textarea>
 (function(){
   "use strict";
   var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, authMode: "signin", realtime: null, renderedPanels: {} };
+  // Dashboard charts should appear immediately. This is also a safeguard
+  // against browser visibility/resize events replaying Chart.js animations.
+  if (window.Chart) Chart.defaults.animation = false;
   var LS_KEY = "jee_test_tracker_v1";
 
   // ===== ONLINE CONFIG =====
@@ -826,8 +829,25 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       else { state.ready = true; setAccountButton(); render(); }
       sb.auth.onAuthStateChange(function(event, session){
         setTimeout(async function(){
-          if (session && session.user) await onSignedIn(session.user);
-          else { state.user = null; state.cloud = false; setAccountButton(); state.tests = loadLocal().map(normalizeTest); render(); }
+          // Do not rebuild the dashboard on token refresh. Supabase commonly
+          // emits TOKEN_REFRESHED when a background browser tab becomes active,
+          // and rebuilding the charts here makes every Chart.js animation restart.
+          if (event === "SIGNED_OUT") {
+            state.user = null;
+            state.cloud = false;
+            setAccountButton();
+            state.tests = loadLocal().map(normalizeTest);
+            render();
+            return;
+          }
+
+          // Initial sign-in is already handled by handleAuth()/onSignedIn().
+          // Only handle a genuinely new signed-in user here (for example,
+          // another tab signed in) so auth refresh events stay invisible.
+          if (event === "SIGNED_IN" && session && session.user &&
+              (!state.user || state.user.id !== session.user.id)) {
+            await onSignedIn(session.user);
+          }
         }, 0);
       });
     } catch(e) { state.ready = true; setAccountButton(); render(); }
