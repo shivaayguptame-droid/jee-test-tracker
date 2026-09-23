@@ -515,7 +515,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
 <script>
 (function(){
   "use strict";
-  var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, authMode: "signin", realtime: null };
+  var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, authMode: "signin", realtime: null, renderedPanels: {} };
   var LS_KEY = "jee_test_tracker_v1";
 
   // ===== ONLINE CONFIG =====
@@ -806,7 +806,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       saveLocal(state.tests);
       await loadCloudGoals();
       subscribeRealtime();
-      state.ready = true; render(); refreshAIInsights(); toast("Cloud sync enabled");
+      state.ready = true; render(); refreshAIInsights();
     } catch(e) {
       state.cloud = false; state.tests = loadLocal().map(normalizeTest);
       state.ready = true; render();
@@ -879,18 +879,21 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     return state.tests.slice().sort(function(a,b){ return new Date(a.date) - new Date(b.date); });
   }
 
-  function render(){
-    var tests = sortedTests();
-    var syncText = state.user ? " • Cloud synced" : (sb ? " • Local until you sign in" : " • Local mode");
-    document.getElementById("subhead").textContent = tests.length
-      ? tests.length + " test" + (tests.length>1?"s":"") + " logged" + syncText
-      : "No tests yet — add your first one" + syncText;
-
-    var steps = [renderKpis, renderGoals, renderScoreChart, renderAccChart, renderSubjects, renderTierChart, renderSkipChart, renderFatigue, renderTimeTable, renderPlan, renderMistakes, renderHistory];
+  function renderPanel(panel, tests){
+    if (!panel || state.renderedPanels[panel]) return;
+    var stepsByPanel = {
+      overview: [renderGoals, renderScoreChart, renderAccChart],
+      subjects: [renderSubjects],
+      analysis: [renderTierChart, renderSkipChart, renderFatigue, renderTimeTable],
+      plan: [renderPlan, renderMistakes],
+      tests: [renderHistory]
+    };
+    var steps = stepsByPanel[panel] || [];
     var errors = [];
     steps.forEach(function(fn){
       try { fn(tests); } catch(e) { errors.push(fn.name + ": " + e.message); }
     });
+    state.renderedPanels[panel] = true;
     var banner = document.getElementById("errBanner");
     if (errors.length) {
       if (!banner) {
@@ -903,6 +906,21 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     } else if (banner) {
       banner.remove();
     }
+  }
+
+  function render(){
+    var tests = sortedTests();
+    document.getElementById("subhead").textContent = tests.length
+      ? tests.length + " test" + (tests.length>1?"s":"") + " logged"
+      : "No tests yet — add your first one";
+
+    // Invalidate cached panels only when the underlying data actually changed.
+    state.renderedPanels = {};
+    try { renderKpis(tests); } catch(e) {}
+
+    var active = document.querySelector("#mainTabNav .tabbtn.active");
+    var panel = active ? active.getAttribute("data-tab") : "overview";
+    renderPanel(panel, tests);
   }
 
   function renderKpis(tests){
@@ -1801,7 +1819,9 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       document.querySelectorAll(".tabpanel").forEach(function(p){
         p.style.display = (p.getAttribute("data-panel") === target) ? "" : "none";
       });
-      if (state.ready) render();
+      if (state.ready) {
+        renderPanel(target, sortedTests());
+      }
     });
   });
 
