@@ -140,6 +140,7 @@
     </div>
     <div class="btnrow">
       <button class="ghost" id="accountBtn">Account</button>
+      <button class="ghost" id="importLocalBtn">Import Old Data</button>
       <button class="ghost" id="pasteBtn">Paste Results</button>
       <button class="ghost" id="compareBtn">Compare</button>
       <button class="primary" id="addBtn">+ Add Test</button>
@@ -472,6 +473,31 @@ Mistakes: Physics: sign error in kinematics"></textarea>
   </div>
 </div>
 
+<!-- Local data migration modal -->
+<div class="modalBg" id="migrationModalBg">
+  <div class="modal" style="max-width:620px;">
+    <h2>Import old local data</h2>
+    <div class="hint">Your old tracker stored tests in the browser, not inside the HTML file. This tool can import a JSON backup from that old tracker and upload it to your signed-in account. Nothing is deleted from the old browser data.</div>
+
+    <div class="sectionBlock" style="margin-top:0;">
+      <h4>Step 1 — choose a backup</h4>
+      <div style="font-size:12.5px;color:var(--text-dim);line-height:1.5;margin-bottom:9px;">If you already exported your old tracker data as JSON, select it below. If you have not exported it yet, keep the old tracker data intact; we can add the export button to the old HTML next.</div>
+      <input id="migrationFile" type="file" accept=".json,application/json">
+    </div>
+
+    <div class="sectionBlock">
+      <h4>Step 2 — review</h4>
+      <div id="migrationPreview" style="font-size:13px;color:var(--text-dim);">No backup selected.</div>
+    </div>
+
+    <div id="migrationStatus" style="font-size:12.5px;margin-top:10px;min-height:20px;"></div>
+    <div class="modalFoot">
+      <button type="button" class="ghost" id="migrationCloseBtn">Close</button>
+      <button type="button" class="primary" id="migrationUploadBtn" disabled>Import to my account</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -487,6 +513,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
   var SUPABASE_URL = "https://isbhjnezkqiazrtbcrdi.supabase.co";
   var SUPABASE_PUBLISHABLE_KEY = "sb_publishable_TdkiN3P82zEpA7jmlO_KxQ_Ds5hf0g2";
   var sb = null;
+  var migrationPayload = null;
   if (window.supabase && SUPABASE_URL.indexOf("PASTE_") !== 0 && SUPABASE_PUBLISHABLE_KEY.indexOf("PASTE_") !== 0) {
     try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }); } catch(e) { sb = null; }
   }
@@ -659,6 +686,71 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     var redirectTo = window.location.origin + window.location.pathname;
     var res = await sb.auth.resetPasswordForEmail(email, { redirectTo: redirectTo });
     status.textContent = res.error ? res.error.message : "Reset email sent. Check your inbox and spam folder.";
+  }
+
+  function openMigration(){
+    migrationPayload = null;
+    document.getElementById("migrationFile").value = "";
+    document.getElementById("migrationPreview").textContent = "No backup selected.";
+    document.getElementById("migrationStatus").textContent = state.user ? "Signed in as " + state.user.email + "." : "Sign in first so the imported data can be uploaded to your account.";
+    document.getElementById("migrationUploadBtn").disabled = !state.user;
+    document.getElementById("migrationModalBg").classList.add("open");
+  }
+  function closeMigration(){ document.getElementById("migrationModalBg").classList.remove("open"); }
+
+  function parseMigrationPayload(raw){
+    var parsed = JSON.parse(raw);
+    var tests = [];
+    var goals = null;
+    if (Array.isArray(parsed)) tests = parsed;
+    else if (parsed && typeof parsed === "object") {
+      if (Array.isArray(parsed.tests)) tests = parsed.tests;
+      else if (Array.isArray(parsed.data)) tests = parsed.data;
+      goals = parsed.goals || parsed.goal || null;
+    }
+    tests = tests.map(function(t){ return normalizeTest(Object.assign({}, t)); });
+    return { tests: tests, goals: goals };
+  }
+
+  function showMigrationPreview(payload){
+    var el = document.getElementById("migrationPreview");
+    var n = payload.tests.length;
+    var goalText = payload.goals ? " Goals are also included." : " No goals found in this backup.";
+    el.innerHTML = "<b>" + n + " test" + (n === 1 ? "" : "s") + " found.</b>" + goalText +
+      (n ? "<div style=\"margin-top:6px;max-height:130px;overflow:auto;\">" + payload.tests.slice(0,8).map(function(t){ return "• " + (t.name || "Unnamed test") + (t.date ? " — " + t.date : ""); }).join("<br>") + (n > 8 ? "<br>…and " + (n-8) + " more" : "") + "</div>" : "");
+  }
+
+  async function importMigration(){
+    if (!state.user) { document.getElementById("migrationStatus").textContent = "Please sign in first."; return; }
+    if (!migrationPayload || !migrationPayload.tests.length) { document.getElementById("migrationStatus").textContent = "No tests were found in the backup."; return; }
+    var btn = document.getElementById("migrationUploadBtn");
+    var status = document.getElementById("migrationStatus");
+    btn.disabled = true;
+    status.textContent = "Uploading " + migrationPayload.tests.length + " tests…";
+    try {
+      var now = new Date().toISOString();
+      var rows = migrationPayload.tests.map(function(t){
+        var id = t.id || ("t_" + Date.now() + "_" + Math.random().toString(36).slice(2,8));
+        t.id = id;
+        return { id:id, user_id:state.user.id, data:t, updated_at:now };
+      });
+      var res = await sb.from("tracker_tests").upsert(rows, { onConflict:"id" });
+      if (res.error) throw res.error;
+      if (migrationPayload.goals) {
+        var g = Object.assign({}, DEFAULT_GOALS, migrationPayload.goals);
+        await persistGoalsCloud(g);
+      }
+      state.tests = await loadCloudTests();
+      saveLocal(state.tests);
+      await loadCloudGoals();
+      render();
+      status.textContent = "Import complete. " + migrationPayload.tests.length + " tests are now in your account.";
+      toast("Old data imported to cloud");
+      setTimeout(closeMigration, 900);
+    } catch(e) {
+      status.textContent = "Import failed: " + (e.message || "unknown error");
+      btn.disabled = false;
+    }
   }
 
   async function signOut(){
@@ -1584,6 +1676,31 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       });
       if (state.ready) render();
     });
+  });
+
+  document.getElementById("importLocalBtn").addEventListener("click", openMigration);
+  document.getElementById("migrationCloseBtn").addEventListener("click", closeMigration);
+  document.getElementById("migrationModalBg").addEventListener("click", function(e){ if (e.target === this) closeMigration(); });
+  document.getElementById("migrationUploadBtn").addEventListener("click", importMigration);
+  document.getElementById("migrationFile").addEventListener("change", function(){
+    var file = this.files && this.files[0];
+    var status = document.getElementById("migrationStatus");
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try {
+        migrationPayload = parseMigrationPayload(reader.result);
+        showMigrationPreview(migrationPayload);
+        document.getElementById("migrationUploadBtn").disabled = !state.user || !migrationPayload.tests.length;
+        status.textContent = migrationPayload.tests.length ? "Backup loaded. Review the count, then import." : "This backup contains no tests.";
+      } catch(e) {
+        migrationPayload = null;
+        document.getElementById("migrationPreview").textContent = "That file is not a valid tracker JSON backup.";
+        document.getElementById("migrationUploadBtn").disabled = true;
+        status.textContent = "Could not read backup: " + (e.message || "invalid JSON");
+      }
+    };
+    reader.readAsText(file);
   });
 
   document.getElementById("accountBtn").addEventListener("click", function(){
