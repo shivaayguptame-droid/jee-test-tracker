@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>JEE Test Tracker v1.5.2</title>
-<!-- VERSION: 1.5.2 | Stages 2-7: briefing, cross-test patterns, calendar planning, trajectory, spaced mistakes, auto-tags. -->
+<title>JEE Test Tracker v1.5.3</title>
+<!-- VERSION: 1.5.3 | Adds reusable AI analysis trigger for already-uploaded mistake images. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -850,6 +850,15 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     <div style="margin-top:16px;">
       <div class="sectionTitle" style="font-size:13px;">Mistakes logged</div>
       <div id="detailMistakes" style="font-size:13px;"></div>
+    </div>
+    <div class="sectionBlock" style="margin-top:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <div>
+          <div class="sectionTitle" style="font-size:13px;margin:0;">AI mistake analysis</div>
+          <div id="detailAIStatus" style="font-size:11.5px;color:var(--text-dim);margin-top:4px;">Checking stored mistake images…</div>
+        </div>
+        <button type="button" class="primary small" id="detailAnalyzeAIBtn">Analyze stored images</button>
+      </div>
     </div>
     <div class="modalFoot">
       <button type="button" class="ghost" id="detailCloseBtn">Close</button>
@@ -2841,6 +2850,55 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     down: function(id){ return moveTestOrder(id, 1); }
   };
 
+  async function prepareDetailAI(testId){
+    var statusEl = document.getElementById("detailAIStatus");
+    var btn = document.getElementById("detailAnalyzeAIBtn");
+    if (!statusEl || !btn) return;
+    btn.disabled = true;
+    statusEl.textContent = "Checking stored mistake images…";
+    if (!state.user || !sb) {
+      statusEl.textContent = "Sign in to use AI analysis.";
+      return;
+    }
+    try {
+      var imgRes = await sb.from("tracker_mistakes")
+        .select("id,image_path")
+        .eq("user_id", state.user.id)
+        .eq("test_id", testId);
+      if (imgRes.error) throw imgRes.error;
+      var count = (imgRes.data || []).filter(function(r){ return !!r.image_path; }).length;
+      if (!count) {
+        statusEl.textContent = "No stored mistake images for this test.";
+        btn.disabled = true;
+        return;
+      }
+      statusEl.textContent = count + " stored mistake image" + (count === 1 ? "" : "s") + " ready for analysis.";
+      btn.disabled = false;
+      btn.onclick = async function(){
+        btn.disabled = true;
+        btn.textContent = "Analyzing…";
+        statusEl.textContent = "Sending the existing stored images to Gemini…";
+        try {
+          await analyzeTestAI(testId);
+          statusEl.textContent = "AI analysis request completed. Refreshing status…";
+          await refreshAIInsights();
+          setTimeout(function(){
+            var rowEl = document.getElementById("detailAIStatus");
+            if (rowEl) rowEl.textContent = "Analysis request sent. Check the AI status above or reopen this test for the latest result.";
+          }, 500);
+        } catch (e) {
+          statusEl.textContent = "AI analysis failed: " + (e.message || "unknown error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Analyze stored images";
+        }
+      };
+    } catch (e) {
+      statusEl.textContent = "Could not check stored mistake images: " + (e.message || "unknown error");
+      btn.disabled = true;
+    }
+  }
+
   function openDetail(t){
     document.getElementById("detailTitle").textContent = t.name;
     document.getElementById("detailSub").textContent = t.date + (t.type ? " · " + t.type : "") + (t.markingScheme ? " · " + t.markingScheme : "") + (t.sessionGroup ? " · Session: " + t.sessionGroup + (t.sessionOrder?" (paper "+t.sessionOrder+")":"") : "") + (t.tags && t.tags.length ? " · Tags: " + t.tags.join(", ") : "") + (t.autoTags && t.autoTags.length ? " · Auto: " + t.autoTags.join(", ") : "");
@@ -2896,6 +2954,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       openModal(t);
     };
     document.getElementById("detailModalBg").classList.add("open");
+    prepareDetailAI(t.id);
   }
   document.getElementById("detailCloseBtn").onclick = function(){ document.getElementById("detailModalBg").classList.remove("open"); };
   document.getElementById("detailModalBg").addEventListener("click", function(e){ if (e.target === this) this.classList.remove("open"); });
