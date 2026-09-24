@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>JEE Test Tracker v1.5.1</title>
-<!-- VERSION: 1.5.1 | Stages 2-7: briefing, cross-test patterns, calendar planning, trajectory, spaced mistakes, auto-tags. -->
+<title>JEE Test Tracker v1.5.2</title>
+<!-- VERSION: 1.5.2 | Stages 2-7: briefing, cross-test patterns, calendar planning, trajectory, spaced mistakes, auto-tags. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -1348,9 +1347,13 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       await loadCloudGoals();
       subscribeRealtime();
       state.ready = true; render(); refreshAIInsights();
-      // Calendar OAuth callback can return before the Supabase session is ready.
-      // Restore it only after the signed-in user has been established.
-      try { await restoreGoogleCalendarConnection(); } catch(e) {}
+      // Calendar restoration is deliberately detached from the initial app boot.
+      // The tracker must render even if Calendar auth/network is slow or fails.
+      setTimeout(function(){
+        restoreGoogleCalendarConnection().catch(function(e){
+          console.warn("Calendar restoration failed after app boot:", e);
+        });
+      }, 0);
     } catch(e) {
       state.cloud = false; state.tests = loadLocal().map(normalizeTest);
       state.ready = true; render();
