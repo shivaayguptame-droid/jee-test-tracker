@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>JEE Test Tracker v1.4.0</title>
-<!-- VERSION: 1.4.0 | Stage 2: auto-generated pre-test briefing from test history + Google Calendar. -->
+<title>JEE Test Tracker v1.5.1</title>
+<!-- VERSION: 1.5.1 | Stages 2-7: briefing, cross-test patterns, calendar planning, trajectory, spaced mistakes, auto-tags. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -559,6 +559,18 @@ tr:hover td { background:#171e27; }
       <div id="fatigueContent"></div>
       <div class="empty" id="fatigueEmpty" style="display:none">No linked sessions yet — set a Session group on 2+ same-day tests to see this.</div>
     </div>
+
+    <div class="card">
+      <div class="sectionTitle">Cross-test pattern mining</div>
+      <div class="hint" style="color:var(--text-dim);font-size:12px;margin-bottom:8px;">Recurring mistake descriptions are clustered across your logged tests.</div>
+      <div id="crossPatternContent"></div>
+    </div>
+
+    <div class="card">
+      <div class="sectionTitle">JEE percentile trajectory</div>
+      <div class="hint" style="color:var(--text-dim);font-size:12px;margin-bottom:8px;">A simple historical trend projection toward your JEE Main target date. It is a trend estimate, not a prediction of an exam result.</div>
+      <div id="trajectoryContent"></div>
+    </div>
   </div>
 
   <div class="tabpanel" data-panel="plan" style="display:none;">
@@ -576,6 +588,24 @@ tr:hover td { background:#171e27; }
       <div class="sectionTitle">Mistake log</div>
       <div id="mistakeList"></div>
       <div class="empty" id="mistakeEmpty" style="display:none">No mistakes logged yet.</div>
+    </div>
+
+    <div class="card">
+      <div class="sectionTitle">Mistakes to resurface</div>
+      <div class="hint" style="color:var(--text-dim);font-size:12px;margin-bottom:8px;">Mistakes are resurfaced around 7 and 14 days after the test.</div>
+      <div id="spacedMistakesContent"></div>
+    </div>
+
+    <div class="card">
+      <div class="sectionTitle">Automatic test tags</div>
+      <div class="hint" style="color:var(--text-dim);font-size:12px;margin-bottom:8px;">Tags are inferred only from information already logged in the tracker.</div>
+      <div id="autoTagsContent"></div>
+    </div>
+
+    <div class="card">
+      <div class="sectionTitle">Calendar revision automation</div>
+      <div class="hint" style="color:var(--text-dim);font-size:12px;margin-bottom:8px;">After Calendar is re-authorized with write access, the tracker can insert revision blocks from your current plan.</div>
+      <div id="calendarAutomationContent"></div>
     </div>
   </div>
 
@@ -906,7 +936,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
   // OAuth Client ID created for the GitHub Pages origin:
   // https://shivaayguptame-droid.github.io
   var GOOGLE_CLIENT_ID = "447831086514-cb2u4apbahdplkmrcluueki2brh3tte7.apps.googleusercontent.com";
-  var GOOGLE_CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
+  var GOOGLE_CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events";
   var sb = null;
   var migrationPayload = null;
   if (window.supabase && SUPABASE_URL.indexOf("PASTE_") !== 0 && SUPABASE_PUBLISHABLE_KEY.indexOf("PASTE_") !== 0) {
@@ -1318,6 +1348,9 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       await loadCloudGoals();
       subscribeRealtime();
       state.ready = true; render(); refreshAIInsights();
+      // Calendar OAuth callback can return before the Supabase session is ready.
+      // Restore it only after the signed-in user has been established.
+      try { await restoreGoogleCalendarConnection(); } catch(e) {}
     } catch(e) {
       state.cloud = false; state.tests = loadLocal().map(normalizeTest);
       state.ready = true; render();
@@ -1357,6 +1390,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     });
     t.mistakes = Array.isArray(t.mistakes) ? t.mistakes : [];
     t.tags = Array.isArray(t.tags) ? t.tags : [];
+    t.autoTags = Array.isArray(t.autoTags) ? t.autoTags : [];
     t.serialNo = num(t.serialNo) || null;
     return calcDerived(t);
   }
@@ -1564,13 +1598,15 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     }
   }
 
-  async function gcalFetch(url, retried){
+  async function gcalFetch(url, retried, options){
     if (!state.gcalAccessToken) await getServerCalendarAccessToken();
-    var res = await fetch(url,{headers:{Authorization:"Bearer "+state.gcalAccessToken}});
+    options = options || {};
+    options.headers = Object.assign({}, options.headers || {}, {Authorization:"Bearer "+state.gcalAccessToken});
+    var res = await fetch(url,options);
     var data = await res.json().catch(function(){return {};});
     if (res.status === 401 && !retried) {
       await getServerCalendarAccessToken();
-      return gcalFetch(url, true);
+      return gcalFetch(url, true, options);
     }
     if (!res.ok) throw new Error(data.error && data.error.message ? data.error.message : ("Google Calendar API error "+res.status));
     return data;
@@ -1771,8 +1807,8 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     var stepsByPanel = {
       overview: [renderGoals, renderPreTestBriefing, renderScoreChart, renderAccChart],
       subjects: [renderSubjects],
-      analysis: [renderTierChart, renderSkipChart, renderFatigue, renderTimeTable],
-      plan: [renderPlan, renderMistakes],
+      analysis: [renderTierChart, renderSkipChart, renderFatigue, renderTimeTable, renderCrossTestPatterns, renderTrajectory],
+      plan: [renderPlan, renderMistakes, renderSpacedMistakes, renderAutoTags, renderCalendarAutomation],
       tests: [renderHistory],
       schedule: [renderSchedule]
     };
@@ -2176,6 +2212,128 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     tbl.innerHTML = "<thead><tr><th>Section</th><th>Avg time spent</th><th>Accuracy</th><th>Speed</th><th>Read</th></tr></thead><tbody>"+rows+"</tbody>";
   }
 
+  // ---------- Stage 3 / 5 / 6 / 7 analytics ----------
+  function aiMistakeRowsForTest(t){
+    var out=[];
+    var rows = Array.isArray(t._aiMistakes) ? t._aiMistakes : [];
+    rows.forEach(function(x){
+      if(typeof x === 'string'){ if(x.trim()) out.push(x.trim()); return; }
+      if(!x || typeof x !== 'object') return;
+      var parts=[];
+      if(x.subject) parts.push(String(x.subject));
+      if(x.topic) parts.push(String(x.topic));
+      if(x.observation) parts.push(String(x.observation));
+      if(x.action) parts.push('Action: '+String(x.action));
+      var text=parts.join(' — ').trim();
+      if(text) out.push(text);
+    });
+    return out;
+  }
+  function mistakeTextRows(tests){
+    var out=[];
+    tests.forEach(function(t){
+      (t.mistakes||[]).forEach(function(m){
+        var text=String(m||'').replace(/^\s*(physics|chemistry|maths|math)\s*:\s*/i,'').trim();
+        if(text) out.push({test:t,date:t.date,text:text,raw:String(m||''),source:'manual'});
+      });
+      aiMistakeRowsForTest(t).forEach(function(text){
+        out.push({test:t,date:t.date,text:text,raw:text,source:'ai'});
+      });
+    });
+    return out;
+  }
+  function normalizeMistakeKey(text){
+    return text.toLowerCase().replace(/[^a-z0-9\\s]/g,' ').replace(/\\b(the|a|an|in|on|of|to|and|for|with|this|that|question|q)\\b/g,' ').replace(/\\s+/g,' ').trim();
+  }
+  function renderCrossTestPatterns(tests){
+    var el=document.getElementById('crossPatternContent'); if(!el) return;
+    var rows=mistakeTextRows(tests), groups={};
+    rows.forEach(function(r){
+      var key=normalizeMistakeKey(r.text); if(!key) return;
+      // Use the first meaningful 5-word signature so wording variations can still cluster.
+      var words=key.split(' ').filter(function(w){return w.length>2;}).slice(0,5); key=words.join(' ');
+      if(!key) return;
+      if(!groups[key]) groups[key]={count:0,tests:{},examples:[]};
+      groups[key].count++; groups[key].tests[r.test.id]=true;
+      if(groups[key].examples.length<2) groups[key].examples.push(r.text);
+    });
+    var ranked=Object.keys(groups).map(function(k){return {key:k,g:groups[k],testCount:Object.keys(groups[k].tests).length};}).filter(function(x){return x.testCount>=2;}).sort(function(a,b){return b.testCount-a.testCount||b.g.count-a.g.count;}).slice(0,8);
+    if(!ranked.length){ el.innerHTML='<span style="color:var(--text-dim)">Not enough repeated mistake text yet. Log the same kind of mistake across at least two tests.</span>'; return; }
+    el.innerHTML=ranked.map(function(x){return '<div style="padding:8px 0;border-bottom:1px solid var(--border)"><b>'+escapeHtml(x.key)+'</b> <span class="pill warn">'+x.testCount+' tests</span><div style="font-size:11.5px;color:var(--text-dim);margin-top:3px;">Observed '+x.g.count+' times · '+x.g.examples.map(escapeHtml).join(' · ')+'</div></div>';}).join('');
+  }
+
+  function renderTrajectory(tests){
+    var el=document.getElementById('trajectoryContent'); if(!el) return;
+    var pts=tests.filter(function(t){return typeof t.percentile==='number' && isFinite(t.percentile) && t.date;}).map(function(t){return {x:new Date(t.date+'T00:00:00').getTime(),y:t.percentile};}).filter(function(p){return isFinite(p.x);});
+    var goal=loadGoals();
+    if(pts.length<2){el.innerHTML='<span style="color:var(--text-dim)">Log at least two tests with percentile and date to calculate a trend.</span>';return;}
+    var x0=pts[0].x, sx=0,sy=0,sxx=0,sxy=0,n=pts.length;
+    pts.forEach(function(p){var x=(p.x-x0)/86400000;sx+=x;sy+=p.y;sxx+=x*x;sxy+=x*p.y;});
+    var den=n*sxx-sx*sx, slope=den?((n*sxy-sx*sy)/den):0, intercept=(sy-slope*sx)/n;
+    var targetDate=new Date(goal.mainDate+'T00:00:00'), tx=(targetDate.getTime()-x0)/86400000, projected=intercept+slope*tx;
+    projected=Math.max(0,Math.min(100,projected));
+    var trend=slope>=0?('+'+slope.toFixed(3)):slope.toFixed(3);
+    el.innerHTML='<div style="display:flex;gap:10px;flex-wrap:wrap"><span class="pill">Historical slope '+trend+' percentile/day</span><span class="pill">Projected '+projected.toFixed(2)+' on '+escapeHtml(goal.mainDate)+'</span></div><div style="font-size:11.5px;color:var(--text-dim);margin-top:8px;">Uses a linear fit to logged percentile history. More tests, especially recent ones, make the trend more informative.</div>';
+  }
+
+  function autoTagsForTest(t){
+    var tags=[], all=(t.mistakes||[]).join(' ').toLowerCase()+' '+aiMistakeRowsForTest(t).join(' ').toLowerCase();
+    var attempted=(t.correct||0)+(t.incorrect||0), total=attempted+(t.unattempted||0);
+    var skip=total?pct(t.unattempted||0,total):0;
+    if((t.sessionOrder||0)>1 || /fatigue|tired|exhaust/.test(all)) tags.push('fatigue');
+    if(typeof t.percentile==='number' && t.percentile-t.accuracy>20) tags.push('hard-paper');
+    if(/careless|silly|calculation|sign error|arithmetic|misread/.test(all)) tags.push('careless-error');
+    if((t.totalTimeAllotted>0 && t.totalTime>0 && t.totalTime/t.totalTimeAllotted>=0.95) || skip>=20) tags.push('time-pressure');
+    if(/concept|forgot|didn.t know|formula|theory|revision|content/.test(all)) tags.push('content-gap');
+    if(attempted>0 && (t.incorrect||0)/attempted>=0.35) tags.push('guess-heavy');
+    return tags;
+  }
+  function renderAutoTags(tests){
+    var el=document.getElementById('autoTagsContent'); if(!el) return;
+    if(!tests.length){el.innerHTML='<span style="color:var(--text-dim)">No tests yet.</span>';return;}
+    var rows=tests.slice().reverse().slice(0,8).map(function(t){var tags=autoTagsForTest(t);return '<div style="padding:7px 0;border-bottom:1px solid var(--border)"><b>'+escapeHtml(t.name)+'</b><div style="margin-top:4px">'+(tags.length?tags.map(function(x){return '<span class="pill">'+escapeHtml(x)+'</span>';}).join(' '):'<span style="font-size:11.5px;color:var(--text-dim)">No automatic tag triggered</span>')+'</div></div>';}).join('');
+    el.innerHTML=rows;
+  }
+  function renderSpacedMistakes(tests){
+    var el=document.getElementById('spacedMistakesContent'); if(!el) return;
+    var now=new Date(), rows=[];
+    tests.forEach(function(t){
+      var combined=(t.mistakes||[]).map(function(m){return {text:String(m),source:'manual'};});
+      aiMistakeRowsForTest(t).forEach(function(m){combined.push({text:m,source:'ai'});});
+      combined.forEach(function(m){
+        var d=new Date(t.date+'T00:00:00');if(isNaN(d))return;
+        var age=Math.floor((now-d)/86400000);
+        if(age>=6 && age<=9) rows.push({due:'~1 week',t:t,m:m});
+        if(age>=13 && age<=16) rows.push({due:'~2 weeks',t:t,m:m});
+      });
+    });
+    if(!rows.length){el.innerHTML='<span style="color:var(--text-dim)">Nothing due right now. Logged mistakes and AI-identified mistakes will appear here around 1 and 2 weeks after their test.</span>';return;}
+    el.innerHTML=rows.slice(0,20).map(function(r){return '<div style="padding:7px 0;border-bottom:1px solid var(--border)"><span class="pill warn">'+r.due+'</span> <span class="tag">'+(r.m.source==='ai'?'AI':'Manual')+'</span> <b>'+escapeHtml(r.t.name)+'</b><div style="font-size:12px;margin-top:3px">'+escapeHtml(r.m.text)+'</div></div>';}).join('');
+  }
+  function suggestedRevisionBlocks(tests){
+    var blocks=[]; var avgs=sectionAverages(tests); if(!avgs) return blocks;
+    Object.keys(avgs).sort(function(a,b){return avgs[a].accuracy-avgs[b].accuracy;}).forEach(function(k,i){if(i<3) blocks.push({subject:SUBJECT_LABELS[k],minutes:i===0?60:45});});
+    return blocks;
+  }
+  async function createCalendarRevisionBlocks(tests){
+    if(!state.user || !state.gcalAccessToken) throw new Error('Connect Google Calendar first.');
+    var blocks=suggestedRevisionBlocks(tests); if(!blocks.length) return 0;
+    var base=new Date(); base.setHours(18,0,0,0); var made=0;
+    for(var i=0;i<blocks.length;i++){
+      var start=new Date(base); start.setDate(start.getDate()+i+1); start.setHours(18,0,0,0); var end=new Date(start); end.setMinutes(end.getMinutes()+blocks[i].minutes);
+      var body={summary:'JEE revision · '+blocks[i].subject,description:'Auto-generated by JEE Test Tracker from recent test performance.',start:{dateTime:start.toISOString()},end:{dateTime:end.toISOString()}};
+      await gcalFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',false,{method:'POST',body:JSON.stringify(body),headers:{'Content-Type':'application/json'}}); made++;
+    }
+    return made;
+  }
+  function renderCalendarAutomation(tests){
+    var el=document.getElementById('calendarAutomationContent'); if(!el) return;
+    var blocks=suggestedRevisionBlocks(tests);
+    if(!blocks.length){el.innerHTML='<span style="color:var(--text-dim)">Log section data first to generate revision blocks.</span>';return;}
+    el.innerHTML='<div style="font-size:12.5px;margin-bottom:8px">Suggested blocks: '+blocks.map(function(b){return b.subject+' '+b.minutes+' min';}).join(' · ')+'</div><button class="primary small" id="createRevisionBlocksBtn">Add next 3 revision blocks to Google Calendar</button><div id="calendarAutomationStatus" style="font-size:11.5px;color:var(--text-dim);margin-top:7px">Calendar write access requires one re-authorization after this update.</div>';
+    document.getElementById('createRevisionBlocksBtn').onclick=async function(){var b=this;b.disabled=true;try{var n=await createCalendarRevisionBlocks(tests);document.getElementById('calendarAutomationStatus').textContent=n+' revision blocks added to your primary Google Calendar.';}catch(e){document.getElementById('calendarAutomationStatus').textContent=e.message||'Could not add calendar blocks.';}b.disabled=false;};
+  }
+
   function renderPlan(tests){
     var el = document.getElementById("planText");
     if (tests.length < 1){ el.innerHTML = '<span style="color:var(--text-dim)">Log at least one test to get a plan.</span>'; return; }
@@ -2288,6 +2446,13 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     var res = await sb.from("tracker_ai_insights").select("test_id,status,retry_count,next_retry_at,last_error,mistakes_analysis,plan_analysis,updated_at,completed_at").eq("user_id",state.user.id).order("updated_at",{ascending:false});
     if (res.error) return;
     var rows = res.data || [];
+    // Make AI-identified mistakes available to the same analytics used for manual mistakes.
+    state.tests.forEach(function(t){ t._aiMistakes=[]; });
+    rows.forEach(function(r){
+      var t=state.tests.find(function(x){return x.id===r.test_id;});
+      if(!t) return;
+      t._aiMistakes = Array.isArray(r.mistakes_analysis) ? r.mistakes_analysis : [];
+    });
     if (!rows.length){ el.innerHTML = '<span style="color:var(--text-dim)">No AI analysis yet. Add mistake images to a test and save it.</span>'; return; }
     function statusHtml(r){
       var status = r.status || "processing";
@@ -2315,27 +2480,35 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       return out+'</div>';
     }).join('');
     el.innerHTML = html;
+    // Re-render mistake analytics so AI-sourced mistakes are included immediately.
+    renderCrossTestPatterns(state.tests);
+    renderAutoTags(state.tests);
+    renderSpacedMistakes(state.tests);
+    renderMistakes(state.tests);
   }
 
   function renderMistakes(tests){
     var list = document.getElementById("mistakeList"), empty = document.getElementById("mistakeEmpty");
     var rows = [];
     var secCounts = { Physics:0, Chemistry:0, Maths:0, Other:0 };
+    function addRow(t,text,source){
+      var clean=String(text||'').trim(); if(!clean) return;
+      rows.push({ test:t.name, date:t.date, text:clean, source:source });
+      var lower=clean.toLowerCase();
+      if (lower.indexOf("physics") === 0) secCounts.Physics++;
+      else if (lower.indexOf("chemistry") === 0) secCounts.Chemistry++;
+      else if (lower.indexOf("maths") === 0 || lower.indexOf("math") === 0) secCounts.Maths++;
+      else secCounts.Other++;
+    }
     tests.slice().reverse().forEach(function(t){
-      (t.mistakes||[]).forEach(function(m){
-        rows.push({ test:t.name, date:t.date, text:m });
-        var lower = m.toLowerCase();
-        if (lower.indexOf("physics") === 0) secCounts.Physics++;
-        else if (lower.indexOf("chemistry") === 0) secCounts.Chemistry++;
-        else if (lower.indexOf("maths") === 0 || lower.indexOf("math") === 0) secCounts.Maths++;
-        else secCounts.Other++;
-      });
+      (t.mistakes||[]).forEach(function(m){addRow(t,m,'manual');});
+      aiMistakeRowsForTest(t).forEach(function(m){addRow(t,m,'ai');});
     });
     if (!rows.length){ list.innerHTML = ""; empty.style.display = "block"; return; }
     empty.style.display = "none";
-    var breakdown = '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">By section: Physics '+secCounts.Physics+' · Chemistry '+secCounts.Chemistry+' · Maths '+secCounts.Maths+(secCounts.Other?(' · Other '+secCounts.Other):'')+'</div>';
+    var breakdown = '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">By section: Physics '+secCounts.Physics+' · Chemistry '+secCounts.Chemistry+' · Maths '+secCounts.Maths+(secCounts.Other?(' · Other '+secCounts.Other):'')+' · AI-identified mistakes are included</div>';
     list.innerHTML = breakdown + rows.map(function(r){
-      return '<div style="padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span class="tag">'+r.date+'</span>'+r.text+' <span style="color:var(--text-dim)">— '+r.test+'</span></div>';
+      return '<div style="padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span class="tag">'+r.date+'</span> <span class="tag">'+(r.source==='ai'?'AI':'Manual')+'</span> '+escapeHtml(r.text)+' <span style="color:var(--text-dim)">— '+escapeHtml(r.test)+'</span></div>';
     }).join("");
   }
 
@@ -2606,6 +2779,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       t.serialNo = maxSerial + 1;
     }
     calcDerived(t);
+    t.autoTags = autoTagsForTest(t);
     try {
       await persistTest(t);
       var imageFiles = document.getElementById("f_mistakeImages").files;
@@ -2666,7 +2840,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
 
   function openDetail(t){
     document.getElementById("detailTitle").textContent = t.name;
-    document.getElementById("detailSub").textContent = t.date + (t.type ? " · " + t.type : "") + (t.markingScheme ? " · " + t.markingScheme : "") + (t.sessionGroup ? " · Session: " + t.sessionGroup + (t.sessionOrder?" (paper "+t.sessionOrder+")":"") : "") + (t.tags && t.tags.length ? " · Tags: " + t.tags.join(", ") : "");
+    document.getElementById("detailSub").textContent = t.date + (t.type ? " · " + t.type : "") + (t.markingScheme ? " · " + t.markingScheme : "") + (t.sessionGroup ? " · Session: " + t.sessionGroup + (t.sessionOrder?" (paper "+t.sessionOrder+")":"") : "") + (t.tags && t.tags.length ? " · Tags: " + t.tags.join(", ") : "") + (t.autoTags && t.autoTags.length ? " · Auto: " + t.autoTags.join(", ") : "");
     document.getElementById("detailKpis").innerHTML = [
       { label:"Marks", value: t.marksObtained + "/" + t.totalMarks },
       { label:"Percentage", value: t.percentage.toFixed(2) + "%" },
@@ -2958,9 +3132,8 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     });
   });
 
-  // Restore Google Calendar silently if this browser has previously connected.
-  // This avoids requiring a new consent click every time the HTML page is reopened.
-  restoreGoogleCalendarConnection(0);
+  // Calendar restoration is triggered from onSignedIn(), after the Supabase
+  // session/user is available. Do not run it before authentication is ready.
 
   // Keep AI retry status visible without requiring Supabase to be opened.
   setInterval(function(){ if (state.user && state.ready) refreshAIInsights(); }, 30000);
