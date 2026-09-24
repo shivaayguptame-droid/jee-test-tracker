@@ -155,7 +155,7 @@
   .gcal-all-day { padding:8px 12px 9px 72px; border-bottom:1px solid var(--border); background:var(--bg); position:relative; }
   .gcal-all-day-label { position:absolute; left:12px; top:11px; font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; }
   .gcal-all-day-events { display:flex; gap:6px; flex-wrap:wrap; min-height:26px; }
-  .gcal-all-day-event { border-radius:5px; padding:5px 8px; font-size:11.5px; color:#fff; font-weight:600; cursor:pointer; }
+  .gcal-all-day-event { border-radius:5px; padding:5px 8px; font-size:11.5px; color:var(--text); font-weight:650; cursor:pointer; background:color-mix(in srgb, var(--gcal-event-color, #4285f4) 22%, var(--surface-2)); border:1px solid color-mix(in srgb, var(--gcal-event-color, #4285f4) 62%, var(--border)); box-shadow:inset 3px 0 0 var(--gcal-event-color, #4285f4); }
   .gcal-day-scroll { max-height:calc(100vh - 330px); min-height:520px; overflow-y:auto; overflow-x:hidden; background:var(--surface); }
   .gcal-timeline { position:relative; min-height:1536px; background:var(--surface); }
   .gcal-time-grid { position:relative; margin-left:64px; height:1536px; border-left:1px solid var(--border); }
@@ -164,11 +164,11 @@
   .gcal-hour-label { position:absolute; left:-64px; top:-7px; width:55px; padding-right:8px; text-align:right; font-size:11px; color:var(--text-dim); white-space:nowrap; }
   .gcal-half-line { position:absolute; left:0; right:0; top:32px; border-top:1px dotted color-mix(in srgb, var(--border) 75%, transparent); pointer-events:none; }
   .gcal-event-layer { position:absolute; left:0; right:10px; top:0; height:1536px; pointer-events:none; }
-  .gcal-event { position:absolute; border-radius:6px; padding:5px 7px; color:#fff; overflow:hidden; cursor:pointer; pointer-events:auto; box-shadow:0 1px 2px rgba(0,0,0,.14); border-left:3px solid rgba(255,255,255,.75); min-height:22px; }
+  .gcal-event { position:absolute; border-radius:6px; padding:5px 7px; color:var(--text); overflow:hidden; cursor:pointer; pointer-events:auto; background:color-mix(in srgb, var(--gcal-event-color, #4285f4) 22%, var(--surface-2)); border:1px solid color-mix(in srgb, var(--gcal-event-color, #4285f4) 58%, var(--border)); box-shadow:0 1px 2px rgba(0,0,0,.14), inset 3px 0 0 var(--gcal-event-color, #4285f4); min-height:22px; }
   .gcal-event:hover { filter:brightness(.97); box-shadow:0 2px 6px rgba(0,0,0,.22); z-index:6 !important; }
   .gcal-event-title { font-size:12px; font-weight:700; line-height:1.25; white-space:normal; overflow:hidden; }
-  .gcal-event-time { font-size:10.5px; opacity:.94; margin-top:2px; white-space:nowrap; }
-  .gcal-event-meta { font-size:10px; opacity:.88; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .gcal-event-time { font-size:10.5px; opacity:.98; margin-top:2px; white-space:nowrap; }
+  .gcal-event-meta { font-size:10px; opacity:.92; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .gcal-now-line { position:absolute; left:0; right:0; height:2px; background:#d93025; z-index:7; pointer-events:none; }
   .gcal-now-dot { width:9px; height:9px; border-radius:50%; background:#d93025; position:absolute; left:-4px; top:-4px; }
   .gcal-calendar-strip { display:flex; gap:7px; flex-wrap:wrap; padding:8px 12px; border-bottom:1px solid var(--border); background:var(--surface); }
@@ -444,7 +444,7 @@ tr:hover td { background:#171e27; }
 <div class="wrap">
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v1.0.1</span></h1>
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v1.1.0</span></h1>
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow">
@@ -627,6 +627,7 @@ tr:hover td { background:#171e27; }
       <input type="hidden" id="f_id">
       <div class="formgrid">
         <div class="field"><label>Test name</label><input id="f_name" required placeholder="Full Syllabus Test 5"></div>
+        <div class="field"><label>S.No. / Order</label><input id="f_serialNo" type="number" min="1" step="1" placeholder="Auto"></div>
         <div class="field"><label>Date</label><input id="f_date" type="date" required></div>
         <div class="field"><label>Type / series</label><input id="f_type" placeholder="PW Batch Mains / JRTS Advanced / AITS"></div>
         <div class="field">
@@ -1201,6 +1202,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     });
     t.mistakes = Array.isArray(t.mistakes) ? t.mistakes : [];
     t.tags = Array.isArray(t.tags) ? t.tags : [];
+    t.serialNo = num(t.serialNo) || null;
     return calcDerived(t);
   }
 
@@ -2147,17 +2149,68 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     return "";
   }
 
+  function ensureHistoryOrder(){
+    var missing = state.tests.some(function(t){ return !t.serialNo || t.serialNo < 1; });
+    if (!missing) return;
+    var ordered = state.tests.slice().sort(function(a,b){
+      var da = new Date(a.date).getTime() || 0, db = new Date(b.date).getTime() || 0;
+      return da - db;
+    });
+    ordered.forEach(function(t,i){ if (!t.serialNo || t.serialNo < 1) t.serialNo = i + 1; });
+    // Keep serial numbers unique and sequential without changing tests that already have a valid order.
+    var used = {};
+    ordered.forEach(function(t){
+      if (used[t.serialNo]) t.serialNo = null;
+      else used[t.serialNo] = true;
+    });
+    var next = 1;
+    ordered.forEach(function(t){
+      if (!t.serialNo) { while (used[next]) next++; t.serialNo = next; used[next] = true; }
+    });
+    saveLocal(state.tests);
+  }
+
+  function historyOrderedTests(){
+    ensureHistoryOrder();
+    return state.tests.slice().sort(function(a,b){ return (a.serialNo||999999) - (b.serialNo||999999); });
+  }
+
+  async function persistHistoryOrder(){
+    saveLocal(state.tests);
+    if (state.cloud && sb && state.user) {
+      for (var i=0;i<state.tests.length;i++) {
+        var t = state.tests[i];
+        var res = await sb.from("tracker_tests").upsert({ id:t.id, user_id:state.user.id, data:t, updated_at:new Date().toISOString() }, { onConflict:"id" });
+        if (res.error) throw res.error;
+      }
+    }
+  }
+
+  async function moveTestOrder(id, direction){
+    var arr = historyOrderedTests();
+    var idx = arr.findIndex(function(t){ return t.id === id; });
+    var other = idx + direction;
+    if (idx < 0 || other < 0 || other >= arr.length) return;
+    var a = arr[idx], b = arr[other];
+    var temp = a.serialNo; a.serialNo = b.serialNo; b.serialNo = temp;
+    try { await persistHistoryOrder(); render(); }
+    catch(e) { toast("Order changed locally, but cloud sync failed: " + (e.message || "unknown error")); render(); return; }
+  }
+
   function renderHistory(tests){
     var tbl = document.getElementById("historyTable"), empty = document.getElementById("historyEmpty");
     if (!tests.length){ tbl.innerHTML = ""; empty.style.display = "block"; return; }
     empty.style.display = "none";
-    var rows = tests.slice().reverse().map(function(t){
+    var rows = historyOrderedTests().map(function(t, idx, arr){
       var typeLabel = (t.type||"").trim();
       var pill = typeLabel ? '<span class="pill" style="background:'+colorForSeries(typeLabel)+'22;color:'+colorForSeries(typeLabel)+'" title="'+(t.markingScheme?("Marking: "+t.markingScheme):"")+'">'+typeLabel+"</span>" : "—";
       var tierBadge = t.difficulty ? ' <span class="pill" style="background:var(--accent-soft);color:var(--accent)">T'+t.difficulty+'</span>' : "";
       var tagPills = (t.tags||[]).map(function(tag){ return '<span class="pill" style="background:#7c5cbf22;color:#7c5cbf;margin-right:3px;">'+tag+'</span>'; }).join("");
       var flags = divergenceFlag(t) + (tagPills ? " " + tagPills : "");
+      var up = idx > 0 ? '<button class="small ghost" title="Move up" onclick="TT.up(\''+t.id+'\')">↑</button>' : '';
+      var down = idx < arr.length-1 ? '<button class="small ghost" title="Move down" onclick="TT.down(\''+t.id+'\')">↓</button>' : '';
       return "<tr>" +
+        "<td><b>"+t.serialNo+"</b></td>" +
         "<td>"+t.date+"</td>" +
         "<td>"+t.name+"</td>" +
         "<td>"+pill+tierBadge+"</td>" +
@@ -2167,10 +2220,10 @@ Mistakes: Physics: sign error in kinematics"></textarea>
         "<td>"+t.accuracy.toFixed(2)+"%"+(t.accuracyOverride?' <span title="Manually entered" style="color:var(--text-dim)">✎</span>':"")+"</td>" +
         "<td>"+(t.rank ? "#"+t.rank : "—")+"</td>" +
         "<td>"+(flags||"—")+"</td>" +
-        '<td class="rowbtns"><button class="small ghost" onclick="TT.view(\''+t.id+'\')">View</button><button class="small ghost" onclick="TT.edit(\''+t.id+'\')">Edit</button><button class="small ghost" onclick="TT.del(\''+t.id+'\')">Delete</button></td>' +
+        '<td class="rowbtns">'+up+down+'<button class="small ghost" onclick="TT.view(\''+t.id+'\')">View</button><button class="small ghost" onclick="TT.edit(\''+t.id+'\')">Edit</button><button class="small ghost" onclick="TT.del(\''+t.id+'\')">Delete</button></td>' +
         "</tr>";
     }).join("");
-    tbl.innerHTML = "<thead><tr><th>Date</th><th>Test</th><th>Series</th><th>Marks</th><th>%</th><th>Percentile</th><th>Accuracy</th><th>Rank</th><th>Flags</th><th></th></tr></thead><tbody>"+rows+"</tbody>";
+    tbl.innerHTML = "<thead><tr><th>S.No.</th><th>Date</th><th>Test</th><th>Series</th><th>Marks</th><th>%</th><th>Percentile</th><th>Accuracy</th><th>Rank</th><th>Flags</th><th>Order / Actions</th></tr></thead><tbody>"+rows+"</tbody>";
   }
 
   // ---------- form handling ----------
@@ -2183,6 +2236,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     var f = function(id){ return document.getElementById(id); };
     f("f_id").value = test ? test.id : "";
     f("f_name").value = test ? test.name : "";
+    f("f_serialNo").value = test && test.serialNo ? test.serialNo : "";
     f("f_date").value = test ? test.date : new Date().toISOString().slice(0,10);
     f("f_type").value = test ? (test.type||"") : "";
     f("f_difficulty").value = test && test.difficulty !== undefined && test.difficulty !== null ? String(test.difficulty) : "0";
@@ -2321,6 +2375,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     var t = {
       id: f("f_id") || null,
       name: f("f_name") || "Untitled test",
+      serialNo: num(f("f_serialNo")) || null,
       date: f("f_date"),
       type: f("f_type"),
       difficulty: parseInt(f("f_difficulty"),10) || 0,
@@ -2348,6 +2403,10 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       sessionGroup: f("f_sessionGroup").trim(),
       sessionOrder: num(f("f_sessionOrder")) || null
     };
+    if (!t.serialNo) {
+      var maxSerial = state.tests.reduce(function(m,x){ return Math.max(m, num(x.serialNo) || 0); }, 0);
+      t.serialNo = maxSerial + 1;
+    }
     calcDerived(t);
     try {
       await persistTest(t);
@@ -2402,7 +2461,9 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     view: function(id){
       var t = state.tests.find(function(x){ return x.id === id; });
       if (t) openDetail(t);
-    }
+    },
+    up: function(id){ return moveTestOrder(id, -1); },
+    down: function(id){ return moveTestOrder(id, 1); }
   };
 
   function openDetail(t){
