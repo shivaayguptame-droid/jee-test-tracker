@@ -1446,8 +1446,9 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     return Math.round(m/1440) + " day" + (Math.round(m/1440) === 1 ? "" : "s") + " before";
   }
 
-  var GCAL_CONNECTED_KEY = "jee_test_tracker_google_calendar_connected_v1";
-  var gcalSilentAttempted = false;
+  var GCAL_CONNECTED_KEY = "jee_test_tracker_google_calendar_connected_v2";
+  var GCAL_TOKEN_ENDPOINT = SUPABASE_URL + "/functions/v1/google-calendar-oauth";
+  var GCAL_CALLBACK_URL = SUPABASE_URL + "/functions/v1/google-calendar-oauth";
 
   function setGoogleCalendarStatus(msg){
     var el = document.getElementById("googleCalendarStatus");
@@ -1462,86 +1463,114 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     try { localStorage.setItem(GCAL_CONNECTED_KEY, "1"); } catch(e){}
   }
 
-  function initGoogleCalendarClient(){
-    if (state.gcalTokenClient) return state.gcalTokenClient;
-    if (!window.google || !google.accounts || !google.accounts.oauth2) return null;
-    state.gcalTokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: GOOGLE_CLIENT_ID,
-      scope: GOOGLE_CALENDAR_SCOPE,
-      callback: async function(response){
-        if (response && response.error) {
-          var detail = response.error_description || response.error;
-          setGoogleCalendarStatus("Google Calendar authorization needs attention: " + detail + ". Click Connect Google Calendar to authorize again.");
-          state.gcalAccessToken = null;
-          return;
-        }
-        if (!response || !response.access_token) {
-          setGoogleCalendarStatus("Google Calendar did not return an access token. Click Connect Google Calendar to try again.");
-          return;
-        }
-        state.gcalAccessToken = response.access_token;
-        markGoogleCalendarConnected();
-        var expires = response.expires_in ? Number(response.expires_in) * 1000 : 3600000;
-        if (state.gcalExpiryTimer) clearTimeout(state.gcalExpiryTimer);
-        // GIS access tokens are temporary. Refresh silently before expiry instead
-        // of making the user reconnect every time the page is reopened.
-        state.gcalExpiryTimer = setTimeout(function(){
-          if (hasGoogleCalendarConnection()) requestGoogleCalendarToken(true);
-        }, Math.max(60000, expires - 120000));
-        setGoogleCalendarStatus("Connected. Loading all of your visible Google Calendars…");
-        await loadGoogleCalendarDay();
-      }
-    });
-    return state.gcalTokenClient;
+  function clearGoogleCalendarConnection(){
+    try { localStorage.removeItem(GCAL_CONNECTED_KEY); } catch(e){}
+    state.gcalAccessToken = null;
   }
 
-  function requestGoogleCalendarToken(silent){
-    var client = initGoogleCalendarClient();
-    if (!client) {
-      setGoogleCalendarStatus("Google Calendar sign-in is still loading. Wait a moment and try again.");
-      return false;
+  function makeRandomState(){
+    var bytes = new Uint8Array(32);
+    if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(bytes);
+    else for (var i=0;i<bytes.length;i++) bytes[i] = Math.floor(Math.random()*256);
+    var out="";
+    for (var j=0;j<bytes.length;j++) out += bytes[j].toString(16).padStart(2,"0");
+    return out;
+  }
+
+  async function connectGoogleCalendar(){
+    if (!sb || !state.user) {
+      setGoogleCalendarStatus("Sign in to the tracker first, then connect Google Calendar.");
+      return;
     }
     try {
-      client.requestAccessToken({prompt: silent ? "" : "consent"});
-      return true;
+      setGoogleCalendarStatus("Opening Google Calendar authorization…");
+      var sessionRes = await sb.auth.getSession();
+      var session = sessionRes && sessionRes.data && sessionRes.data.session;
+      if (!session || !session.access_token) throw new Error("Your tracker session is not ready. Please sign in again.");
+
+      var oauthState = makeRandomState();
+      var ins = await sb.from("google_calendar_oauth_states").insert({
+        state: oauthState,
+        user_id: state.user.id,
+        redirect_to: window.location.href.split("#")[0].split("?")[0]
+      });
+      if (ins.error) throw ins.error;
+
+      var params = new URLSearchParams({
+        client_id: GOOGLE_CLIENT_ID,
+        redirect_uri: GCAL_CALLBACK_URL,
+        response_type: "code",
+        scope: GOOGLE_CALENDAR_SCOPE,
+        access_type: "offline",
+        prompt: "consent",
+        include_granted_scopes: "true",
+        state: oauthState
+      });
+      window.location.href = "https://accounts.google.com/o/oauth2/v2/auth?" + params.toString();
     } catch(e) {
-      if (silent) {
-        setGoogleCalendarStatus("Google Calendar session could not be restored automatically. Click Connect Google Calendar to reconnect.");
-      } else {
-        setGoogleCalendarStatus("Google Calendar authorization failed: " + (e.message || "unknown error"));
-      }
-      return false;
+      setGoogleCalendarStatus("Could not start Google Calendar authorization: " + (e.message || "unknown error"));
     }
   }
 
-  function connectGoogleCalendar(){
-    requestGoogleCalendarToken(false);
+  async function getServerCalendarAccessToken(){
+    if (!sb || !state.user) throw new Error("Tracker sign-in is required");
+    var sessionRes = await sb.auth.getSession();
+    var session = sessionRes && sessionRes.data && sessionRes.data.session;
+    if (!session || !session.access_token) throw new Error("Tracker session is not available");
+    var res = await fetch(GCAL_TOKEN_ENDPOINT, {
+      method:"POST",
+      headers:{"Authorization":"Bearer "+session.access_token,"Content-Type":"application/json"},
+      body:"{}"
+    });
+    var data = await res.json().catch(function(){return {};});
+    if (!res.ok || !data.access_token) {
+      var msg = data.error || ("Calendar token service returned HTTP "+res.status);
+      if (res.status === 404 || res.status === 405) msg = "Persistent Calendar authentication is not deployed yet. Deploy the google-calendar-token Edge Function.";
+      throw new Error(msg);
+    }
+    state.gcalAccessToken = data.access_token;
+    markGoogleCalendarConnected();
+    var expires = data.expires_in ? Number(data.expires_in)*1000 : 3600000;
+    if (state.gcalExpiryTimer) clearTimeout(state.gcalExpiryTimer);
+    state.gcalExpiryTimer = setTimeout(function(){
+      getServerCalendarAccessToken().then(loadGoogleCalendarDay).catch(function(){
+        setGoogleCalendarStatus("Google Calendar session needs attention. Click Connect Google Calendar to reconnect.");
+      });
+    }, Math.max(60000, expires - 120000));
+    return data.access_token;
   }
 
-  function restoreGoogleCalendarConnection(attempt){
-    if (gcalSilentAttempted || !hasGoogleCalendarConnection()) return;
-    if (attempt > 40) {
-      setGoogleCalendarStatus("Google Calendar is not connected yet. Click Connect Google Calendar to reconnect.");
+  async function restoreGoogleCalendarConnection(){
+    if (!state.user) return;
+    var params = new URLSearchParams(window.location.search);
+    if (params.get("gcal") === "connected") {
+      markGoogleCalendarConnected();
+      try { window.history.replaceState({}, document.title, window.location.pathname + window.location.hash); } catch(e){}
+    }
+    if (params.get("gcal") === "error") {
+      setGoogleCalendarStatus("Google Calendar authorization failed. Click Connect Google Calendar to try again.");
+      try { window.history.replaceState({}, document.title, window.location.pathname + window.location.hash); } catch(e){}
       return;
     }
-    if (!window.google || !google.accounts || !google.accounts.oauth2) {
-      setTimeout(function(){ restoreGoogleCalendarConnection(attempt + 1); }, 250);
-      return;
-    }
-    gcalSilentAttempted = true;
+    if (!hasGoogleCalendarConnection()) return;
     setGoogleCalendarStatus("Restoring Google Calendar connection…");
-    requestGoogleCalendarToken(true);
+    try {
+      await getServerCalendarAccessToken();
+      setGoogleCalendarStatus("Connected. Loading all of your visible Google Calendars…");
+      await loadGoogleCalendarDay();
+    } catch(e) {
+      clearGoogleCalendarConnection();
+      setGoogleCalendarStatus("Google Calendar is not connected. Click Connect Google Calendar to authorize it once.");
+    }
   }
 
   async function gcalFetch(url, retried){
-    if (!state.gcalAccessToken) throw new Error("Google Calendar is not connected");
+    if (!state.gcalAccessToken) await getServerCalendarAccessToken();
     var res = await fetch(url,{headers:{Authorization:"Bearer "+state.gcalAccessToken}});
     var data = await res.json().catch(function(){return {};});
-    if (res.status === 401 && !retried && hasGoogleCalendarConnection()) {
-      // Token expired/revoked: ask GIS for a silent replacement, then retry.
-      requestGoogleCalendarToken(true);
-      await new Promise(function(resolve){ setTimeout(resolve, 700); });
-      if (state.gcalAccessToken) return gcalFetch(url, true);
+    if (res.status === 401 && !retried) {
+      await getServerCalendarAccessToken();
+      return gcalFetch(url, true);
     }
     if (!res.ok) throw new Error(data.error && data.error.message ? data.error.message : ("Google Calendar API error "+res.status));
     return data;
