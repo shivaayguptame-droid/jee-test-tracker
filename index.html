@@ -444,13 +444,14 @@ tr:hover td { background:#171e27; }
 <div class="wrap">
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v1.1.0</span></h1>
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v1.3.0</span></h1>
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow">
       <button class="ghost" id="accountBtn">Account</button>
       <button class="ghost" id="importLocalBtn">Import Old Data</button>
       <button class="ghost" id="pasteBtn">Paste Results</button>
+      <button class="ghost" id="screenshotImportBtn">📷 Screenshot → Test</button>
       <button class="ghost" id="compareBtn">Compare</button>
       <button class="primary" id="addBtn">+ Add Test</button>
     </div>
@@ -754,6 +755,23 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       <button type="button" class="ghost" id="pasteCancelBtn">Cancel</button>
       <button type="button" class="ghost" id="pasteClearBtn">Clear</button>
       <button type="button" class="primary" id="pasteParseBtn">Parse &amp; open form</button>
+    </div>
+  </div>
+</div>
+
+<!-- Result screenshot OCR modal -->
+<div class="modalBg" id="screenshotImportModalBg">
+  <div class="modal" style="max-width:620px;">
+    <h2>Import result screenshot</h2>
+    <div class="hint">Upload a result-page screenshot. Gemini will read the visible test data and open the normal test form for you to review. The screenshot is processed temporarily and is not saved to your mistake-image storage.</div>
+    <div class="field full" style="margin-top:12px;">
+      <label>Result screenshot</label>
+      <input id="resultScreenshotInput" type="file" accept="image/*">
+    </div>
+    <div id="resultScreenshotStatus" style="font-size:12.5px;color:var(--text-dim);margin-top:10px;min-height:18px;"></div>
+    <div class="modalFoot">
+      <button type="button" class="ghost" id="screenshotImportCancelBtn">Cancel</button>
+      <button type="button" class="primary" id="screenshotImportRunBtn">Read screenshot</button>
     </div>
   </div>
 </div>
@@ -2536,6 +2554,101 @@ Mistakes: Physics: sign error in kinematics"></textarea>
   }
   document.getElementById("detailCloseBtn").onclick = function(){ document.getElementById("detailModalBg").classList.remove("open"); };
   document.getElementById("detailModalBg").addEventListener("click", function(e){ if (e.target === this) this.classList.remove("open"); });
+
+  // ---------- result screenshot OCR ----------
+  function fileToDataUrl(file){
+    return new Promise(function(resolve,reject){
+      var reader = new FileReader();
+      reader.onload = function(){ resolve(String(reader.result || "")); };
+      reader.onerror = function(){ reject(new Error("Could not read the screenshot")); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function setResultScreenshotStatus(msg, error){
+    var el = document.getElementById("resultScreenshotStatus");
+    if (!el) return;
+    el.textContent = msg || "";
+    el.style.color = error ? "var(--danger, #b42318)" : "var(--text-dim)";
+  }
+
+  function applyImportedResult(data){
+    openModal(null);
+    var f = function(id){ return document.getElementById(id); };
+    function set(id, value){
+      if (value !== undefined && value !== null && value !== "") f(id).value = value;
+    }
+    set("f_name", data.test);
+    set("f_date", data.date);
+    set("f_type", data.type);
+    set("f_markingScheme", data.markingScheme);
+    set("f_totalMarks", data.totalMarks);
+    set("f_marksObtained", data.marksObtained);
+    set("f_totalQ", data.totalQuestions);
+    set("f_correct", data.correct);
+    set("f_incorrect", data.incorrect);
+    set("f_unattempted", data.unattempted);
+    set("f_rank", data.indiaRank);
+    set("f_percentile", data.percentile);
+    set("f_candidates", data.totalCandidates);
+    set("f_totalTime", data.totalTime);
+    set("f_totalTimeAllotted", data.totalTimeAllotted);
+    set("p_correct", data.physicsCorrect); set("p_incorrect", data.physicsIncorrect); set("p_unattempted", data.physicsUnattempted); set("p_time", data.physicsTime); set("p_percentile", data.physicsPercentile);
+    set("c_correct", data.chemistryCorrect); set("c_incorrect", data.chemistryIncorrect); set("c_unattempted", data.chemistryUnattempted); set("c_time", data.chemistryTime); set("c_percentile", data.chemistryPercentile);
+    set("m_correct", data.mathsCorrect); set("m_incorrect", data.mathsIncorrect); set("m_unattempted", data.mathsUnattempted); set("m_time", data.mathsTime); set("m_percentile", data.mathsPercentile);
+    if (data.accuracy !== undefined && data.accuracy !== null && data.accuracy !== "") {
+      f("f_accOverride").checked = true;
+      f("f_manualAccuracy").disabled = false;
+      f("f_manualAccuracy").value = data.accuracy;
+    }
+    if (data.difficultyTier !== undefined && data.difficultyTier !== null && data.difficultyTier !== "") {
+      f("f_difficulty").value = String(data.difficultyTier);
+    } else {
+      var guess = guessDifficulty(data.type || "");
+      if (guess !== null) f("f_difficulty").value = String(guess);
+    }
+    if (Array.isArray(data.mistakes) && data.mistakes.length) f("f_mistakes").value = data.mistakes.join("\n");
+    toast("Screenshot read — check the fields, then save");
+  }
+
+  document.getElementById("screenshotImportBtn").onclick = function(){
+    document.getElementById("resultScreenshotInput").value = "";
+    setResultScreenshotStatus("");
+    document.getElementById("screenshotImportModalBg").classList.add("open");
+  };
+  document.getElementById("screenshotImportCancelBtn").onclick = function(){ document.getElementById("screenshotImportModalBg").classList.remove("open"); };
+  document.getElementById("screenshotImportModalBg").addEventListener("click", function(e){ if (e.target === this) this.classList.remove("open"); });
+  document.getElementById("screenshotImportRunBtn").onclick = async function(){
+    var input = document.getElementById("resultScreenshotInput");
+    var file = input && input.files ? input.files[0] : null;
+    if (!file) { setResultScreenshotStatus("Choose a screenshot first.", true); return; }
+    if (!state.user || !sb) { setResultScreenshotStatus("Sign in first so the tracker can securely call the AI function.", true); return; }
+    if (!file.type || file.type.indexOf("image/") !== 0) { setResultScreenshotStatus("Please choose an image file.", true); return; }
+    if (file.size > 12 * 1024 * 1024) { setResultScreenshotStatus("Please use an image smaller than 12 MB.", true); return; }
+    var btn = document.getElementById("screenshotImportRunBtn");
+    btn.disabled = true;
+    setResultScreenshotStatus("Reading screenshot with AI…");
+    try {
+      var dataUrl = await fileToDataUrl(file);
+      var sessionRes = await sb.auth.getSession();
+      var token = sessionRes.data && sessionRes.data.session ? sessionRes.data.session.access_token : null;
+      if (!token) throw new Error("No active session");
+      var res = await withTimeout(fetch(SUPABASE_URL + "/functions/v1/extract-test-result", {
+        method:"POST",
+        headers:{"Content-Type":"application/json","Authorization":"Bearer "+token,"apikey":SUPABASE_PUBLISHABLE_KEY},
+        body:JSON.stringify({image:dataUrl})
+      }), 60000, "Screenshot analysis timed out. Try the screenshot again.");
+      var payload = await res.json().catch(function(){return {};});
+      if (!res.ok) throw new Error(payload.error || "Screenshot extraction failed");
+      if (!payload.data) throw new Error("AI returned no test data");
+      document.getElementById("screenshotImportModalBg").classList.remove("open");
+      applyImportedResult(payload.data);
+    } catch(e) {
+      setResultScreenshotStatus(e.message || "Screenshot extraction failed", true);
+    } finally {
+      btn.disabled = false;
+    }
+  };
 
   // ---------- paste parser ----------
   document.getElementById("pasteBtn").onclick = function(){
