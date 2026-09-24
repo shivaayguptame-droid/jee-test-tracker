@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>JEE Test Tracker v1.0.1</title>
+<title>JEE Test Tracker v1.3.1</title>
 <!-- VERSION: 1.0.1 | Layout fixes: six equal KPI cards + no sidebar horizontal overflow. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -444,7 +444,7 @@ tr:hover td { background:#171e27; }
 <div class="wrap">
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v1.3.0</span></h1>
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v1.3.1</span></h1>
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow">
@@ -2596,6 +2596,9 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     set("p_correct", data.physicsCorrect); set("p_incorrect", data.physicsIncorrect); set("p_unattempted", data.physicsUnattempted); set("p_time", data.physicsTime); set("p_percentile", data.physicsPercentile);
     set("c_correct", data.chemistryCorrect); set("c_incorrect", data.chemistryIncorrect); set("c_unattempted", data.chemistryUnattempted); set("c_time", data.chemistryTime); set("c_percentile", data.chemistryPercentile);
     set("m_correct", data.mathsCorrect); set("m_incorrect", data.mathsIncorrect); set("m_unattempted", data.mathsUnattempted); set("m_time", data.mathsTime); set("m_percentile", data.mathsPercentile);
+    if (Array.isArray(data.tags) && data.tags.length) f("f_tags").value = data.tags.join(", ");
+    if (data.sessionGroup !== undefined && data.sessionGroup !== null && data.sessionGroup !== "") f("f_sessionGroup").value = data.sessionGroup;
+    if (data.sessionOrder !== undefined && data.sessionOrder !== null && data.sessionOrder !== "") f("f_sessionOrder").value = data.sessionOrder;
     if (data.accuracy !== undefined && data.accuracy !== null && data.accuracy !== "") {
       f("f_accOverride").checked = true;
       f("f_manualAccuracy").disabled = false;
