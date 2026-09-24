@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>JEE Test Tracker v1.3.2</title>
-<!-- VERSION: 1.0.1 | Layout fixes: six equal KPI cards + no sidebar horizontal overflow. -->
+<title>JEE Test Tracker v1.4.0</title>
+<!-- VERSION: 1.4.0 | Stage 2: auto-generated pre-test briefing from test history + Google Calendar. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -444,7 +444,7 @@ tr:hover td { background:#171e27; }
 <div class="wrap">
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v1.3.1</span></h1>
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v1.4.0</span></h1>
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow">
@@ -477,7 +477,15 @@ tr:hover td { background:#171e27; }
       <div id="goalsContent"></div>
     </div>
 
-    <div class="grid2">
+    <div class="card" id="preTestBriefingCard" style="display:none;margin-top:14px;">
+    <div class="sectionTitle" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span>Pre-test briefing</span>
+      <span id="preTestBriefingMeta" style="font-size:11.5px;color:var(--text-dim);"></span>
+    </div>
+    <div id="preTestBriefingContent"></div>
+  </div>
+
+  <div class="grid2">
       <div class="card">
         <div class="sectionTitle" style="display:flex;justify-content:space-between;align-items:center;">
           <span>Score trend</span>
@@ -942,6 +950,124 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     var d = new Date(dateStr + "T00:00:00");
     var now = new Date();
     return Math.ceil((d - now) / 86400000);
+  }
+
+  function isoLocalDate(d){
+    var x = d || new Date();
+    var y=x.getFullYear(), m=String(x.getMonth()+1).padStart(2,"0"), day=String(x.getDate()).padStart(2,"0");
+    return y+"-"+m+"-"+day;
+  }
+
+  function isLikelyTestEvent(ev){
+    var text=((ev && ev.summary)||"").toLowerCase();
+    return /\b(test|mock|aits|jrts|jee|mains|advanced|major|minor|exam|paper|dpp|full\s*syllabus)\b/i.test(text);
+  }
+
+  function renderPreTestBriefing(tests){
+    var card=document.getElementById("preTestBriefingCard");
+    var content=document.getElementById("preTestBriefingContent");
+    var meta=document.getElementById("preTestBriefingMeta");
+    if(!card || !content || !meta) return;
+
+    var today=isoLocalDate(new Date());
+    var todaysEvents=(state.gcalEvents||[]).filter(function(ev){
+      var v=ev && ev.start && (ev.start.date || ev.start.dateTime);
+      if(!v) return false;
+      return isoLocalDate(ev.start.date ? new Date(v+"T00:00:00") : new Date(v))===today;
+    });
+    var testEvents=todaysEvents.filter(isLikelyTestEvent);
+
+    // Stage 2 is a test-day briefing. Calendar is the source of truth for scheduled tests.
+    if(!testEvents.length){
+      card.style.display="none";
+      return;
+    }
+
+    var recent=tests.slice(-5);
+    var subjects=["physics","chemistry","maths"];
+    var labels={physics:"Physics",chemistry:"Chemistry",maths:"Maths"};
+    var metrics={};
+    subjects.forEach(function(sub){
+      var acc=[], skip=[];
+      recent.forEach(function(t){
+        var sec=t.sections && t.sections[sub];
+        if(!sec) return;
+        var attempted=(sec.correct||0)+(sec.incorrect||0);
+        var total=attempted+(sec.unattempted||0);
+        if(attempted>0) acc.push(pct(sec.correct||0,attempted));
+        if(total>0) skip.push(pct(sec.unattempted||0,total));
+      });
+      metrics[sub]={
+        accuracy:acc.length ? acc.reduce(function(a,b){return a+b;},0)/acc.length : null,
+        skip:skip.length ? skip.reduce(function(a,b){return a+b;},0)/skip.length : null
+      };
+    });
+
+    var available=subjects.filter(function(s){return metrics[s].accuracy!==null;});
+    var weak=available.length ? available.slice().sort(function(a,b){return metrics[a].accuracy-metrics[b].accuracy;})[0] : null;
+    var skipSub=subjects.filter(function(s){return metrics[s].skip!==null;}).sort(function(a,b){return metrics[b].skip-metrics[a].skip;})[0];
+
+    // Historical same-session fatigue signal.
+    var groups={};
+    tests.forEach(function(t){
+      if(!t.sessionGroup) return;
+      if(!groups[t.sessionGroup]) groups[t.sessionGroup]=[];
+      groups[t.sessionGroup].push(t);
+    });
+    var fatigueDeltas=[];
+    Object.keys(groups).forEach(function(g){
+      var papers=groups[g].slice().sort(function(a,b){return (a.sessionOrder||0)-(b.sessionOrder||0);});
+      if(papers.length<2) return;
+      var first=papers[0], last=papers[papers.length-1];
+      if(typeof first.accuracy==="number" && typeof last.accuracy==="number") fatigueDeltas.push(last.accuracy-first.accuracy);
+    });
+    var avgFatigue=fatigueDeltas.length ? fatigueDeltas.reduce(function(a,b){return a+b;},0)/fatigueDeltas.length : null;
+    var multiPaper=testEvents.length>=2;
+
+    // Suggested section budget is derived from the user's recent section-time shares.
+    var timeSums={physics:0,chemistry:0,maths:0}, timeN={physics:0,chemistry:0,maths:0};
+    recent.forEach(function(t){
+      subjects.forEach(function(sub){
+        var v=t.sections && t.sections[sub] ? num(t.sections[sub].time) : 0;
+        if(v>0){timeSums[sub]+=v; timeN[sub]++;}
+      });
+    });
+    var timeShares={};
+    var totalRecentTime=0;
+    subjects.forEach(function(sub){ if(timeN[sub]) totalRecentTime+=timeSums[sub]/timeN[sub]; });
+    subjects.forEach(function(sub){ timeShares[sub]=timeN[sub]&&totalRecentTime ? (timeSums[sub]/timeN[sub])/totalRecentTime : null; });
+    var latestWithBudget=null;
+    for(var li=tests.length-1;li>=0;li--){
+      if(num(tests[li].totalTimeAllotted)>0){latestWithBudget=tests[li];break;}
+    }
+    var budgetBase=latestWithBudget ? num(latestWithBudget.totalTimeAllotted) : 0;
+
+    var html='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;">';
+    if(weak){
+      html+='<div style="padding:11px;border:1px solid var(--border);border-radius:10px;background:var(--accent-soft);"><div style="font-size:11px;color:var(--text-dim);">Watch closely</div><b>'+labels[weak]+'</b><div style="font-size:12px;margin-top:4px;">Recent accuracy average: '+metrics[weak].accuracy.toFixed(1)+'%</div></div>';
+    }
+    if(skipSub){
+      html+='<div style="padding:11px;border:1px solid var(--border);border-radius:10px;"><div style="font-size:11px;color:var(--text-dim);">Skip tendency</div><b>'+labels[skipSub]+' has the highest skip rate</b><div style="font-size:12px;margin-top:4px;">Recent average: '+metrics[skipSub].skip.toFixed(1)+'% unattempted</div></div>';
+    }
+    var fatigueText;
+    if(multiPaper) fatigueText='Multiple test-like events are on today\'s calendar.';
+    else if(avgFatigue!==null) fatigueText='Historical same-session change: '+(avgFatigue>=0?'+':'')+avgFatigue.toFixed(1)+' accuracy points from first to last paper.';
+    else fatigueText='No enough same-session history yet.';
+    html+='<div style="padding:11px;border:1px solid var(--border);border-radius:10px;"><div style="font-size:11px;color:var(--text-dim);">Fatigue risk</div><b>'+((multiPaper|| (avgFatigue!==null && avgFatigue<=-5))?'Pay attention to fatigue':'No strong fatigue signal')+'</b><div style="font-size:12px;margin-top:4px;">'+fatigueText+'</div></div>';
+    html+='</div>';
+
+    if(budgetBase && subjects.some(function(s){return timeShares[s]!==null;})){
+      html+='<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);"><div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">Suggested time budget · based on your recent section-time pattern</div><div style="display:flex;gap:8px;flex-wrap:wrap;">';
+      subjects.forEach(function(sub){ if(timeShares[sub]!==null) html+='<span class="pill">'+labels[sub]+' '+Math.round(budgetBase*timeShares[sub])+' min</span>'; });
+      html+='</div></div>';
+    } else if(subjects.some(function(s){return timeShares[s]!==null;})){
+      html+='<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;color:var(--text-dim);">Time budget: recent section timing is available, but no explicit total-time allowance is logged yet, so no fixed minute budget is shown.</div>';
+    }
+
+    html+='<div style="margin-top:10px;font-size:11.5px;color:var(--text-dim);">Generated from your latest '+recent.length+' logged tests and today\'s Google Calendar test schedule. It updates automatically when your test history changes.</div>';
+    content.innerHTML=html;
+    meta.textContent=testEvents.length+(testEvents.length===1?' test':' tests')+' today';
+    card.style.display="block";
   }
 
   function renderGoals(tests){
@@ -1455,7 +1581,9 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       state.gcalEvents = all;
       document.getElementById("googleCalendarStatus").textContent = "Connected to your Google Calendars. Colors, reminders and event details are shown here; Google Calendar remains the source of truth.";
       state.renderedPanels.schedule = false;
+      state.renderedPanels.overview = false;
       renderPanel("schedule", sortedTests());
+      if ((document.querySelector("#mainTabNav .tabbtn.active") || {}).getAttribute && document.querySelector("#mainTabNav .tabbtn.active").getAttribute("data-tab") === "overview") renderPanel("overview", sortedTests());
     } catch(e) {
       if (!hasGoogleCalendarConnection()) state.gcalAccessToken = null;
       setGoogleCalendarStatus("Could not load Google Calendar: " + (e.message || "access denied") + ". If authorization was revoked, click Connect Google Calendar.");
@@ -1612,7 +1740,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
   function renderPanel(panel, tests){
     if (!panel || state.renderedPanels[panel]) return;
     var stepsByPanel = {
-      overview: [renderGoals, renderScoreChart, renderAccChart],
+      overview: [renderGoals, renderPreTestBriefing, renderScoreChart, renderAccChart],
       subjects: [renderSubjects],
       analysis: [renderTierChart, renderSkipChart, renderFatigue, renderTimeTable],
       plan: [renderPlan, renderMistakes],
