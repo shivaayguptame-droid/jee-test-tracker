@@ -2673,6 +2673,10 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     });
   });
 
+  // Restore Google Calendar silently if this browser has previously connected.
+  // This avoids requiring a new consent click every time the HTML page is reopened.
+  restoreGoogleCalendarConnection(0);
+
   // Keep AI retry status visible without requiring Supabase to be opened.
   setInterval(function(){ if (state.user && state.ready) refreshAIInsights(); }, 30000);
 
