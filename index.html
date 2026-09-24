@@ -2099,10 +2099,22 @@ Mistakes: Physics: sign error in kinematics"></textarea>
   async function refreshAIInsights(){
     var el = document.getElementById("aiInsightContent");
     if (!el || !state.user || !sb) return;
-    var res = await sb.from("tracker_ai_insights").select("test_id,mistakes_analysis,plan_analysis,updated_at").eq("user_id",state.user.id).order("updated_at",{ascending:false});
+    var res = await sb.from("tracker_ai_insights").select("test_id,status,retry_count,next_retry_at,last_error,mistakes_analysis,plan_analysis,updated_at,completed_at").eq("user_id",state.user.id).order("updated_at",{ascending:false});
     if (res.error) return;
     var rows = res.data || [];
     if (!rows.length){ el.innerHTML = '<span style="color:var(--text-dim)">No AI analysis yet. Add mistake images to a test and save it.</span>'; return; }
+    function statusHtml(r){
+      var status = r.status || "processing";
+      var cls = status === "completed" ? "good" : (status === "failed" ? "bad" : "warn");
+      var label = status === "completed" ? "Completed" : (status === "retry_waiting" ? "Retry scheduled" : (status === "failed" ? "Failed" : "Processing"));
+      var detail = "";
+      if (status === "retry_waiting" && r.next_retry_at) {
+        var d = new Date(r.next_retry_at);
+        if (!isNaN(d.getTime())) detail = " · next attempt " + d.toLocaleString([], {dateStyle:"short", timeStyle:"short"});
+      }
+      if (status === "failed" && r.last_error) detail = " · " + String(r.last_error).slice(0,180);
+      return '<span class="pill '+cls+'">AI: '+label+'</span><span style="font-size:11.5px;color:var(--text-dim);margin-left:7px;">'+detail+'</span>';
+    }
     var html = rows.slice(0,5).map(function(r){
       var test = state.tests.find(function(t){return t.id===r.test_id;});
       var title = test ? test.name : r.test_id;
@@ -2110,7 +2122,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       var pa = r.plan_analysis || {};
       var patterns = Array.isArray(pa.patterns) ? pa.patterns : [];
       var plan = Array.isArray(pa.plan) ? pa.plan : [];
-      var out = '<div style="padding:10px 0;border-bottom:1px solid var(--border)"><b>'+title+'</b>';
+      var out = '<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b>'+title+'</b>'+statusHtml(r)+'</div>';
       if (patterns.length) out += '<div style="margin-top:7px"><span class="tag">Patterns</span>'+patterns.map(function(x){return '<div style="margin:4px 0">'+(x.topic||'Pattern')+': '+(x.observation||'')+'</div>';}).join('')+'</div>';
       if (ma.length) out += '<div style="margin-top:7px"><span class="tag">Mistakes</span>'+ma.map(function(x){return '<div style="margin:4px 0">'+(x.subject?'<b>'+x.subject+'</b> — ':'')+(x.topic||'')+(x.observation?' — '+x.observation:'')+(x.action?' <span style="color:var(--text-dim)">→ '+x.action+'</span>':'')+'</div>';}).join('')+'</div>';
       if (plan.length) out += '<div style="margin-top:7px"><span class="tag">Plan</span>'+plan.map(function(x){return '<div style="margin:4px 0"><b>'+((x.priority||'').toUpperCase())+'</b> — '+(x.topic||'')+': '+(x.action||'')+'</div>';}).join('')+'</div>';
@@ -2660,6 +2672,9 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       if (state.ready) renderSubjects(sortedTests());
     });
   });
+
+  // Keep AI retry status visible without requiring Supabase to be opened.
+  setInterval(function(){ if (state.user && state.ready) refreshAIInsights(); }, 30000);
 
   initDb().catch(function(){
     state.tests = loadLocal().map(normalizeTest);
