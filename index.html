@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>JEE Test Tracker v1.6.3</title>
-<!-- VERSION: 1.6.3 | Remote Control Center + US Eastern nighttime AI scheduling. -->
+<!-- VERSION: 1.6.3 | Adds persistent notification center/bell, deduplicated remote notifications, and a single app-version source. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -76,6 +76,30 @@
   h1 { font-family: var(--font-display); font-weight: 700; font-size: 23px; margin: 0; letter-spacing: -0.01em; }
   .sub { color: var(--text-dim); font-size: 13px; margin-top: 2px; }
   .btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
+  .headerActions { align-items: center; }
+  .notificationWrap { position: relative; }
+  .notificationBell { position: relative; width: 42px; height: 40px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; }
+  .bellGlyph { font-size: 18px; line-height: 1; filter: grayscale(.1); }
+  .notificationBadge { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: var(--bad); color: #fff; border: 2px solid var(--bg); font-size: 10px; font-weight: 800; line-height: 1; }
+  .notificationPanel { position: absolute; top: calc(100% + 9px); right: 0; width: min(390px, calc(100vw - 28px)); max-height: min(520px, calc(100vh - 100px)); display: none; flex-direction: column; background: #121821; border: 1px solid #303b4a; border-radius: 14px; box-shadow: 0 18px 60px rgba(0,0,0,.45); z-index: 130; overflow: hidden; }
+  .notificationPanel.open { display: flex; }
+  .notificationPanelHead { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; padding:13px 14px; border-bottom:1px solid #303b4a; background:#151c26; }
+  .notificationPanelTitle { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: #eef2f7; }
+  .notificationPanelSub { margin-top:2px; font-size:11px; color:#8f9aaa; }
+  .notificationPanelActions { display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end; }
+  .notificationPanelActions button { color:#aeb8c6; border-color:#303b4a; padding:5px 8px; font-size:11px; }
+  .notificationList { overflow-y:auto; padding:6px; }
+  .notificationItem { display:grid; grid-template-columns:28px 1fr; gap:9px; padding:10px 9px; border-radius:10px; border:1px solid transparent; margin-bottom:4px; }
+  .notificationItem.unread { background:rgba(255,255,255,.035); border-color:#2b3543; }
+  .notificationItem:last-child { margin-bottom:0; }
+  .notificationDot { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; background:rgba(90,150,255,.13); color:#8eb8ff; }
+  .notificationItem.warn .notificationDot { background:rgba(240,164,75,.13); color:#f0b76a; }
+  .notificationItem.danger .notificationDot { background:rgba(220,70,70,.14); color:#ff7e78; }
+  .notificationItemTitle { font-size:12.5px; font-weight:700; color:#edf1f6; }
+  .notificationItemMessage { margin-top:3px; font-size:12px; line-height:1.45; color:#aeb7c4; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .notificationItemTime { margin-top:5px; font-size:10.5px; color:#727f90; }
+  .notificationEmpty { padding:32px 14px; text-align:center; color:#7f8998; font-size:12.5px; }
+  @media(max-width:800px){ .notificationPanel { position:fixed; top:72px; right:12px; } }
   button {
     font: inherit; cursor: pointer; border-radius: 9px; border: 1px solid var(--border);
     background: var(--surface); color: var(--text); padding: 9px 14px; font-size: 13.5px;
@@ -320,7 +344,7 @@ header .btnrow { gap: 7px; }
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
-#remoteAnnouncement { display:none; margin:0 0 14px; padding:11px 14px; border:1px solid var(--border); border-radius:13px; background:var(--surface); font-size:13px; line-height:1.45; }
+#remoteAnnouncement { display:none !important; margin:0 0 14px; padding:11px 14px; border:1px solid var(--border); border-radius:13px; background:var(--surface); font-size:13px; line-height:1.45; }
 #remoteAnnouncement.show { display:flex; align-items:flex-start; gap:10px; }
 #remoteAnnouncement .remoteIcon { font-weight:800; }
 #remoteAnnouncement.warn { border-color:rgba(240,164,75,.35); background:rgba(240,164,75,.08); }
@@ -466,10 +490,29 @@ tr:hover td { background:#171e27; }
 <div class="wrap">
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v1.6.0</span></h1>
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v1.6.3</span></h1>
       <div class="sub" id="subhead">Loading…</div>
     </div>
-    <div class="btnrow">
+    <div class="btnrow headerActions">
+      <div class="notificationWrap" id="notificationWrap">
+        <button class="ghost notificationBell" id="notificationBell" aria-label="Notifications" title="Notifications">
+          <span class="bellGlyph" aria-hidden="true">🔔</span>
+          <span class="notificationBadge" id="notificationBadge" style="display:none;">0</span>
+        </button>
+        <div class="notificationPanel" id="notificationPanel" role="dialog" aria-label="Notifications">
+          <div class="notificationPanelHead">
+            <div>
+              <div class="notificationPanelTitle">Notifications</div>
+              <div class="notificationPanelSub" id="notificationPanelSub">Updates from your tracker</div>
+            </div>
+            <div class="notificationPanelActions">
+              <button class="small ghost" id="notificationsReadBtn">Mark all read</button>
+              <button class="small ghost" id="notificationsClearBtn">Clear</button>
+            </div>
+          </div>
+          <div class="notificationList" id="notificationList"></div>
+        </div>
+      </div>
       <button class="ghost" id="accountBtn">Account</button>
       <button class="ghost" id="importLocalBtn">Import Old Data</button>
       <button class="ghost" id="pasteBtn">Paste Results</button>
@@ -479,7 +522,7 @@ tr:hover td { background:#171e27; }
     </div>
   </header>
 
-  <div id="remoteAnnouncement" role="status"><span class="remoteIcon">!</span><span id="remoteAnnouncementText"></span></div>
+  <div id="remoteAnnouncement" role="status" aria-hidden="true" style="display:none !important;"><span class="remoteIcon">!</span><span id="remoteAnnouncementText"></span></div>
 
   <div class="kpis" id="kpis"></div>
 
@@ -1018,8 +1061,10 @@ Mistakes: Physics: sign error in kinematics"></textarea>
 <script>
 (function(){
   "use strict";
-  var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null };
+  var APP_VERSION = "1.6.3";
+  var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   var LS_KEY = "jee_test_tracker_v1";
+  var NOTIFICATIONS_KEY_BASE = "jee_tracker_notifications_v2_";
 
   // ===== ONLINE CONFIG =====
   // Put your Supabase project URL and PUBLISHABLE key here once.
@@ -1048,12 +1093,106 @@ Mistakes: Physics: sign error in kinematics"></textarea>
 
   var DEFAULT_APP_CONFIG = { id:1, announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
 
+  function notificationStorageKey(){
+    var uid = state.user && state.user.id ? state.user.id : "public";
+    return NOTIFICATIONS_KEY_BASE + uid;
+  }
+
+  function loadNotifications(){
+    try {
+      var raw = localStorage.getItem(notificationStorageKey());
+      state.notifications = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(state.notifications)) state.notifications = [];
+    } catch(e) { state.notifications = []; }
+    renderNotifications();
+  }
+
+  function saveNotifications(){
+    try { localStorage.setItem(notificationStorageKey(), JSON.stringify(state.notifications.slice(0,50))); } catch(e){}
+  }
+
+  function notificationTypeIcon(type){ return type === "danger" ? "!" : (type === "warn" ? "!" : "i"); }
+
+  function notificationTime(ts){
+    try { return new Date(ts).toLocaleString([], { month:"short", day:"numeric", hour:"numeric", minute:"2-digit" }); }
+    catch(e) { return ""; }
+  }
+
+  function addNotification(type, title, message, id){
+    id = id || ("n_" + Date.now() + "_" + Math.random().toString(36).slice(2,8));
+    if (state.notifications.some(function(n){ return n.id === id; })) return false;
+    state.notifications.unshift({ id:id, type:type || "info", title:String(title || "Notification"), message:String(message || ""), timestamp:new Date().toISOString(), read:false });
+    state.notifications = state.notifications.slice(0,50);
+    saveNotifications();
+    renderNotifications();
+    return true;
+  }
+
+  function markAllNotificationsRead(){
+    state.notifications.forEach(function(n){ n.read = true; });
+    saveNotifications();
+    renderNotifications();
+  }
+
+  function clearNotifications(){
+    state.notifications = [];
+    saveNotifications();
+    renderNotifications();
+  }
+
+  function renderNotifications(){
+    var list = document.getElementById("notificationList");
+    var badge = document.getElementById("notificationBadge");
+    var sub = document.getElementById("notificationPanelSub");
+    if (!list) return;
+    var unread = state.notifications.filter(function(n){ return !n.read; }).length;
+    if (badge) { badge.textContent = unread > 99 ? "99+" : String(unread); badge.style.display = unread ? "inline-flex" : "none"; }
+    if (sub) sub.textContent = unread ? (unread + (unread === 1 ? " unread update" : " unread updates")) : "All updates have been read";
+    if (!state.notifications.length) { list.innerHTML = '<div class="notificationEmpty">No notifications yet.</div>'; return; }
+    list.innerHTML = state.notifications.map(function(n){
+      var type = n.type === "danger" ? "danger" : (n.type === "warn" ? "warn" : "info");
+      return '<div class="notificationItem '+type+(n.read ? "" : " unread")+'">' +
+        '<div class="notificationDot">'+notificationTypeIcon(type)+'</div>' +
+        '<div><div class="notificationItemTitle">'+escapeHtml(n.title)+'</div>' +
+        '<div class="notificationItemMessage">'+escapeHtml(n.message)+'</div>' +
+        '<div class="notificationItemTime">'+escapeHtml(notificationTime(n.timestamp))+'</div></div></div>';
+    }).join("");
+  }
+
+  function processRemoteConfigNotification(previous, next){
+    if (!next) return;
+    var updatedAt = String(next.updated_at || "");
+    if (!updatedAt) return;
+    var baseId = "remote-config-" + updatedAt;
+    if (next.announcement_enabled && String(next.announcement_text || "").trim()) {
+      addNotification(next.announcement_type || "info", "Admin announcement", String(next.announcement_text).trim(), baseId + "-announcement");
+    }
+    if (next.ai_enabled === false) {
+      addNotification("danger", "AI analysis disabled", next.ai_disabled_message || DEFAULT_APP_CONFIG.ai_disabled_message, baseId + "-ai-off");
+    } else if (previous && previous.ai_enabled === false && next.ai_enabled !== false) {
+      addNotification("info", "AI analysis enabled", "AI analysis is available again.", baseId + "-ai-on");
+    }
+    if (previous && previous.updated_at && previous.updated_at !== updatedAt && !next.announcement_enabled && next.ai_enabled !== false && previous.ai_enabled !== next.ai_enabled) {
+      addNotification("info", "Remote settings updated", "Tracker remote settings were updated.", baseId + "-general");
+    }
+  }
+
+  function ensureVersionNotification(){
+    addNotification("info", "Tracker updated", "JEE Test Tracker is now running v" + APP_VERSION + ".", "app-version-" + APP_VERSION);
+  }
+
   async function loadRemoteConfig(){
-    if (!sb) { state.appConfig = Object.assign({}, DEFAULT_APP_CONFIG); applyRemoteConfig(); return state.appConfig; }
+    var previous = state.appConfig ? Object.assign({}, state.appConfig) : null;
+    if (!sb) {
+      state.appConfig = Object.assign({}, DEFAULT_APP_CONFIG);
+      applyRemoteConfig();
+      return state.appConfig;
+    }
     try {
       var res = await sb.from("tracker_app_config").select("id,announcement_enabled,announcement_type,announcement_text,ai_enabled,ai_disabled_message,updated_at").eq("id",1).maybeSingle();
       if (res.error) throw res.error;
       state.appConfig = Object.assign({}, DEFAULT_APP_CONFIG, res.data || {});
+      processRemoteConfigNotification(previous, state.appConfig);
     } catch(e) {
       state.appConfig = state.appConfig || Object.assign({}, DEFAULT_APP_CONFIG);
       console.warn("Remote config unavailable:", e);
@@ -1062,28 +1201,33 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     return state.appConfig;
   }
 
-  var ADMIN_OWNER_UID = "6164f9f6-0953-43b9-a3c8-7b59ce633259";
+  var PRIMARY_ADMIN_UID = "6164f9f6-0953-43b9-a3c8-7b59ce633259";
 
   async function loadAdminState(){
     state.isAdmin = false;
     var tab = document.getElementById("adminTabBtn");
     if (tab) tab.style.display = "none";
     if (!sb || !state.user) return false;
+
+    // Owner fallback: keep the Control Center visible for the account owner even
+    // if the admin-row read is temporarily blocked/missing. Supabase RLS still
+    // protects all writes to tracker_app_config, so visibility is not write access.
+    if (String(state.user.id || "").toLowerCase() === PRIMARY_ADMIN_UID.toLowerCase()) {
+      state.isAdmin = true;
+      if (tab) tab.style.display = "";
+    }
+
     try {
       var res = await sb.from("tracker_admins").select("user_id").eq("user_id", state.user.id).maybeSingle();
       if (!res.error && res.data) {
         state.isAdmin = true;
-      } else if (state.user.id === ADMIN_OWNER_UID) {
-        // Owner fallback keeps the Control Center visible if the admin-row SELECT
-        // policy is temporarily unavailable. Supabase RLS still protects writes.
-        state.isAdmin = true;
-        console.warn("Admin row could not be read; using configured owner UID fallback.");
+        if (tab) tab.style.display = "";
+      } else if (res.error) {
+        console.warn("Admin-row check failed; owner fallback remains active if this is the owner account:", res.error);
       }
     } catch(e) {
-      if (state.user.id === ADMIN_OWNER_UID) state.isAdmin = true;
-      console.warn("Admin check failed:", e);
+      console.warn("Admin check failed; owner fallback remains active if this is the owner account:", e);
     }
-    if (tab) tab.style.display = state.isAdmin ? "" : "none";
     return state.isAdmin;
   }
 
@@ -1132,7 +1276,9 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     };
     var res=await sb.from("tracker_app_config").upsert(next,{onConflict:"id"});
     if(res.error) throw res.error;
+    var previous = state.appConfig ? Object.assign({}, state.appConfig) : null;
     state.appConfig=Object.assign({},DEFAULT_APP_CONFIG,next);
+    processRemoteConfigNotification(previous, state.appConfig);
     applyRemoteConfig();
     toast("Remote settings saved");
   }
@@ -1498,7 +1644,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
 
   async function signOut(){
     if (sb) await sb.auth.signOut();
-    state.user = null; state.cloud = false; state.tests = loadLocal().map(normalizeTest);
+    state.user = null; state.cloud = false; loadNotifications(); state.tests = loadLocal().map(normalizeTest);
     if (state.realtime) { try { await sb.removeChannel(state.realtime); } catch(e){} state.realtime = null; }
     setAccountButton(); render(); toast("Signed out");
   }
@@ -1534,7 +1680,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
   }
 
   async function onSignedIn(user){
-    state.user = user; state.cloud = true; setAccountButton();
+    state.user = user; state.cloud = true; loadNotifications(); ensureVersionNotification(); setAccountButton();
     try {
       await migrateLocalToCloud();
       state.tests = await loadCloudTests();
@@ -1575,7 +1721,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       sb.auth.onAuthStateChange(function(event, session){
         setTimeout(async function(){
           if (session && session.user) await onSignedIn(session.user);
-          else { state.user = null; state.cloud = false; setAccountButton(); state.tests = loadLocal().map(normalizeTest); render(); }
+          else { state.user = null; state.cloud = false; loadNotifications(); setAccountButton(); state.tests = loadLocal().map(normalizeTest); render(); }
         }, 0);
       });
     } catch(e) { state.ready = true; setAccountButton(); render(); }
@@ -2637,7 +2783,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     return count;
   }
 
-  async function analyzeTestAI(testId, mode){
+  async function analyzeTestAI(testId){
     if (!state.user || !sb || !testId) return null;
     var sessionRes = await sb.auth.getSession();
     var token = sessionRes.data && sessionRes.data.session ? sessionRes.data.session.access_token : null;
@@ -2645,7 +2791,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     var res = await fetch(SUPABASE_URL + "/functions/v1/analyze-test", {
       method:"POST",
       headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+token, "apikey":SUPABASE_PUBLISHABLE_KEY },
-      body:JSON.stringify({test_id:testId, mode:mode || "automatic"})
+      body:JSON.stringify({test_id:testId})
     });
     var data = await res.json().catch(function(){return {};});
     if (!res.ok) throw new Error(data.error || "AI analysis failed");
@@ -3015,7 +3161,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
             } else {
               toast("Images uploaded — analyzing all mistakes together…");
             try {
-              await withTimeout(analyzeTestAI(t.id, "automatic"), 30000, "AI analysis timed out. The test was saved and the images were uploaded.");
+              await withTimeout(analyzeTestAI(t.id), 30000, "AI analysis timed out. The test was saved and the images were uploaded.");
             } catch(aiErr) {
               toast("Test saved, but AI analysis failed: " + (aiErr.message || "unknown error"));
             }
@@ -3098,7 +3244,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
         btn.textContent = "Analyzing…";
         statusEl.textContent = "Sending the existing stored images to Gemini…";
         try {
-          await analyzeTestAI(testId, "manual");
+          await analyzeTestAI(testId);
           statusEl.textContent = "AI analysis request completed. Refreshing status…";
           await refreshAIInsights();
           setTimeout(function(){
@@ -3496,6 +3642,32 @@ Mistakes: Physics: sign error in kinematics"></textarea>
 
   // Keep AI retry status visible without requiring Supabase to be opened.
   setInterval(function(){ if (state.user && state.ready) refreshAIInsights(); }, 30000);
+
+  // Single source of truth for the displayed application version.
+  document.title = "JEE Test Tracker v" + APP_VERSION;
+  var versionEl = document.getElementById("appVersion");
+  if (versionEl) versionEl.textContent = "v" + APP_VERSION;
+  loadNotifications();
+  ensureVersionNotification();
+
+  // Notification interactions.
+  document.getElementById("notificationBell").addEventListener("click", function(e){
+    e.stopPropagation();
+    state.notificationOpen = !state.notificationOpen;
+    var panel = document.getElementById("notificationPanel");
+    if (panel) panel.classList.toggle("open", state.notificationOpen);
+    if (state.notificationOpen) markAllNotificationsRead();
+  });
+  document.getElementById("notificationsReadBtn").addEventListener("click", function(e){ e.stopPropagation(); markAllNotificationsRead(); });
+  document.getElementById("notificationsClearBtn").addEventListener("click", function(e){ e.stopPropagation(); clearNotifications(); });
+  document.addEventListener("click", function(e){
+    var wrap = document.getElementById("notificationWrap");
+    if (state.notificationOpen && wrap && !wrap.contains(e.target)) {
+      state.notificationOpen = false;
+      var panel = document.getElementById("notificationPanel");
+      if (panel) panel.classList.remove("open");
+    }
+  });
 
   initDb().catch(function(){
     state.tests = loadLocal().map(normalizeTest);
