@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>JEE Test Tracker v1.5.4</title>
-<!-- VERSION: 1.5.3 | Adds reusable AI analysis trigger for already-uploaded mistake images. -->
+<!-- VERSION: 1.6.0 | Adds remote control center and live website/AI configuration. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -320,6 +320,20 @@ header .btnrow { gap: 7px; }
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
+#remoteAnnouncement { display:none; margin:0 0 14px; padding:11px 14px; border:1px solid var(--border); border-radius:13px; background:var(--surface); font-size:13px; line-height:1.45; }
+#remoteAnnouncement.show { display:flex; align-items:flex-start; gap:10px; }
+#remoteAnnouncement .remoteIcon { font-weight:800; }
+#remoteAnnouncement.warn { border-color:rgba(240,164,75,.35); background:rgba(240,164,75,.08); }
+#remoteAnnouncement.danger { border-color:rgba(220,70,70,.38); background:rgba(220,70,70,.08); }
+#remoteAnnouncement.info { border-color:rgba(90,150,255,.30); background:rgba(90,150,255,.07); }
+.adminGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.adminField { display:flex; flex-direction:column; gap:6px; }
+.adminField label { font-size:12px; font-weight:700; color:var(--text-dim); }
+.adminField textarea { min-height:92px; resize:vertical; }
+.adminToggle { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:var(--surface-2); }
+.adminToggle input { width:18px; height:18px; }
+@media(max-width:800px){ .adminGrid{grid-template-columns:1fr;} }
+
 .tabpanel {
   grid-column: 2;
   min-width: 0;
@@ -452,7 +466,7 @@ tr:hover td { background:#171e27; }
 <div class="wrap">
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v1.4.0</span></h1>
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v1.6.0</span></h1>
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow">
@@ -465,6 +479,8 @@ tr:hover td { background:#171e27; }
     </div>
   </header>
 
+  <div id="remoteAnnouncement" role="status"><span class="remoteIcon">!</span><span id="remoteAnnouncementText"></span></div>
+
   <div class="kpis" id="kpis"></div>
 
   <div class="tabnav" id="mainTabNav">
@@ -474,6 +490,7 @@ tr:hover td { background:#171e27; }
     <button class="tabbtn" data-tab="plan">Plan &amp; Mistakes</button>
     <button class="tabbtn" data-tab="tests">All Tests</button>
     <button class="tabbtn" data-tab="schedule">Schedule</button>
+    <button class="tabbtn" data-tab="admin" id="adminTabBtn" style="display:none;">Control Center</button>
   </div>
 
   <div class="tabpanel" data-panel="overview">
@@ -614,6 +631,49 @@ tr:hover td { background:#171e27; }
       <div class="sectionTitle">Calendar revision automation</div>
       <div class="hint" style="color:var(--text-dim);font-size:12px;margin-bottom:8px;">After Calendar is re-authorized with write access, the tracker can insert revision blocks from your current plan.</div>
       <div id="calendarAutomationContent"></div>
+    </div>
+  </div>
+
+
+  <div class="tabpanel" data-panel="admin" style="display:none;">
+    <div class="card">
+      <div class="sectionTitle">Remote Control Center</div>
+      <div class="hint" style="color:var(--text-dim);font-size:12px;margin-bottom:12px;">Changes here are stored in Supabase and appear in the tracker without downloading or pushing a new HTML file.</div>
+      <div id="adminConfigStatus" style="font-size:12px;color:var(--text-dim);margin-bottom:12px;"></div>
+      <div class="adminGrid">
+        <div class="adminField">
+          <label>Website announcement</label>
+          <div class="adminToggle"><span>Show announcement to users</span><input type="checkbox" id="adminAnnouncementEnabled"></div>
+        </div>
+        <div class="adminField">
+          <label>Announcement type</label>
+          <select id="adminAnnouncementType"><option value="info">Info</option><option value="warn">Warning</option><option value="danger">Important</option></select>
+        </div>
+        <div class="adminField" style="grid-column:1/-1;">
+          <label>Announcement text</label>
+          <textarea id="adminAnnouncementText" placeholder="Example: AI analysis is temporarily unavailable while Gemini is being fixed."></textarea>
+        </div>
+        <div class="adminField">
+          <label>AI system</label>
+          <div class="adminToggle"><span>Allow new AI analysis and automatic retries</span><input type="checkbox" id="adminAIEnabled"></div>
+        </div>
+        <div class="adminField">
+          <label>AI disabled message</label>
+          <textarea id="adminAIDisabledMessage" placeholder="Example: AI analysis is temporarily disabled. Your images are still being saved."></textarea>
+        </div>
+      </div>
+      <div class="btnrow" style="margin-top:14px;">
+        <button class="primary" id="adminSaveBtn">Save changes</button>
+        <button class="ghost" id="adminReloadBtn">Reload</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="sectionTitle">What this controls</div>
+      <div style="font-size:13px;line-height:1.6;color:var(--text-dim);">
+        <div><b>AI system OFF</b> — the tracker will still save mistake images, but it will not send them to Gemini and scheduled retries will pause.</div>
+        <div><b>Announcement ON</b> — the message appears at the top of the tracker for signed-in and signed-out visitors.</div>
+        <div><b>Code changes</b> — changing the actual website code still requires a deployment; these controls are for operational changes that should happen immediately.</div>
+      </div>
     </div>
   </div>
 
@@ -958,7 +1018,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
 <script>
 (function(){
   "use strict";
-  var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalCalendars: {}, scheduleWeekStart: null };
+  var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null };
   var LS_KEY = "jee_test_tracker_v1";
 
   // ===== ONLINE CONFIG =====
@@ -985,6 +1045,92 @@ Mistakes: Physics: sign error in kinematics"></textarea>
   }
 
   function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
+
+  var DEFAULT_APP_CONFIG = { id:1, announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
+
+  async function loadRemoteConfig(){
+    if (!sb) { state.appConfig = Object.assign({}, DEFAULT_APP_CONFIG); applyRemoteConfig(); return state.appConfig; }
+    try {
+      var res = await sb.from("tracker_app_config").select("id,announcement_enabled,announcement_type,announcement_text,ai_enabled,ai_disabled_message,updated_at").eq("id",1).maybeSingle();
+      if (res.error) throw res.error;
+      state.appConfig = Object.assign({}, DEFAULT_APP_CONFIG, res.data || {});
+    } catch(e) {
+      state.appConfig = state.appConfig || Object.assign({}, DEFAULT_APP_CONFIG);
+      console.warn("Remote config unavailable:", e);
+    }
+    applyRemoteConfig();
+    return state.appConfig;
+  }
+
+  async function loadAdminState(){
+    state.isAdmin = false;
+    var tab = document.getElementById("adminTabBtn");
+    if (tab) tab.style.display = "none";
+    if (!sb || !state.user) return false;
+    try {
+      var res = await sb.from("tracker_admins").select("user_id").eq("user_id", state.user.id).maybeSingle();
+      if (!res.error && res.data) {
+        state.isAdmin = true;
+        if (tab) tab.style.display = "";
+      }
+    } catch(e) { console.warn("Admin check failed:", e); }
+    return state.isAdmin;
+  }
+
+  function applyRemoteConfig(){
+    var cfg = state.appConfig || DEFAULT_APP_CONFIG;
+    var banner = document.getElementById("remoteAnnouncement");
+    var text = document.getElementById("remoteAnnouncementText");
+    if (banner && text) {
+      var show = !!cfg.announcement_enabled && String(cfg.announcement_text || "").trim();
+      banner.className = show ? "show " + (cfg.announcement_type || "info") : "";
+      text.textContent = show ? String(cfg.announcement_text) : "";
+    }
+    var adminTab = document.getElementById("adminTabBtn");
+    if (adminTab) adminTab.style.display = state.isAdmin ? "" : "none";
+    var aiBtns = document.querySelectorAll("#detailAnalyzeAIBtn");
+    for (var i=0;i<aiBtns.length;i++) {
+      if (!cfg.ai_enabled) { aiBtns[i].disabled = true; aiBtns[i].title = cfg.ai_disabled_message || "AI analysis is temporarily disabled."; }
+    }
+    var status = document.getElementById("detailAIStatus");
+    if (status && !cfg.ai_enabled) status.textContent = cfg.ai_disabled_message || "AI analysis is temporarily disabled.";
+    var adminStatus = document.getElementById("adminConfigStatus");
+    if (adminStatus && state.isAdmin) adminStatus.textContent = "AI is currently " + (cfg.ai_enabled ? "enabled" : "disabled") + ".";
+  }
+
+  function fillAdminForm(){
+    var cfg = state.appConfig || DEFAULT_APP_CONFIG;
+    var a=document.getElementById("adminAnnouncementEnabled"), t=document.getElementById("adminAnnouncementText"), ty=document.getElementById("adminAnnouncementType"), ai=document.getElementById("adminAIEnabled"), msg=document.getElementById("adminAIDisabledMessage");
+    if(a) a.checked=!!cfg.announcement_enabled;
+    if(t) t.value=cfg.announcement_text || "";
+    if(ty) ty.value=cfg.announcement_type || "info";
+    if(ai) ai.checked=cfg.ai_enabled !== false;
+    if(msg) msg.value=cfg.ai_disabled_message || DEFAULT_APP_CONFIG.ai_disabled_message;
+  }
+
+  async function saveRemoteConfig(){
+    if (!state.isAdmin || !sb || !state.user) throw new Error("Admin access required");
+    var next = {
+      id:1,
+      announcement_enabled:!!document.getElementById("adminAnnouncementEnabled").checked,
+      announcement_type:document.getElementById("adminAnnouncementType").value || "info",
+      announcement_text:document.getElementById("adminAnnouncementText").value.trim(),
+      ai_enabled:!!document.getElementById("adminAIEnabled").checked,
+      ai_disabled_message:document.getElementById("adminAIDisabledMessage").value.trim() || DEFAULT_APP_CONFIG.ai_disabled_message,
+      updated_at:new Date().toISOString(),
+      updated_by:state.user.id
+    };
+    var res=await sb.from("tracker_app_config").upsert(next,{onConflict:"id"});
+    if(res.error) throw res.error;
+    state.appConfig=Object.assign({},DEFAULT_APP_CONFIG,next);
+    applyRemoteConfig();
+    toast("Remote settings saved");
+  }
+
+  function startRemoteConfigRefresh(){
+    if(state.appConfigTimer) clearInterval(state.appConfigTimer);
+    state.appConfigTimer=setInterval(function(){ loadRemoteConfig(); },30000);
+  }
 
   var GOALS_KEY = "jee_goals_v1";
   var DEFAULT_GOALS = { targetPercentile: 99.9, mainDate: "2028-01-31", advDate: "2028-05-31" };
@@ -1371,6 +1517,9 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       .on("postgres_changes", { event: "*", schema: "public", table: "tracker_goals", filter: "user_id=eq." + state.user.id }, async function(){
         try { await loadCloudGoals(); render(); } catch(e){}
       })
+      .on("postgres_changes", { event: "*", schema: "public", table: "tracker_app_config" }, async function(){
+        try { await loadRemoteConfig(); } catch(e){}
+      })
       .subscribe();
   }
 
@@ -1381,8 +1530,13 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       state.tests = await loadCloudTests();
       saveLocal(state.tests);
       await loadCloudGoals();
+      await loadRemoteConfig();
+      await loadAdminState();
+      applyRemoteConfig();
+      if (state.isAdmin) fillAdminForm();
       subscribeRealtime();
       state.ready = true; render(); refreshAIInsights();
+      startRemoteConfigRefresh();
       // Calendar restoration is deliberately detached from the initial app boot.
       // The tracker must render even if Calendar auth/network is slow or fails.
       setTimeout(function(){
@@ -1404,6 +1558,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       return;
     }
     try {
+      await loadRemoteConfig();
       var sessionRes = await sb.auth.getSession();
       if (sessionRes.data && sessionRes.data.session && sessionRes.data.session.user) await onSignedIn(sessionRes.data.session.user);
       else { state.ready = true; setAccountButton(); render(); }
@@ -1841,6 +1996,13 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     }
   }
 
+  function renderAdminPanel(){
+    if(!state.isAdmin) return;
+    fillAdminForm();
+    var status=document.getElementById("adminConfigStatus");
+    if(status){ var cfg=state.appConfig||DEFAULT_APP_CONFIG; status.textContent="AI is currently "+(cfg.ai_enabled?"enabled":"disabled")+". Last remote update: "+(cfg.updated_at?new Date(cfg.updated_at).toLocaleString():"not recorded")+"."; }
+  }
+
   function renderPanel(panel, tests){
     if (!panel || state.renderedPanels[panel]) return;
     var stepsByPanel = {
@@ -1849,7 +2011,8 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       analysis: [renderTierChart, renderSkipChart, renderFatigue, renderTimeTable, renderCrossTestPatterns, renderTrajectory],
       plan: [renderPlan, renderMistakes, renderSpacedMistakes, renderAutoTags, renderCalendarAutomation],
       tests: [renderHistory],
-      schedule: [renderSchedule]
+      schedule: [renderSchedule],
+      admin: [renderAdminPanel]
     };
     var steps = stepsByPanel[panel] || [];
     var errors = [];
@@ -2837,11 +3000,15 @@ Mistakes: Physics: sign error in kinematics"></textarea>
         try {
           var uploaded = await uploadMistakeImages(t.id, imageFiles);
           if (uploaded) {
-            toast("Images uploaded — analyzing all mistakes together…");
+            if (state.appConfig && state.appConfig.ai_enabled === false) {
+              toast("Images saved. AI is currently disabled.");
+            } else {
+              toast("Images uploaded — analyzing all mistakes together…");
             try {
               await withTimeout(analyzeTestAI(t.id), 30000, "AI analysis timed out. The test was saved and the images were uploaded.");
             } catch(aiErr) {
               toast("Test saved, but AI analysis failed: " + (aiErr.message || "unknown error"));
+            }
             }
           }
         } catch(uploadErr) {
@@ -2893,6 +3060,11 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     if (!statusEl || !btn) return;
     btn.disabled = true;
     statusEl.textContent = "Checking stored mistake images…";
+    if (state.appConfig && state.appConfig.ai_enabled === false) {
+      statusEl.textContent = state.appConfig.ai_disabled_message || "AI analysis is temporarily disabled.";
+      btn.disabled = true;
+      return;
+    }
     if (!state.user || !sb) {
       statusEl.textContent = "Sign in to use AI analysis.";
       return;
@@ -3272,6 +3444,19 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       }
     };
     reader.readAsText(file);
+  });
+
+  document.getElementById("adminSaveBtn").addEventListener("click", async function(){
+    var btn=this;
+    if(!state.isAdmin) return;
+    btn.disabled=true;
+    try { await saveRemoteConfig(); renderAdminPanel(); }
+    catch(e){ toast("Could not save remote settings: "+(e.message||"unknown error")); }
+    finally { btn.disabled=false; }
+  });
+  document.getElementById("adminReloadBtn").addEventListener("click", async function(){
+    try { await loadRemoteConfig(); renderAdminPanel(); toast("Remote settings reloaded"); }
+    catch(e){ toast("Could not reload settings: "+(e.message||"unknown error")); }
   });
 
   document.getElementById("accountBtn").addEventListener("click", function(){
