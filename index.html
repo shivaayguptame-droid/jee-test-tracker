@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>JEE Test Tracker v1.6.1</title>
-<!-- VERSION: 1.6.1 | Fixes admin Control Center initialization after sign-in. -->
+<title>JEE Test Tracker v1.6.2</title>
+<!-- VERSION: 1.6.2 | Makes the owner Control Center visible reliably while keeping Supabase RLS as the write-security layer. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -466,7 +466,7 @@ tr:hover td { background:#171e27; }
 <div class="wrap">
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v1.6.1</span></h1>
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v1.6.2</span></h1>
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow">
@@ -1062,18 +1062,33 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     return state.appConfig;
   }
 
+  var PRIMARY_ADMIN_UID = "6164f9f6-0953-43b9-a3c8-7b59ce633259";
+
   async function loadAdminState(){
     state.isAdmin = false;
     var tab = document.getElementById("adminTabBtn");
     if (tab) tab.style.display = "none";
     if (!sb || !state.user) return false;
+
+    // Owner fallback: keep the Control Center visible for the account owner even
+    // if the admin-row read is temporarily blocked/missing. Supabase RLS still
+    // protects all writes to tracker_app_config, so visibility is not write access.
+    if (String(state.user.id || "").toLowerCase() === PRIMARY_ADMIN_UID.toLowerCase()) {
+      state.isAdmin = true;
+      if (tab) tab.style.display = "";
+    }
+
     try {
       var res = await sb.from("tracker_admins").select("user_id").eq("user_id", state.user.id).maybeSingle();
       if (!res.error && res.data) {
         state.isAdmin = true;
         if (tab) tab.style.display = "";
+      } else if (res.error) {
+        console.warn("Admin-row check failed; owner fallback remains active if this is the owner account:", res.error);
       }
-    } catch(e) { console.warn("Admin check failed:", e); }
+    } catch(e) {
+      console.warn("Admin check failed; owner fallback remains active if this is the owner account:", e);
+    }
     return state.isAdmin;
   }
 
