@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>JEE Test Tracker v1.5.3</title>
+<title>JEE Test Tracker v1.5.4</title>
 <!-- VERSION: 1.5.3 | Adds reusable AI analysis trigger for already-uploaded mistake images. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -135,6 +135,15 @@
   input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
   textarea { resize: vertical; min-height: 56px; }
   .sectionBlock { border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin-top: 10px; }
+  .mistakeImageGrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-top:10px; }
+  .mistakeImageCard { border:1px solid var(--border); border-radius:10px; overflow:hidden; background:var(--surface-2); cursor:pointer; transition:transform .12s ease,border-color .12s ease; }
+  .mistakeImageCard:hover { transform:translateY(-1px); border-color:var(--accent); }
+  .mistakeImageCard img { display:block; width:100%; height:150px; object-fit:cover; background:#0b0f14; }
+  .mistakeImageMeta { padding:7px 8px; font-size:11px; color:var(--text-dim); display:flex; justify-content:space-between; gap:8px; }
+  .imageViewerBg { position:fixed; inset:0; z-index:90; display:none; align-items:center; justify-content:center; padding:18px; background:rgba(0,0,0,.86); }
+  .imageViewerBg.open { display:flex; }
+  .imageViewerWrap { max-width:min(1100px,96vw); max-height:94vh; position:relative; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .imageViewerWrap img { max-width:96vw; max-height:86vh; object-fit:contain; border-radius:10px; box-shadow:0 18px 60px rgba(0,0,0,.5); }
   .sectionBlock h4 { margin: 0 0 8px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .03em; color: var(--accent); }
   .modalFoot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
   .toast { position: fixed; bottom: calc(20px + env(safe-area-inset-bottom,0px)); left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 999px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 100; }
@@ -854,6 +863,15 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     <div class="sectionBlock" style="margin-top:16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
         <div>
+          <div class="sectionTitle" style="font-size:13px;margin:0;">Stored mistake images</div>
+          <div id="detailMistakeImagesStatus" style="font-size:11.5px;color:var(--text-dim);margin-top:4px;">Loading stored images…</div>
+        </div>
+      </div>
+      <div id="detailMistakeImages" class="mistakeImageGrid"></div>
+    </div>
+    <div class="sectionBlock" style="margin-top:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <div>
           <div class="sectionTitle" style="font-size:13px;margin:0;">AI mistake analysis</div>
           <div id="detailAIStatus" style="font-size:11.5px;color:var(--text-dim);margin-top:4px;">Checking stored mistake images…</div>
         </div>
@@ -864,6 +882,15 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       <button type="button" class="ghost" id="detailCloseBtn">Close</button>
       <button type="button" class="primary" id="detailEditBtn">Edit this test</button>
     </div>
+  </div>
+</div>
+
+<!-- Mistake image viewer -->
+<div class="imageViewerBg" id="mistakeImageViewerBg">
+  <div class="imageViewerWrap">
+    <button type="button" class="ghost" id="mistakeImageViewerClose" style="position:absolute;right:0;top:-4px;z-index:2;background:rgba(17,22,30,.9);">Close</button>
+    <img id="mistakeImageViewerImg" alt="Mistake question">
+    <div id="mistakeImageViewerMeta" style="font-size:12px;color:#d7dde6;"></div>
   </div>
 </div>
 
@@ -2455,7 +2482,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
   async function refreshAIInsights(){
     var el = document.getElementById("aiInsightContent");
     if (!el || !state.user || !sb) return;
-    var res = await sb.from("tracker_ai_insights").select("test_id,status,retry_count,next_retry_at,last_error,mistakes_analysis,plan_analysis,updated_at,completed_at").eq("user_id",state.user.id).order("updated_at",{ascending:false});
+    var res = await sb.from("tracker_ai_insights").select("test_id,status,retry_count,next_retry_at,retry_deadline_at,last_error,mistakes_analysis,plan_analysis,updated_at,completed_at").eq("user_id",state.user.id).order("updated_at",{ascending:false});
     if (res.error) return;
     var rows = res.data || [];
     // Make AI-identified mistakes available to the same analytics used for manual mistakes.
@@ -2473,7 +2500,17 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       var detail = "";
       if (status === "retry_waiting" && r.next_retry_at) {
         var d = new Date(r.next_retry_at);
-        if (!isNaN(d.getTime())) detail = " · next attempt " + d.toLocaleString([], {dateStyle:"short", timeStyle:"short"});
+        if (!isNaN(d.getTime())) {
+          detail = d.getTime() <= Date.now()
+            ? " · retry is due"
+            : " · next attempt " + d.toLocaleString([], {dateStyle:"short", timeStyle:"short"});
+        }
+      }
+      if (status === "failed" && r.retry_deadline_at) {
+        var rd = new Date(r.retry_deadline_at);
+        if (!isNaN(rd.getTime()) && r.last_error && /timed out|503|busy|temporarily unavailable|429/i.test(String(r.last_error))) {
+          detail = " · Gemini unavailable during the 2-hour retry window";
+        }
       }
       if (status === "failed" && r.last_error) detail = " · " + String(r.last_error).slice(0,180);
       return '<span class="pill '+cls+'">AI: '+label+'</span><span style="font-size:11.5px;color:var(--text-dim);margin-left:7px;">'+detail+'</span>';
@@ -2899,6 +2936,70 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     }
   }
 
+  async function loadDetailMistakeImages(testId){
+    var grid = document.getElementById("detailMistakeImages");
+    var statusEl = document.getElementById("detailMistakeImagesStatus");
+    if (!grid || !statusEl) return;
+    grid.innerHTML = "";
+    statusEl.textContent = "Loading stored images…";
+    if (!state.user || !sb) {
+      statusEl.textContent = "Sign in to view stored images.";
+      return;
+    }
+    try {
+      var res = await sb.from("tracker_mistakes")
+        .select("id,question_number,subject,image_path,created_at")
+        .eq("user_id", state.user.id)
+        .eq("test_id", testId)
+        .not("image_path", "is", null)
+        .order("created_at", {ascending:true});
+      if (res.error) throw res.error;
+      var rows = res.data || [];
+      if (!rows.length) {
+        statusEl.textContent = "No stored mistake images for this test.";
+        return;
+      }
+      var cards = [];
+      for (var i=0; i<rows.length; i++) {
+        var row = rows[i];
+        var signed = await sb.storage.from("mistake-images").createSignedUrl(row.image_path, 3600);
+        if (signed.error || !signed.data || !signed.data.signedUrl) continue;
+        var label = row.question_number ? "Q" + row.question_number : "Mistake " + (i+1);
+        if (row.subject) label += " · " + row.subject;
+        cards.push('<div class="mistakeImageCard" data-img-url="'+escapeHtml(signed.data.signedUrl)+'" data-img-meta="'+escapeHtml(label)+'"><img src="'+escapeHtml(signed.data.signedUrl)+'" alt="'+escapeHtml(label)+'" loading="lazy"><div class="mistakeImageMeta"><span>'+escapeHtml(label)+'</span><span>View</span></div></div>');
+      }
+      if (!cards.length) {
+        statusEl.textContent = "The image records exist, but their signed URLs could not be created.";
+        return;
+      }
+      grid.innerHTML = cards.join("");
+      statusEl.textContent = cards.length + " stored mistake image" + (cards.length === 1 ? "" : "s") + ". Click an image to view it larger.";
+      Array.prototype.forEach.call(grid.querySelectorAll(".mistakeImageCard"), function(card){
+        card.onclick = function(){
+          var viewer = document.getElementById("mistakeImageViewerBg");
+          var img = document.getElementById("mistakeImageViewerImg");
+          var meta = document.getElementById("mistakeImageViewerMeta");
+          if (!viewer || !img) return;
+          img.src = card.getAttribute("data-img-url") || "";
+          if (meta) meta.textContent = card.getAttribute("data-img-meta") || "";
+          viewer.classList.add("open");
+        };
+      });
+    } catch (e) {
+      statusEl.textContent = "Could not load stored mistake images: " + (e.message || "unknown error");
+    }
+  }
+
+  function closeMistakeImageViewer(){
+    var viewer = document.getElementById("mistakeImageViewerBg");
+    var img = document.getElementById("mistakeImageViewerImg");
+    if (viewer) viewer.classList.remove("open");
+    if (img) img.removeAttribute("src");
+  }
+
+  document.getElementById("mistakeImageViewerClose").onclick = closeMistakeImageViewer;
+  document.getElementById("mistakeImageViewerBg").addEventListener("click", function(e){ if (e.target === this) closeMistakeImageViewer(); });
+
   function openDetail(t){
     document.getElementById("detailTitle").textContent = t.name;
     document.getElementById("detailSub").textContent = t.date + (t.type ? " · " + t.type : "") + (t.markingScheme ? " · " + t.markingScheme : "") + (t.sessionGroup ? " · Session: " + t.sessionGroup + (t.sessionOrder?" (paper "+t.sessionOrder+")":"") : "") + (t.tags && t.tags.length ? " · Tags: " + t.tags.join(", ") : "") + (t.autoTags && t.autoTags.length ? " · Auto: " + t.autoTags.join(", ") : "");
@@ -2954,6 +3055,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
       openModal(t);
     };
     document.getElementById("detailModalBg").classList.add("open");
+    loadDetailMistakeImages(t.id);
     prepareDetailAI(t.id);
   }
   document.getElementById("detailCloseBtn").onclick = function(){ document.getElementById("detailModalBg").classList.remove("open"); };
