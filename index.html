@@ -1720,7 +1720,11 @@ Mistakes: Physics: sign error in kinematics"></textarea>
   async function onSignedIn(user){
     state.user = user; state.cloud = true; loadNotifications(); ensureVersionNotification(); setAccountButton();
     try {
-      await migrateLocalToCloud();
+      // Do not automatically upload browser-local tests when a user signs in.
+      // localStorage is shared by accounts on the same browser/origin, so an
+      // alternate account could otherwise try to upsert tests belonging to
+      // another account and hit tracker_tests RLS onConflict=UPDATE.
+      // Old-data migration is intentionally explicit through "Import Old Data".
       state.tests = await loadCloudTests();
       saveLocal(state.tests);
       await loadCloudGoals();
