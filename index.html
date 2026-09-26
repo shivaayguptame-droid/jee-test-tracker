@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>JEE Test Tracker v1.7.0</title>
-<!-- VERSION: 1.7.0 | Adds persistent notification center/bell, deduplicated remote notifications, and a single app-version source. -->
+<title>JEE Test Tracker v1.7.1</title>
+<!-- VERSION: 1.7.1 | Mobile-first responsive experience with touch navigation, responsive forms, modals, charts, and theme-preserving phone layouts. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -766,6 +766,106 @@ body { font-family:var(--font-ui); }
   :root[data-theme="light"] #kpis { grid-template-columns:1fr; }
 }
 
+
+/* v1.7.1 — Mobile Experience Update
+   The app remains one responsive document: desktop/tablet/phone are selected by viewport width.
+   Theme identities are preserved; Terminal keeps CRT effects while non-Terminal themes stay clean.
+*/
+@media (max-width: 760px) {
+  html, body { width:100%; max-width:100%; overflow-x:hidden; }
+  body { -webkit-tap-highlight-color: transparent; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .wrap { width:100%; max-width:none; box-sizing:border-box; margin:0; padding:12px 12px calc(84px + env(safe-area-inset-bottom, 0px)); }
+
+  header { align-items:flex-start; gap:10px; margin-bottom:12px; }
+  header > div:first-child { min-width:0; flex:1 1 auto; }
+  h1 { font-size:26px; line-height:1.05; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sub { font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  /* Keep every header action reachable without allowing the page itself to overflow. */
+  .headerActions { width:100%; flex:0 0 100%; display:flex; flex-wrap:nowrap; gap:7px; overflow-x:auto; overflow-y:hidden; padding:2px 1px 6px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .headerActions::-webkit-scrollbar { display:none; }
+  .headerActions > button, .headerActions .notificationWrap { flex:0 0 auto; }
+  .headerActions button { min-height:44px; }
+  .notificationBell, .settingsButton { width:44px; height:44px; min-width:44px; }
+  .headerActions .notificationPanel { position:fixed; left:10px; right:10px; top:calc(60px + env(safe-area-inset-top, 0px)); width:auto; max-width:none; max-height:min(70vh,560px); z-index:100; }
+  .notificationPanelHead { gap:8px; }
+  .notificationPanelActions { flex-wrap:wrap; justify-content:flex-end; }
+
+  #remoteAnnouncement { margin-bottom:10px; }
+  .kpis { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:8px; margin-bottom:12px; }
+  .kpi { min-width:0; padding:12px 10px; }
+  .kpi .value { font-size:22px; }
+
+  /* Main tabs become an app-like bottom navigation. The row can be swiped horizontally. */
+  #mainTabNav { position:fixed; left:0; right:0; bottom:0; z-index:80; margin:0; padding:7px 8px calc(7px + env(safe-area-inset-bottom, 0px)); background:var(--nav-bg); border-top:1px solid var(--border); border-bottom:0; box-shadow:0 -8px 24px rgba(0,0,0,.18); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); overflow-x:auto; scrollbar-width:none; }
+  #mainTabNav::-webkit-scrollbar { display:none; }
+  #mainTabNav .tabbtn { flex:0 0 auto; min-width:82px; min-height:44px; padding:8px 10px; margin:0; border-bottom:2px solid transparent; border-radius:8px; font-size:12px; }
+  #mainTabNav .tabbtn.active { background:var(--active-bg); }
+
+  .tabpanel { width:100%; min-width:0; grid-column:1 !important; }
+  .card { width:100%; box-sizing:border-box; padding:14px; margin-bottom:10px; }
+  .grid2, .grid3 { grid-template-columns:1fr !important; }
+  .sectionTitle { line-height:1.25; }
+
+  /* Touch targets: controls remain comfortable without making the desktop UI larger. */
+  button, .tabbtn, input, select, textarea { min-height:44px; }
+  button.small, .small { min-height:38px; }
+  input, select, textarea { font-size:16px; padding:10px 11px; }
+  textarea { min-height:90px; }
+
+  .btnrow { gap:7px; }
+  .btnrow button { max-width:100%; }
+
+  /* Forms become single-column on narrow screens. */
+  .formgrid, .formgrid.thirds { grid-template-columns:1fr !important; }
+  .field.full { grid-column:auto; }
+
+  .tablewrap { width:100%; max-width:100%; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; border-radius:8px; }
+  table { min-width:640px; }
+  .tablewrap table { margin-bottom:0; }
+
+  /* Charts and canvases stay inside the viewport. */
+  canvas { max-width:100% !important; }
+  .chartBox, .chartWrap, .chartCard { max-width:100%; overflow:hidden; }
+
+  /* Modals use the available phone screen instead of a tiny desktop dialog. */
+  .modalBg { align-items:flex-start; padding:10px; padding-top:calc(10px + env(safe-area-inset-top, 0px)); padding-bottom:calc(10px + env(safe-area-inset-bottom, 0px)); }
+  .modal { width:100%; max-width:none; max-height:calc(100dvh - 20px); overflow-y:auto; box-sizing:border-box; padding:16px; margin:0; border-radius:12px; }
+
+  .settingsModal { width:100%; max-width:none; max-height:calc(100dvh - 20px); }
+  .settingsSide { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .settingsSide::-webkit-scrollbar { display:none; }
+  .settingsNavBtn { min-height:44px; }
+  .themeGrid { grid-template-columns:1fr !important; }
+
+  /* Calendar gets a usable phone viewport while preserving its horizontal timeline. */
+  .gcal-day-scroll { min-height:460px; max-height:calc(100dvh - 250px); overflow:auto; -webkit-overflow-scrolling:touch; }
+
+  .mistakeImageGrid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+  .mistakeImageCard img { width:100%; height:auto; }
+}
+
+@media (max-width: 480px) {
+  .wrap { padding-left:9px; padding-right:9px; }
+  h1 { font-size:23px; }
+  .kpis { grid-template-columns:1fr 1fr !important; }
+  .kpi .value { font-size:20px; }
+  .card { padding:12px; }
+  .sectionTitle { font-size:12px; }
+  .headerActions button { font-size:12px; }
+  #mainTabNav .tabbtn { min-width:74px; font-size:11px; padding-left:8px; padding-right:8px; }
+}
+
+@media (max-width: 360px) {
+  .kpis { grid-template-columns:1fr !important; }
+  h1 { font-size:21px; }
+  .wrap { padding-left:7px; padding-right:7px; }
+}
+
+@media (min-width: 761px) {
+  /* Desktop/tablet keeps the existing dashboard navigation and header behavior. */
+  #mainTabNav { position:static; }
+}
 </style>
 </head>
 <body>
@@ -1403,7 +1503,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "1.7.0";
+  var APP_VERSION = "1.7.1";
   var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   var LS_KEY = "jee_test_tracker_v1";
   var NOTIFICATIONS_KEY_BASE = "jee_tracker_notifications_v2_";
