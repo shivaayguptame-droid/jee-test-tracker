@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="terminal">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>JEE Test Tracker v1.6.3</title>
-<!-- VERSION: 1.6.3 | Adds persistent notification center/bell, deduplicated remote notifications, and a single app-version source. -->
+<title>JEE Test Tracker v1.7.0</title>
+<!-- VERSION: 1.7.0 | Adds persistent notification center/bell, deduplicated remote notifications, and a single app-version source. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,6 +12,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #050805;
@@ -48,19 +51,10 @@
     margin: 0;
     background-color: var(--bg);
     color: var(--text);
-    font-family: "Share Tech Mono", ui-monospace, "Courier New", monospace;
+    font-family: var(--font-ui);
     text-shadow: 0 0 2px rgba(57,255,106,.35);
     -webkit-font-smoothing: antialiased;
     position: relative;
-  }
-  body::before {
-    content: ""; position: fixed; inset: 0; z-index: 9999; pointer-events: none;
-    background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,.22) 3px, rgba(0,0,0,0) 4px);
-    mix-blend-mode: multiply;
-  }
-  body::after {
-    content: ""; position: fixed; inset: 0; z-index: 9998; pointer-events: none;
-    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,.45) 100%);
   }
   :root:not([data-theme="dark"]) body { background-image: none; }
   .wrap { max-width: 1080px; margin: 0 auto; padding: 20px 16px 60px; }
@@ -229,16 +223,30 @@
   --bad: #ff4d4d;
   --warn: #33e0ff;
   --radius: 0px;
+  --font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --header-bg: rgba(17,22,30,.94);
+  --nav-bg: rgba(17,22,30,.96);
+  --card-bg: linear-gradient(145deg, rgba(17,22,30,.98), rgba(20,26,35,.96));
+  --control-bg: #171d26;
+  --control-hover: #202733;
+  --control-border: #303a49;
+  --control-text: #d7dde5;
+  --input-bg: #0d1218;
+  --table-bg: #10151c;
+  --table-head-bg: #171e28;
+  --table-hover: #171e27;
+  --heading: #f2f4f7;
+  --primary-bg: linear-gradient(135deg, #39ff6a, #20c955);
+  --primary-text: #031108;
+  --primary-shadow: 0 5px 18px rgba(57,255,106,.18);
+  --active-bg: linear-gradient(90deg, rgba(57,255,106,.15), rgba(57,255,106,.04));
 }
 
 html { background: var(--bg); }
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 75% -10%, rgba(57,255,106,.08), transparent 32%),
-    radial-gradient(circle at 0% 45%, rgba(92,112,145,.07), transparent 28%),
-    var(--bg);
+  background:var(--bg);
   color: var(--text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -265,7 +273,7 @@ header {
   padding: 16px 18px;
   border: 1px solid var(--border);
   border-radius: 18px;
-  background: rgba(17,22,30,.94);
+  background: var(--header-bg);
   box-shadow: 0 14px 38px rgba(0,0,0,.24);
   backdrop-filter: blur(12px);
 }
@@ -305,7 +313,7 @@ header .btnrow { gap: 7px; }
   margin: 0;
   border: 1px solid var(--border);
   border-radius: 17px;
-  background: rgba(17,22,30,.96);
+  background: var(--nav-bg);
   box-shadow: 0 12px 30px rgba(0,0,0,.2);
   overflow-x: hidden;
   min-width: 0;
@@ -316,7 +324,7 @@ header .btnrow { gap: 7px; }
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1.3px;
-  color: #687386;
+  color: var(--text-dim);
 }
 #mainTabNav .tabbtn {
   width: 100%;
@@ -328,14 +336,14 @@ header .btnrow { gap: 7px; }
   border: 1px solid transparent;
   border-radius: 11px;
   background: transparent;
-  color: #9aa5b5;
+  color: var(--text-dim);
   font-weight: 600;
 }
-#mainTabNav .tabbtn:hover { background: #1a212b; color: #e9edf2; }
+#mainTabNav .tabbtn:hover { background: var(--control-hover); color: var(--text); }
 #mainTabNav .tabbtn.active {
-  background: linear-gradient(90deg, rgba(57,255,106,.15), rgba(57,255,106,.04));
-  border-color: rgba(57,255,106,.22);
-  color: #39ff6a;
+  background: var(--active-bg);
+  border-color: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--accent);
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
@@ -365,12 +373,12 @@ header .btnrow { gap: 7px; }
   padding: 18px;
   border: 1px solid var(--border);
   border-radius: 17px;
-  background: linear-gradient(145deg, rgba(17,22,30,.98), rgba(20,26,35,.96));
+  background: var(--card-bg);
   box-shadow: 0 10px 28px rgba(0,0,0,.16);
 }
-.card:hover { border-color: #344052; }
+.card:hover { border-color: var(--control-border); }
 .sectionTitle {
-  color: #f2f4f7;
+  color: var(--heading);
   font-size: 13px;
   font-weight: 750;
   letter-spacing: .15px;
@@ -386,36 +394,36 @@ button {
   font-weight: 650;
 }
 button.ghost {
-  background: #171d26;
-  border: 1px solid #303a49;
-  color: #d7dde5;
+  background: var(--control-bg);
+  border: 1px solid var(--control-border);
+  color: var(--control-text);
 }
-button.ghost:hover { background:#202733; border-color:#435064; }
+button.ghost:hover { background:var(--control-hover); border-color:var(--control-border); }
 button.primary {
-  background: linear-gradient(135deg, #f0a44b, #d8872f);
-  color: #17120c;
+  background: var(--primary-bg);
+  color: var(--primary-text);
   border: 0;
-  box-shadow: 0 5px 18px rgba(57,255,106,.18);
+  box-shadow: var(--primary-shadow);
 }
 button.primary:hover { filter: brightness(1.06); }
 
 input, select, textarea {
-  background: #0d1218 !important;
-  color: #edf1f5 !important;
-  border: 1px solid #303a49 !important;
+  background: var(--input-bg) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--control-border) !important;
   border-radius: 10px !important;
 }
 input:focus, select:focus, textarea:focus {
   outline: none;
-  border-color: rgba(57,255,106,.75) !important;
-  box-shadow: 0 0 0 3px rgba(57,255,106,.09);
+  border-color: color-mix(in srgb, var(--accent) 75%, transparent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 9%, transparent);
 }
 
 .tablewrap { border: 1px solid var(--border); border-radius: 12px; overflow:auto; }
-table { background: #10151c; }
-th { background:#171e28 !important; color:#aab4c3 !important; }
-td { border-color:#27303d !important; }
-tr:hover td { background:#171e27; }
+table { background: var(--table-bg); }
+th { background:var(--table-head-bg) !important; color:var(--text-dim) !important; }
+td { border-color:var(--control-border) !important; }
+tr:hover td { background:var(--table-hover); }
 
 .subnav {
   display:flex !important;
@@ -423,23 +431,23 @@ tr:hover td { background:#171e27; }
   position:static !important;
   padding:5px !important;
   margin-bottom:14px !important;
-  background:#10151c !important;
+  background:var(--table-bg) !important;
   border:1px solid var(--border) !important;
   border-radius:12px !important;
 }
-.subnav .subjectbtn { border-radius:9px; color:#8995a5; }
-.subnav .subjectbtn.active { background:#242c38; color:#39ff6a; }
+.subnav .subjectbtn { border-radius:9px; color:var(--text-dim); }
+.subnav .subjectbtn.active { background:var(--accent-soft); color:var(--accent); }
 
 .planText { line-height:1.65; }
-.empty { border:1px dashed #364151; border-radius:12px; background:#11161e; color:#7f8b9c; }
+.empty { border:1px dashed var(--control-border); border-radius:12px; background:var(--surface-2); color:var(--text-dim); }
 
 /* Calendar: make the horizontal timeline feel native to the new UI. */
 .gcal-nav { padding: 2px 0; }
 .gcal-nav button { min-height: 38px; }
 .gcal-hint { color:#778396; }
 .gcal-day {
-  background:#0d1218 !important;
-  border-color:#2c3644 !important;
+  background:var(--input-bg) !important;
+  border-color:var(--control-border) !important;
   border-radius:14px !important;
 }
 
@@ -479,13 +487,292 @@ tr:hover td { background:#171e27; }
   .card { padding:13px; border-radius:14px; }
 }
 
+
+/* ================================================================
+   v1.7.0 SETTINGS SYSTEM — universal, future-ready control center
+   ================================================================ */
+.settingsButton { min-width:42px; width:42px; height:40px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; }
+.settingsGlyph { font-size:18px; line-height:1; }
+.settingsModalBg { position:fixed; inset:0; z-index:140; display:none; align-items:center; justify-content:center; padding:22px; background:rgba(0,0,0,.66); backdrop-filter:blur(5px); }
+.settingsModalBg.open { display:flex; }
+.settingsModal { width:min(920px,96vw); max-height:min(760px,92vh); overflow:hidden; display:grid; grid-template-columns:220px minmax(0,1fr); background:var(--surface); border:1px solid var(--border); border-radius:18px; box-shadow:0 28px 90px rgba(0,0,0,.5); }
+.settingsSide { padding:14px; border-right:1px solid var(--border); background:color-mix(in srgb,var(--surface) 88%,var(--bg)); overflow:auto; }
+.settingsBrand { padding:8px 10px 14px; border-bottom:1px solid var(--border); margin-bottom:10px; }
+.settingsBrandTitle { font-size:16px; font-weight:800; color:var(--text); }
+.settingsBrandSub { font-size:10.5px; color:var(--text-dim); margin-top:3px; }
+.settingsNavBtn { width:100%; display:flex; align-items:center; gap:9px; text-align:left; border:1px solid transparent; border-radius:10px; padding:10px 11px; margin:3px 0; color:var(--text-dim); background:transparent; }
+.settingsNavBtn:hover { background:var(--accent-soft); color:var(--text); }
+.settingsNavBtn.active { background:var(--accent-soft); color:var(--accent); border-color:color-mix(in srgb,var(--accent) 30%,var(--border)); }
+.settingsContent { min-width:0; overflow:auto; }
+.settingsHead { position:sticky; top:0; z-index:2; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:17px 20px; border-bottom:1px solid var(--border); background:color-mix(in srgb,var(--surface) 94%,var(--bg)); }
+.settingsHead h2 { margin:0; font-family:var(--font-display); font-size:21px; font-weight:500; color:var(--text); }
+.settingsHead p { margin:3px 0 0; font-size:11px; color:var(--text-dim); }
+.settingsClose { width:34px; height:34px; padding:0; }
+.settingsPage { display:none; padding:18px 20px 24px; }
+.settingsPage.active { display:block; }
+.settingsSection { border:1px solid var(--border); border-radius:13px; padding:14px; margin-bottom:12px; background:color-mix(in srgb,var(--surface-2) 82%,transparent); }
+.settingsSectionTitle { font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; color:var(--text); margin-bottom:4px; }
+.settingsSectionDesc { font-size:11.5px; line-height:1.5; color:var(--text-dim); margin-bottom:12px; }
+.themeGrid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:9px; }
+.themeChoice { min-width:0; padding:10px 8px; border:1px solid var(--border); border-radius:11px; background:var(--bg); color:var(--text); cursor:pointer; text-align:left; }
+.themeChoice:hover { border-color:var(--accent); background:var(--accent-soft); color:var(--text); }
+.themeChoice.active { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+.themePreview { height:38px; border-radius:7px; border:1px solid rgba(255,255,255,.14); margin-bottom:8px; position:relative; overflow:hidden; background:var(--preview-bg); }
+.themePreview::after { content:""; position:absolute; left:8px; right:18px; top:10px; height:5px; border-radius:4px; background:var(--preview-accent); box-shadow:0 10px 0 color-mix(in srgb,var(--preview-accent) 35%,transparent), 0 20px 0 color-mix(in srgb,var(--preview-accent) 18%,transparent); }
+.themeChoiceName { font-size:11.5px; font-weight:800; }
+.themeChoiceDesc { font-size:9.5px; color:var(--text-dim); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.settingsActionRow { display:flex; gap:8px; flex-wrap:wrap; }
+.settingsFuture { border-style:dashed; opacity:.88; }
+.settingsFuture .futureBadge { float:right; font-size:9px; padding:2px 6px; border:1px solid var(--border); border-radius:999px; color:var(--text-dim); }
+@media(max-width:760px){
+  .settingsModal { grid-template-columns:1fr; max-height:94vh; }
+  .settingsSide { display:flex; gap:5px; overflow-x:auto; border-right:none; border-bottom:1px solid var(--border); padding:9px; }
+  .settingsBrand { display:none; }
+  .settingsNavBtn { width:auto; flex:0 0 auto; white-space:nowrap; }
+  .themeGrid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
+/* Theme palettes — each theme changes structure, typography, controls and accents, not just colors. */
+:root[data-theme="terminal"] {
+  --font-ui: "Share Tech Mono", ui-monospace, "Courier New", monospace;
+  --font-display: "VT323", "Share Tech Mono", ui-monospace, monospace;
+  --bg:#050805; --surface:#0b120c; --surface-2:#0e1710; --surface-3:#101a12; --border:#1f5c34;
+  --text:#39ff6a; --text-dim:#2a9a4a; --accent:#39ff6a; --accent-soft:#0f2818; --good:#39ff6a; --bad:#ff4d4d; --warn:#33e0ff; --radius:0px;
+  --header-bg:#080d09; --nav-bg:#080d09; --card-bg:linear-gradient(145deg,#0b120c,#101a12);
+  --control-bg:#08100a; --control-hover:#102117; --control-border:#1f5c34; --control-text:#39ff6a; --input-bg:#050805;
+  --table-bg:#09110b; --table-head-bg:#0e1710; --table-hover:#101a12; --heading:#39ff6a;
+  --primary-bg:linear-gradient(135deg,#39ff6a,#20c955); --primary-text:#031108; --primary-shadow:0 5px 18px rgba(57,255,106,.18);
+  --active-bg:linear-gradient(90deg,rgba(57,255,106,.15),rgba(57,255,106,.04));
+}
+:root[data-theme="midnight"] {
+  --font-ui:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; --font-display:Inter,ui-sans-serif,system-ui,sans-serif;
+  --bg:#07101c; --surface:#0d1726; --surface-2:#111f32; --surface-3:#15263c; --border:#23486f; --text:#d9ecff; --text-dim:#7fa6cc; --accent:#58a6ff; --accent-soft:#102943; --good:#58d68d; --bad:#ff6b7a; --warn:#8ecbff; --radius:12px;
+  --header-bg:rgba(9,20,35,.96); --nav-bg:rgba(9,20,35,.96); --card-bg:linear-gradient(145deg,#0d1726,#15263c); --control-bg:#101e30; --control-hover:#172b44; --control-border:#31577f; --control-text:#d9ecff; --input-bg:#091421; --table-bg:#0b1624; --table-head-bg:#112238; --table-hover:#14253a; --heading:#edf6ff;
+  --primary-bg:linear-gradient(135deg,#58a6ff,#317fe0); --primary-text:#061322; --primary-shadow:0 6px 20px rgba(88,166,255,.22); --active-bg:linear-gradient(90deg,rgba(88,166,255,.18),rgba(88,166,255,.05));
+}
+:root[data-theme="light"] {
+  --font-ui:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; --font-display:Inter,ui-sans-serif,system-ui,sans-serif;
+  --bg:#f4f7fb; --surface:#fff; --surface-2:#f7f9fc; --surface-3:#eef3f8; --border:#cbd5e1; --text:#18212f; --text-dim:#607084; --accent:#2563eb; --accent-soft:#e8f0ff; --good:#16834b; --bad:#c62828; --warn:#b45309; --radius:11px;
+  --header-bg:rgba(255,255,255,.96); --nav-bg:rgba(255,255,255,.98); --card-bg:linear-gradient(145deg,#fff,#f7f9fc); --control-bg:#f8fafc; --control-hover:#edf3fb; --control-border:#b9c6d6; --control-text:#18212f; --input-bg:#fff; --table-bg:#fff; --table-head-bg:#eef3f8; --table-hover:#f3f7fb; --heading:#18212f;
+  --primary-bg:linear-gradient(135deg,#2563eb,#4f83e8); --primary-text:#fff; --primary-shadow:0 6px 18px rgba(37,99,235,.18); --active-bg:linear-gradient(90deg,rgba(37,99,235,.12),rgba(37,99,235,.04));
+}
+:root[data-theme="oled"] {
+  --font-ui:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; --font-display:Inter,ui-sans-serif,system-ui,sans-serif;
+  --bg:#000; --surface:#050505; --surface-2:#090909; --surface-3:#0d0d0d; --border:#292929; --text:#f2f2f2; --text-dim:#9b9b9b; --accent:#fff; --accent-soft:#161616; --good:#65ff9a; --bad:#ff6666; --warn:#bdbdbd; --radius:9px;
+  --header-bg:#050505; --nav-bg:#050505; --card-bg:linear-gradient(145deg,#050505,#0b0b0b); --control-bg:#080808; --control-hover:#151515; --control-border:#303030; --control-text:#f2f2f2; --input-bg:#000; --table-bg:#050505; --table-head-bg:#101010; --table-hover:#121212; --heading:#fff;
+  --primary-bg:linear-gradient(135deg,#fff,#d9d9d9); --primary-text:#000; --primary-shadow:0 6px 18px rgba(255,255,255,.10); --active-bg:linear-gradient(90deg,rgba(255,255,255,.12),rgba(255,255,255,.03));
+}
+:root[data-theme="cyber"] {
+  --font-ui:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; --font-display:Inter,ui-sans-serif,system-ui,sans-serif;
+  --bg:#070510; --surface:#100b1c; --surface-2:#171027; --surface-3:#1e1532; --border:#54327d; --text:#f1eaff; --text-dim:#aa91c9; --accent:#c77dff; --accent-soft:#27133d; --good:#5fffc4; --bad:#ff5d8f; --warn:#ff8bd8; --radius:13px;
+  --header-bg:rgba(16,11,28,.96); --nav-bg:rgba(16,11,28,.97); --card-bg:linear-gradient(145deg,#100b1c,#1e1532); --control-bg:#130d20; --control-hover:#24153a; --control-border:#654190; --control-text:#f1eaff; --input-bg:#0b0712; --table-bg:#0d0917; --table-head-bg:#19102a; --table-hover:#211431; --heading:#fff7ff;
+  --primary-bg:linear-gradient(135deg,#c77dff,#9b5de5); --primary-text:#16051f; --primary-shadow:0 6px 22px rgba(199,125,255,.24); --active-bg:linear-gradient(90deg,rgba(199,125,255,.18),rgba(199,125,255,.05));
+}
+
+body { font-family:var(--font-ui); }
+/* CRT is a Terminal-theme feature only. Other themes stay clean. */
+:root[data-theme="terminal"] body {
+  text-shadow:0 0 2px rgba(57,255,106,.28);
+  background-image:
+    radial-gradient(circle at 75% -10%, rgba(57,255,106,.08), transparent 32%),
+    radial-gradient(circle at 0% 45%, rgba(92,112,145,.07), transparent 28%),
+    var(--bg);
+}
+:root[data-theme="terminal"] body::before {
+  content:""; position:fixed; inset:0; z-index:9999; pointer-events:none;
+  background:repeating-linear-gradient(0deg,
+    rgba(0,0,0,0) 0px,
+    rgba(0,0,0,0) 2px,
+    rgba(0,0,0,.22) 3px,
+    rgba(0,0,0,0) 4px);
+  mix-blend-mode:multiply;
+}
+:root[data-theme="terminal"] body::after {
+  content:""; position:fixed; inset:0; z-index:9998; pointer-events:none;
+  background:radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,.45) 100%);
+}
+:root:not([data-theme="terminal"]) body {
+  text-shadow:none;
+  background-image:none;
+}
+:root:not([data-theme="terminal"]) body::before,
+:root:not([data-theme="terminal"]) body::after {
+  content:none;
+  display:none;
+}
+:root[data-theme="terminal"] button.primary {
+  background:var(--primary-bg);
+  color:var(--primary-text);
+  border:0;
+  box-shadow:var(--primary-shadow);
+}
+:root[data-theme="terminal"] button.ghost,
+:root[data-theme="terminal"] button.small {
+  color:var(--control-text);
+}
+:root[data-theme="terminal"] .card:hover { border-color:#2b7b49; }
+:root[data-theme="light"] header, :root[data-theme="light"] #mainTabNav { box-shadow:0 10px 30px rgba(30,50,80,.10); }
+:root[data-theme="midnight"] header, :root[data-theme="cyber"] header, :root[data-theme="oled"] header, :root[data-theme="midnight"] #mainTabNav, :root[data-theme="cyber"] #mainTabNav, :root[data-theme="oled"] #mainTabNav { box-shadow:0 14px 38px rgba(0,0,0,.24); }
+:root[data-theme="light"] .sectionTitle { color:var(--heading); }
+
+
+/* ================================================================
+   v1.7.0 THEME PERSONALITIES — typography + layout + widgets
+   Each theme is intentionally a different visual system, not a recolor.
+   ================================================================ */
+
+/* TERMINAL — dense command console / CRT workstation */
+:root[data-theme="terminal"] body { font-family:"Share Tech Mono",ui-monospace,monospace; }
+:root[data-theme="terminal"] .wrap { width:min(1480px,calc(100% - 36px)); grid-template-columns:218px minmax(0,1fr); gap:18px 22px; }
+:root[data-theme="terminal"] header,
+:root[data-theme="terminal"] #mainTabNav,
+:root[data-theme="terminal"] .card,
+:root[data-theme="terminal"] #kpis .kpi { border-radius:0; box-shadow:0 0 0 1px rgba(57,255,106,.03),0 8px 24px rgba(0,0,0,.35); }
+:root[data-theme="terminal"] header { background:#080d09; }
+:root[data-theme="terminal"] .card { background:linear-gradient(180deg,#0b120c,#081009); }
+:root[data-theme="terminal"] #kpis .kpi { background:#080d09; }
+:root[data-theme="terminal"] #mainTabNav .tabbtn { border-radius:0; }
+:root[data-theme="terminal"] .sectionTitle,
+:root[data-theme="terminal"] .modal h2,
+:root[data-theme="terminal"] .settingsHead h2 { font-family:"VT323","Share Tech Mono",monospace; letter-spacing:.04em; }
+:root[data-theme="terminal"] .kpi .value { font-family:"VT323",monospace; font-size:34px; }
+
+/* MIDNIGHT — spacious glass dashboard */
+:root[data-theme="midnight"] body {
+  background:radial-gradient(circle at 78% -10%,rgba(88,166,255,.16),transparent 30%),linear-gradient(135deg,#050b15,#07101c 52%,#0b1524);
+}
+:root[data-theme="midnight"] .wrap { width:min(1520px,calc(100% - 40px)); grid-template-columns:238px minmax(0,1fr); gap:20px 24px; }
+:root[data-theme="midnight"] header { border-radius:20px; background:rgba(10,22,38,.72); backdrop-filter:blur(18px); box-shadow:0 18px 55px rgba(0,0,0,.28); }
+:root[data-theme="midnight"] #mainTabNav { border-radius:20px; background:rgba(9,20,35,.72); backdrop-filter:blur(18px); box-shadow:0 16px 42px rgba(0,0,0,.28); }
+:root[data-theme="midnight"] .card,
+:root[data-theme="midnight"] #kpis .kpi { border-radius:18px; background:linear-gradient(145deg,rgba(15,28,46,.88),rgba(18,37,60,.68)); backdrop-filter:blur(12px); box-shadow:0 14px 35px rgba(0,0,0,.22); }
+:root[data-theme="midnight"] #kpis { gap:14px; }
+:root[data-theme="midnight"] #kpis .kpi { min-height:88px; }
+:root[data-theme="midnight"] .kpi .value { font-family:"Space Grotesk",sans-serif; font-weight:700; }
+:root[data-theme="midnight"] .sectionTitle,
+:root[data-theme="midnight"] .modal h2,
+:root[data-theme="midnight"] .settingsHead h2 { font-family:"Space Grotesk",sans-serif; }
+:root[data-theme="midnight"] button { border-radius:12px; }
+
+/* LIGHT — editorial / productivity workspace */
+:root[data-theme="light"] body { background:#eef3f8; }
+:root[data-theme="light"] .wrap {
+  width:min(1500px,calc(100% - 48px));
+  grid-template-columns:1fr;
+  grid-template-areas:"header" "kpis" "nav" "main";
+  gap:16px;
+}
+:root[data-theme="light"] header { border-radius:16px; background:rgba(255,255,255,.94); box-shadow:0 5px 20px rgba(28,49,75,.08); }
+:root[data-theme="light"] #mainTabNav {
+  position:static; flex-direction:row; align-items:center; overflow-x:auto; min-width:0;
+  border-radius:14px; padding:7px; background:#fff; box-shadow:0 4px 16px rgba(28,49,75,.07);
+}
+:root[data-theme="light"] #mainTabNav::before { display:none; }
+:root[data-theme="light"] #mainTabNav .tabbtn { width:auto; flex:0 0 auto; border-radius:9px; text-align:center; padding:10px 14px; }
+:root[data-theme="light"] #mainTabNav .tabbtn.active { box-shadow:none; }
+:root[data-theme="light"] .tabpanel { grid-column:1; }
+:root[data-theme="light"] .card { border-radius:14px; background:#fff; box-shadow:0 5px 18px rgba(28,49,75,.07); padding:20px; }
+:root[data-theme="light"] #kpis .kpi { border-radius:14px; background:#fff; box-shadow:0 4px 15px rgba(28,49,75,.06); min-height:82px; }
+:root[data-theme="light"] #kpis { grid-template-columns:repeat(6,minmax(0,1fr)); }
+:root[data-theme="light"] .kpi .value { font-family:"Manrope",sans-serif; font-weight:800; }
+:root[data-theme="light"] .sectionTitle,
+:root[data-theme="light"] .modal h2,
+:root[data-theme="light"] .settingsHead h2 { font-family:"Manrope",sans-serif; }
+:root[data-theme="light"] button { border-radius:9px; }
+
+/* OLED — ultra-minimal black canvas */
+:root[data-theme="oled"] body { background:#000; }
+:root[data-theme="oled"] .wrap { width:min(1440px,calc(100% - 32px)); grid-template-columns:190px minmax(0,1fr); gap:16px 20px; }
+:root[data-theme="oled"] header { border-color:#202020; border-radius:8px; background:#050505; box-shadow:none; }
+:root[data-theme="oled"] #mainTabNav { border-color:#202020; border-radius:8px; background:#050505; box-shadow:none; }
+:root[data-theme="oled"] .card,
+:root[data-theme="oled"] #kpis .kpi { border-color:#242424; border-radius:8px; background:#050505; box-shadow:none; }
+:root[data-theme="oled"] #kpis { gap:8px; }
+:root[data-theme="oled"] #kpis .kpi { min-height:68px; padding:11px 13px; }
+:root[data-theme="oled"] .kpi .value { font-family:"IBM Plex Mono",monospace; font-weight:500; font-size:28px; }
+:root[data-theme="oled"] .sectionTitle,
+:root[data-theme="oled"] .modal h2,
+:root[data-theme="oled"] .settingsHead h2 { font-family:"IBM Plex Mono",monospace; }
+:root[data-theme="oled"] button { border-radius:6px; box-shadow:none; }
+:root[data-theme="oled"] .card:hover { border-color:#555; }
+
+/* CYBER — asymmetric neon / HUD interface */
+:root[data-theme="cyber"] body {
+  background:radial-gradient(circle at 15% 10%,rgba(199,125,255,.18),transparent 25%),radial-gradient(circle at 90% 70%,rgba(95,255,196,.10),transparent 24%),#070510;
+}
+:root[data-theme="cyber"] .wrap { width:min(1540px,calc(100% - 34px)); grid-template-columns:250px minmax(0,1fr); gap:14px 26px; }
+:root[data-theme="cyber"] header { border-radius:4px 20px 4px 20px; background:linear-gradient(120deg,rgba(16,11,28,.96),rgba(28,16,45,.9)); box-shadow:0 0 35px rgba(199,125,255,.10); }
+:root[data-theme="cyber"] #mainTabNav { border-radius:4px 18px 4px 18px; background:rgba(12,7,22,.94); box-shadow:0 0 30px rgba(199,125,255,.08); }
+:root[data-theme="cyber"] .card,
+:root[data-theme="cyber"] #kpis .kpi { border-radius:4px 16px 4px 16px; background:linear-gradient(135deg,#100b1c,#19102b); box-shadow:0 0 26px rgba(199,125,255,.07); }
+:root[data-theme="cyber"] #kpis { grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+:root[data-theme="cyber"] #kpis .kpi { min-height:86px; position:relative; overflow:hidden; }
+:root[data-theme="cyber"] #kpis .kpi::after { content:""; position:absolute; left:0; right:0; bottom:0; height:2px; background:linear-gradient(90deg,var(--accent),var(--good)); opacity:.75; }
+:root[data-theme="cyber"] .kpi .value { font-family:"Orbitron",sans-serif; font-weight:700; letter-spacing:-.5px; }
+:root[data-theme="cyber"] .sectionTitle,
+:root[data-theme="cyber"] .modal h2,
+:root[data-theme="cyber"] .settingsHead h2 { font-family:"Orbitron",sans-serif; letter-spacing:.04em; }
+:root[data-theme="cyber"] button { border-radius:4px 11px 4px 11px; text-transform:uppercase; letter-spacing:.02em; }
+:root[data-theme="cyber"] #mainTabNav .tabbtn.active { box-shadow:inset 3px 0 0 var(--accent),0 0 16px rgba(199,125,255,.10); }
+
+/* Theme-specific widget language: cards, tables, notifications, modals and settings all follow the theme. */
+:root[data-theme="midnight"] .notificationPanel,
+:root[data-theme="midnight"] .settingsModal,
+:root[data-theme="midnight"] .modal { border-radius:20px; backdrop-filter:blur(18px); box-shadow:0 24px 70px rgba(0,0,0,.38); }
+:root[data-theme="light"] .notificationPanel,
+:root[data-theme="light"] .settingsModal,
+:root[data-theme="light"] .modal { border-radius:16px; box-shadow:0 18px 50px rgba(28,49,75,.16); }
+:root[data-theme="oled"] .notificationPanel,
+:root[data-theme="oled"] .settingsModal,
+:root[data-theme="oled"] .modal { border-radius:7px; box-shadow:none; }
+:root[data-theme="cyber"] .notificationPanel,
+:root[data-theme="cyber"] .settingsModal,
+:root[data-theme="cyber"] .modal { border-radius:4px 16px 4px 16px; box-shadow:0 0 45px rgba(199,125,255,.12); }
+:root[data-theme="terminal"] .notificationPanel,
+:root[data-theme="terminal"] .settingsModal,
+:root[data-theme="terminal"] .modal { border-radius:0; box-shadow:0 0 24px rgba(57,255,106,.08); }
+
+@media(max-width:1050px){
+  :root[data-theme="light"] #kpis { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  :root[data-theme="cyber"] #kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:760px){
+  :root[data-theme="terminal"] .wrap,
+  :root[data-theme="midnight"] .wrap,
+  :root[data-theme="oled"] .wrap,
+  :root[data-theme="cyber"] .wrap { grid-template-columns:1fr; grid-template-areas:"header" "kpis" "nav" "main"; }
+  :root[data-theme="terminal"] #mainTabNav,
+  :root[data-theme="midnight"] #mainTabNav,
+  :root[data-theme="oled"] #mainTabNav,
+  :root[data-theme="cyber"] #mainTabNav { position:static; flex-direction:row; overflow-x:auto; }
+  :root[data-theme="terminal"] #mainTabNav::before,
+  :root[data-theme="midnight"] #mainTabNav::before,
+  :root[data-theme="oled"] #mainTabNav::before,
+  :root[data-theme="cyber"] #mainTabNav::before { display:none; }
+  :root[data-theme="terminal"] #mainTabNav .tabbtn,
+  :root[data-theme="midnight"] #mainTabNav .tabbtn,
+  :root[data-theme="oled"] #mainTabNav .tabbtn,
+  :root[data-theme="cyber"] #mainTabNav .tabbtn { width:auto; flex:0 0 auto; }
+  :root[data-theme="terminal"] .tabpanel,
+  :root[data-theme="midnight"] .tabpanel,
+  :root[data-theme="oled"] .tabpanel,
+  :root[data-theme="cyber"] .tabpanel { grid-column:1; }
+  :root[data-theme="light"] .wrap { width:min(100% - 20px,1500px); }
+  :root[data-theme="cyber"] #kpis,
+  :root[data-theme="light"] #kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:520px){
+  :root[data-theme="cyber"] #kpis,
+  :root[data-theme="light"] #kpis { grid-template-columns:1fr; }
+}
+
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v1.6.3</span></h1>
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v1.7.0</span></h1>
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow headerActions">
@@ -508,6 +795,7 @@ tr:hover td { background:#171e27; }
           <div class="notificationList" id="notificationList"></div>
         </div>
       </div>
+      <button class="ghost settingsButton" id="settingsBtn" aria-label="Settings" title="Settings">⚙</button>
       <button class="ghost" id="accountBtn">Account</button>
       <button class="ghost" id="importLocalBtn">Import Old Data</button>
       <button class="ghost" id="pasteBtn">Paste Results</button>
@@ -746,6 +1034,65 @@ tr:hover td { background:#171e27; }
     <div class="sectionTitle" id="scheduleRangeTitle">Today</div>
     <div id="scheduleDays"></div>
     <div class="empty" id="scheduleEmpty" style="display:none">No calendar events found for this day.</div>
+  </div>
+</div>
+
+<!-- Universal Settings -->
+<div class="settingsModalBg" id="settingsModalBg" aria-hidden="true">
+  <div class="settingsModal" role="dialog" aria-modal="true" aria-label="Settings">
+    <aside class="settingsSide">
+      <div class="settingsBrand"><div class="settingsBrandTitle">Settings</div><div class="settingsBrandSub">JEE Command Center</div></div>
+      <button class="settingsNavBtn active" data-settings-page="appearance">🎨 <span>Appearance</span></button>
+      <button class="settingsNavBtn" data-settings-page="account">👤 <span>Account</span></button>
+      <button class="settingsNavBtn" data-settings-page="notifications">🔔 <span>Notifications</span></button>
+      <button class="settingsNavBtn" data-settings-page="data">☁ <span>Data &amp; Sync</span></button>
+      <button class="settingsNavBtn" data-settings-page="ai">✦ <span>AI</span></button>
+      <button class="settingsNavBtn" data-settings-page="calendar">▣ <span>Calendar</span></button>
+      <button class="settingsNavBtn" data-settings-page="advanced">⚙ <span>Advanced</span></button>
+    </aside>
+    <section class="settingsContent">
+      <div class="settingsHead">
+        <div><h2 id="settingsPageTitle">Appearance</h2><p id="settingsPageSubtitle">Personalize the tracker without changing its core functionality.</p></div>
+        <button class="ghost settingsClose" id="settingsCloseBtn" aria-label="Close settings">×</button>
+      </div>
+      <div class="settingsPage active" data-settings-content="appearance">
+        <div class="settingsSection">
+          <div class="settingsSectionTitle">Theme</div>
+          <div class="settingsSectionDesc">Choose a visual theme. Your choice is saved on this browser and will persist when you reopen the tracker.</div>
+          <div class="themeGrid">
+            <button class="themeChoice" data-theme-choice="terminal"><div class="themePreview" style="--preview-bg:#050805;--preview-accent:#39ff6a"></div><div class="themeChoiceName">Terminal</div><div class="themeChoiceDesc">Current command center</div></button>
+            <button class="themeChoice" data-theme-choice="midnight"><div class="themePreview" style="--preview-bg:#07101c;--preview-accent:#58a6ff"></div><div class="themeChoiceName">Midnight</div><div class="themeChoiceDesc">Deep blue workspace</div></button>
+            <button class="themeChoice" data-theme-choice="light"><div class="themePreview" style="--preview-bg:#f4f7fb;--preview-accent:#2563eb"></div><div class="themeChoiceName">Light</div><div class="themeChoiceDesc">Clean daytime UI</div></button>
+            <button class="themeChoice" data-theme-choice="oled"><div class="themePreview" style="--preview-bg:#000;--preview-accent:#fff"></div><div class="themeChoiceName">OLED</div><div class="themeChoiceDesc">Pure black, high contrast</div></button>
+            <button class="themeChoice" data-theme-choice="cyber"><div class="themePreview" style="--preview-bg:#070510;--preview-accent:#c77dff"></div><div class="themeChoiceName">Cyber</div><div class="themeChoiceDesc">Futuristic purple UI</div></button>
+          </div>
+        </div>
+        <div class="settingsSection settingsFuture"><span class="futureBadge">READY FOR MORE</span><div class="settingsSectionTitle">Future appearance controls</div><div class="settingsSectionDesc">Accent colors, compact mode, density, animations, dashboard layout and accessibility options can be added here later without changing the settings architecture.</div></div>
+      </div>
+      <div class="settingsPage" data-settings-content="account">
+        <div class="settingsSection"><div class="settingsSectionTitle">Your account</div><div class="settingsSectionDesc">Manage sign-in and the account used for cloud sync.</div><div class="settingsActionRow"><button class="primary" id="settingsAccountBtn">Open account</button></div></div>
+      </div>
+      <div class="settingsPage" data-settings-content="notifications">
+        <div class="settingsSection"><div class="settingsSectionTitle">Notification center</div><div class="settingsSectionDesc">Your bell contains tracker updates, admin announcements, AI status messages and version notifications.</div><div class="settingsActionRow"><button class="primary" id="settingsNotificationsBtn">Open notifications</button></div></div>
+        <div class="settingsSection settingsFuture"><span class="futureBadge">FUTURE</span><div class="settingsSectionTitle">Notification preferences</div><div class="settingsSectionDesc">Per-category controls such as AI alerts, deployment updates and reminder preferences can live here later.</div></div>
+      </div>
+      <div class="settingsPage" data-settings-content="data">
+        <div class="settingsSection"><div class="settingsSectionTitle">Data &amp; sync</div><div class="settingsSectionDesc">Cloud data belongs to the signed-in account. Old browser-local data can be imported explicitly when needed.</div><div class="settingsActionRow"><button class="primary" id="settingsImportBtn">Import old local data</button></div></div>
+        <div class="settingsSection settingsFuture"><span class="futureBadge">FUTURE</span><div class="settingsSectionTitle">Backup &amp; export</div><div class="settingsSectionDesc">CSV/JSON export, backup history, restore points and storage diagnostics can be added here later.</div></div>
+      </div>
+      <div class="settingsPage" data-settings-content="ai">
+        <div class="settingsSection"><div class="settingsSectionTitle">AI analysis</div><div class="settingsSectionDesc">AI analysis status is controlled by the tracker and, for operational switches, the remote Control Center.</div><div id="settingsAIStatus" style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">Status will appear here.</div><div class="settingsActionRow"><button class="primary" id="settingsAIOpenBtn">Open AI analysis</button></div></div>
+        <div class="settingsSection settingsFuture"><span class="futureBadge">FUTURE</span><div class="settingsSectionTitle">AI preferences</div><div class="settingsSectionDesc">Model selection, analysis limits, automatic-analysis preferences and privacy controls can be added here later.</div></div>
+      </div>
+      <div class="settingsPage" data-settings-content="calendar">
+        <div class="settingsSection"><div class="settingsSectionTitle">Google Calendar</div><div class="settingsSectionDesc">Open the tracker schedule to connect and manage your calendar view.</div><div class="settingsActionRow"><button class="primary" id="settingsCalendarBtn">Open calendar</button></div></div>
+        <div class="settingsSection settingsFuture"><span class="futureBadge">FUTURE</span><div class="settingsSectionTitle">Calendar automation</div><div class="settingsSectionDesc">Revision blocks, reminders, study-plan sync and calendar preferences can be grouped here later.</div></div>
+      </div>
+      <div class="settingsPage" data-settings-content="advanced">
+        <div class="settingsSection"><div class="settingsSectionTitle">Advanced</div><div class="settingsSectionDesc">Developer-facing and system-level controls can be placed here without cluttering the main dashboard.</div><div class="settingsActionRow"><button class="ghost" id="settingsAdvancedAdminBtn">Open Control Center</button></div></div>
+        <div class="settingsSection settingsFuture"><span class="futureBadge">FUTURE</span><div class="settingsSectionTitle">System information</div><div class="settingsSectionDesc">Version history, deployment ID, diagnostics, feature flags and storage information can be surfaced here later.</div></div>
+      </div>
+    </section>
   </div>
 </div>
 
@@ -1056,7 +1403,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "1.6.3";
+  var APP_VERSION = "1.7.0";
   var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   var LS_KEY = "jee_test_tracker_v1";
   var NOTIFICATIONS_KEY_BASE = "jee_tracker_notifications_v2_";
@@ -3718,6 +4065,63 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     render();
   });
 })();
+
+
+  // ---------- Universal settings ----------
+  var SETTINGS_THEME_KEY = "jee_tracker_theme_v1";
+  var SETTINGS_META = {
+    appearance:{title:"Appearance",sub:"Personalize the tracker without changing its core functionality."},
+    account:{title:"Account",sub:"Manage sign-in and cloud-sync identity."},
+    notifications:{title:"Notifications",sub:"Control how tracker updates are surfaced."},
+    data:{title:"Data & Sync",sub:"Manage local data, cloud sync and future backups."},
+    ai:{title:"AI",sub:"AI analysis status and future AI preferences."},
+    calendar:{title:"Calendar",sub:"Google Calendar connection and future automation."},
+    advanced:{title:"Advanced",sub:"System controls, diagnostics and future developer options."}
+  };
+  function applyTrackerTheme(theme){
+    var allowed={terminal:1,midnight:1,light:1,oled:1,cyber:1};
+    if (!allowed[theme]) theme="terminal";
+    document.documentElement.setAttribute("data-theme", theme);
+    try { localStorage.setItem(SETTINGS_THEME_KEY, theme); } catch(e){}
+    document.querySelectorAll(".themeChoice").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-theme-choice")===theme); });
+  }
+  function loadTrackerTheme(){
+    var theme="terminal";
+    try { theme=localStorage.getItem(SETTINGS_THEME_KEY) || "terminal"; } catch(e){}
+    applyTrackerTheme(theme);
+  }
+  function openSettings(page){
+    var bg=document.getElementById("settingsModalBg"); if(!bg) return;
+    bg.classList.add("open"); bg.setAttribute("aria-hidden","false");
+    switchSettingsPage(page || "appearance");
+  }
+  function closeSettings(){ var bg=document.getElementById("settingsModalBg"); if(bg){ bg.classList.remove("open"); bg.setAttribute("aria-hidden","true"); } }
+  function switchSettingsPage(page){
+    if(!SETTINGS_META[page]) page="appearance";
+    document.querySelectorAll(".settingsNavBtn").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-settings-page")===page); });
+    document.querySelectorAll(".settingsPage").forEach(function(p){ p.classList.toggle("active", p.getAttribute("data-settings-content")===page); });
+    var meta=SETTINGS_META[page];
+    var title=document.getElementById("settingsPageTitle"), sub=document.getElementById("settingsPageSubtitle");
+    if(title) title.textContent=meta.title; if(sub) sub.textContent=meta.sub;
+    if(page === "ai"){
+      var st=document.getElementById("settingsAIStatus");
+      if(st) st.textContent = state.appConfig && state.appConfig.ai_enabled === false ? "AI analysis is currently disabled by remote settings." : "AI analysis is currently enabled.";
+    }
+  }
+  loadTrackerTheme();
+  document.getElementById("settingsBtn").addEventListener("click", function(){ openSettings("appearance"); });
+  document.getElementById("settingsCloseBtn").addEventListener("click", closeSettings);
+  document.getElementById("settingsModalBg").addEventListener("click", function(e){ if(e.target===this) closeSettings(); });
+  document.addEventListener("keydown", function(e){ if(e.key==="Escape") closeSettings(); });
+  document.querySelectorAll(".settingsNavBtn").forEach(function(b){ b.addEventListener("click", function(){ switchSettingsPage(b.getAttribute("data-settings-page")); }); });
+  document.querySelectorAll(".themeChoice").forEach(function(b){ b.addEventListener("click", function(){ applyTrackerTheme(b.getAttribute("data-theme-choice")); }); });
+  document.getElementById("settingsAccountBtn").addEventListener("click", function(){ closeSettings(); if(typeof openAuth === "function") openAuth(state.user ? "signin" : "signin"); });
+  document.getElementById("settingsNotificationsBtn").addEventListener("click", function(){ closeSettings(); var b=document.getElementById("notificationBell"); if(b) b.click(); });
+  document.getElementById("settingsImportBtn").addEventListener("click", function(){ closeSettings(); var b=document.getElementById("importLocalBtn"); if(b) b.click(); });
+  document.getElementById("settingsAIOpenBtn").addEventListener("click", function(){ closeSettings(); var b=document.querySelector('#mainTabNav .tabbtn[data-tab="analysis"]'); if(b) b.click(); });
+  document.getElementById("settingsCalendarBtn").addEventListener("click", function(){ closeSettings(); var b=document.querySelector('#mainTabNav .tabbtn[data-tab="schedule"]'); if(b) b.click(); });
+  document.getElementById("settingsAdvancedAdminBtn").addEventListener("click", function(){ closeSettings(); var b=document.getElementById("adminTabBtn"); if(b && b.style.display !== "none") b.click(); else toast("Control Center is available to the admin account only"); });
+
 </script>
 </body>
 </html>
