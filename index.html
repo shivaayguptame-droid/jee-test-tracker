@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>JEE Test Tracker v1.7.1</title>
+<title>JEE Test Tracker v1.8.0</title>
 <!-- VERSION: 1.7.1 | Mobile-first responsive experience with touch navigation, responsive forms, modals, charts, and theme-preserving phone layouts. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -866,6 +866,25 @@ body { font-family:var(--font-ui); }
   /* Desktop/tablet keeps the existing dashboard navigation and header behavior. */
   #mainTabNav { position:static; }
 }
+
+/* v1.8.0 — Performance OS */
+:root[data-theme="matrix"]{--font-ui:"Share Tech Mono",monospace;--font-display:"VT323",monospace;--bg:#020703;--surface:#061008;--surface-2:#09170b;--surface-3:#0c1d0f;--border:#145c2a;--text:#00ff66;--text-dim:#35a65b;--accent:#00ff66;--accent-soft:#082516;--good:#00ff66;--bad:#ff496c;--warn:#d8ff4d;--radius:2px;--header-bg:#030b05;--nav-bg:#030b05;--card-bg:linear-gradient(145deg,#061008,#0a180c);--control-bg:#061008;--control-hover:#0c1d0f;--control-border:#145c2a;--control-text:#00ff66;--input-bg:#020703;--table-bg:#061008;--table-head-bg:#0b1b0e;--table-hover:#0b1b0e;--heading:#7affad;}
+:root[data-theme="aurora"]{--font-ui:"Manrope",sans-serif;--font-display:"Space Grotesk",sans-serif;--bg:#07141a;--surface:rgba(15,31,39,.88);--surface-2:#12252d;--surface-3:#17323a;--border:#2b6871;--text:#e5fffb;--text-dim:#8bb9b9;--accent:#61ffd7;--accent-soft:#123a39;--good:#65f5b5;--bad:#ff779c;--warn:#ffd166;--radius:18px;--header-bg:rgba(10,28,34,.86);--nav-bg:rgba(10,28,34,.86);--card-bg:linear-gradient(135deg,rgba(16,43,49,.92),rgba(11,27,35,.88));--control-bg:#0c252c;--control-hover:#14363d;--control-border:#2b6871;--control-text:#e5fffb;--input-bg:#08191f;--table-bg:#0d252d;--table-head-bg:#14343b;--table-hover:#173a40;--heading:#b9fff1;}
+:root[data-theme="solarized"]{--font-ui:"Manrope",sans-serif;--font-display:"Space Grotesk",sans-serif;--bg:#fdf6e3;--surface:#eee8d5;--surface-2:#f7f0dc;--surface-3:#e4dcc5;--border:#93a1a1;--text:#586e75;--text-dim:#839496;--accent:#b58900;--accent-soft:#eee3bd;--good:#2aa198;--bad:#dc322f;--warn:#cb4b16;--radius:8px;--header-bg:#eee8d5;--nav-bg:#eee8d5;--card-bg:#f7f0dc;--control-bg:#fdf6e3;--control-hover:#eee8d5;--control-border:#93a1a1;--control-text:#586e75;--input-bg:#fdf6e3;--table-bg:#f7f0dc;--table-head-bg:#e4dcc5;--table-hover:#eee8d5;--heading:#657b83;}
+:root[data-theme="paper"]{--font-ui:"Manrope",sans-serif;--font-display:"Manrope",sans-serif;--bg:#f7f3ea;--surface:#fffdf7;--surface-2:#faf6ee;--surface-3:#f1eadc;--border:#d8cbb5;--text:#3f3a33;--text-dim:#7c7265;--accent:#b45309;--accent-soft:#fff0dd;--good:#15803d;--bad:#b91c1c;--warn:#a16207;--radius:4px;--header-bg:#fffdf7;--nav-bg:#fffdf7;--card-bg:#fffdf7;--control-bg:#fffdf7;--control-hover:#f1eadc;--control-border:#d8cbb5;--control-text:#3f3a33;--input-bg:#fffdf7;--table-bg:#fffdf7;--table-head-bg:#f1eadc;--table-hover:#faf6ee;--heading:#7c2d12;}
+:root[data-theme="nebula"]{--font-ui:"Space Grotesk",sans-serif;--font-display:"Space Grotesk",sans-serif;--bg:#0b0618;--surface:#160d2a;--surface-2:#1e1037;--surface-3:#281447;--border:#633f82;--text:#f8ecff;--text-dim:#b99dcc;--accent:#ff75c3;--accent-soft:#351738;--good:#62f5d2;--bad:#ff657a;--warn:#ffca68;--radius:16px;--header-bg:rgba(18,8,35,.9);--nav-bg:rgba(18,8,35,.9);--card-bg:linear-gradient(135deg,#160d2a,#25133e);--control-bg:#160d2a;--control-hover:#291641;--control-border:#633f82;--control-text:#f8ecff;--input-bg:#0f0820;--table-bg:#160d2a;--table-head-bg:#281447;--table-hover:#211238;--heading:#ffc2e2;}
+:root[data-theme="matrix"] body{background:radial-gradient(circle at 80% -10%,rgba(0,255,102,.08),transparent 30%),#020703;color:var(--text);text-shadow:0 0 2px rgba(0,255,102,.25)}
+:root[data-theme="matrix"] body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;background:linear-gradient(rgba(0,255,102,.025) 1px,transparent 1px);background-size:100% 4px}
+:root[data-theme="aurora"] body{background:radial-gradient(circle at 10% 10%,rgba(97,255,215,.13),transparent 25%),radial-gradient(circle at 90% 80%,rgba(89,145,255,.13),transparent 25%),var(--bg)}
+:root[data-theme="aurora"] .card,:root[data-theme="aurora"] #kpis .kpi{backdrop-filter:blur(12px);box-shadow:0 18px 50px rgba(0,0,0,.18)}
+:root[data-theme="nebula"] body{background:radial-gradient(circle at 20% 10%,rgba(255,117,195,.14),transparent 25%),radial-gradient(circle at 85% 75%,rgba(98,245,210,.10),transparent 25%),#0b0618}
+:root[data-theme="nebula"] .card,:root[data-theme="nebula"] #kpis .kpi{box-shadow:0 18px 55px rgba(0,0,0,.35)}
+:root[data-theme="paper"] .card{box-shadow:0 3px 12px rgba(80,60,30,.08)}
+:root[data-theme="solarized"] .card{box-shadow:0 3px 12px rgba(80,70,40,.08)}
+/* Performance OS modal */
+.perfBg{position:fixed;inset:0;z-index:170;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.7);backdrop-filter:blur(7px)}
+.perfBg.open{display:flex}.perfModal{width:min(1180px,96vw);max-height:min(900px,94vh);overflow:hidden;background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:0 28px 100px rgba(0,0,0,.55);display:flex;flex-direction:column}.perfHead{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--border);background:var(--header-bg)}.perfTitle{font-size:20px;font-weight:900;color:var(--heading)}.perfSub{font-size:11px;color:var(--text-dim);margin-top:3px}.perfTabs{display:flex;gap:6px;overflow:auto;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--nav-bg)}.perfTab{border:1px solid var(--border);background:var(--control-bg);color:var(--control-text);border-radius:9px;padding:9px 12px;white-space:nowrap;cursor:pointer}.perfTab.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}.perfBody{overflow:auto;padding:16px}.perfPage{display:none}.perfPage.active{display:block}.perfGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.perfCard{border:1px solid var(--border);background:var(--card-bg);border-radius:var(--radius);padding:14px;min-width:0}.perfCard h3{margin:0 0 8px;font-size:13px;color:var(--heading)}.perfBig{font-size:28px;font-weight:900;color:var(--accent)}.perfSmall{font-size:11px;color:var(--text-dim)}.perfBar{height:8px;border-radius:999px;background:var(--surface-3);overflow:hidden;margin-top:8px}.perfBar i{display:block;height:100%;background:var(--accent);border-radius:inherit}.perfTable{width:100%;border-collapse:collapse;font-size:12px}.perfTable th,.perfTable td{padding:8px;border-bottom:1px solid var(--border);text-align:left}.perfActions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.perfForm{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.perfForm input,.perfForm select,.perfForm textarea{width:100%;box-sizing:border-box}.perfList{display:grid;gap:8px;margin-top:10px}.perfItem{border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--surface-2)}.timerDisplay{font-size:58px;font-weight:900;text-align:center;letter-spacing:.04em;padding:24px;color:var(--accent)}
+@media(max-width:760px){.perfBg{padding:0}.perfModal{width:100%;height:100%;max-height:none;border-radius:0}.perfHead{padding-top:calc(12px + env(safe-area-inset-top,0px))}.perfGrid{grid-template-columns:1fr}.perfForm{grid-template-columns:1fr}.perfBody{padding:12px}.timerDisplay{font-size:46px}.perfTabs{padding-bottom:10px}.perfTab{min-height:42px}}
 </style>
 </head>
 <body>
@@ -902,6 +921,7 @@ body { font-family:var(--font-ui); }
       <button class="ghost" id="screenshotImportBtn">📷 Screenshot → Test</button>
       <button class="ghost" id="compareBtn">Compare</button>
       <button class="primary" id="addBtn">+ Add Test</button>
+      <button class="ghost" id="performanceOSBtn" title="Performance OS">⚡ Command Center</button>
     </div>
   </header>
 
@@ -1165,6 +1185,11 @@ body { font-family:var(--font-ui); }
             <button class="themeChoice" data-theme-choice="light"><div class="themePreview" style="--preview-bg:#f4f7fb;--preview-accent:#2563eb"></div><div class="themeChoiceName">Light</div><div class="themeChoiceDesc">Clean daytime UI</div></button>
             <button class="themeChoice" data-theme-choice="oled"><div class="themePreview" style="--preview-bg:#000;--preview-accent:#fff"></div><div class="themeChoiceName">OLED</div><div class="themeChoiceDesc">Pure black, high contrast</div></button>
             <button class="themeChoice" data-theme-choice="cyber"><div class="themePreview" style="--preview-bg:#070510;--preview-accent:#c77dff"></div><div class="themeChoiceName">Cyber</div><div class="themeChoiceDesc">Futuristic purple UI</div></button>
+            <button class="themeChoice" data-theme-choice="matrix"><div class="themePreview" style="--preview-bg:#020703;--preview-accent:#00ff66"></div><div class="themeChoiceName">Matrix</div><div class="themeChoiceDesc">Green code rain</div></button>
+            <button class="themeChoice" data-theme-choice="aurora"><div class="themePreview" style="--preview-bg:#07141a;--preview-accent:#61ffd7"></div><div class="themeChoiceName">Aurora</div><div class="themeChoiceDesc">Arctic glass workspace</div></button>
+            <button class="themeChoice" data-theme-choice="solarized"><div class="themePreview" style="--preview-bg:#002b36;--preview-accent:#b58900"></div><div class="themeChoiceName">Solarized</div><div class="themeChoiceDesc">Classic research desk</div></button>
+            <button class="themeChoice" data-theme-choice="paper"><div class="themePreview" style="--preview-bg:#fbfaf4;--preview-accent:#b45309"></div><div class="themeChoiceName">Paper</div><div class="themeChoiceDesc">Notebook study desk</div></button>
+            <button class="themeChoice" data-theme-choice="nebula"><div class="themePreview" style="--preview-bg:#0b0618;--preview-accent:#ff75c3"></div><div class="themeChoiceName">Nebula</div><div class="themeChoiceDesc">Deep-space observatory</div></button>
           </div>
         </div>
         <div class="settingsSection settingsFuture"><span class="futureBadge">READY FOR MORE</span><div class="settingsSectionTitle">Future appearance controls</div><div class="settingsSectionDesc">Accent colors, compact mode, density, animations, dashboard layout and accessibility options can be added here later without changing the settings architecture.</div></div>
@@ -1497,14 +1522,35 @@ Mistakes: Physics: sign error in kinematics"></textarea>
   </div>
 </div>
 
+
+<div class="perfBg" id="performanceOSBg" aria-hidden="true">
+ <div class="perfModal" role="dialog" aria-modal="true" aria-label="JEE Performance OS">
+  <div class="perfHead"><div><div class="perfTitle">⚡ Performance OS</div><div class="perfSub">Your tests, mastery, mistakes, planning and study system in one place.</div></div><button class="ghost" id="performanceClose">✕</button></div>
+  <div class="perfTabs">
+   <button class="perfTab active" data-perf-tab="overview">Overview</button><button class="perfTab" data-perf-tab="mastery">Chapter Mastery</button><button class="perfTab" data-perf-tab="mistakes">Mistakes</button><button class="perfTab" data-perf-tab="planner">Planner</button><button class="perfTab" data-perf-tab="timer">Study Timer</button><button class="perfTab" data-perf-tab="records">Records</button><button class="perfTab" data-perf-tab="data">Data Center</button><button class="perfTab" data-perf-tab="experiments">Experiments</button>
+  </div>
+  <div class="perfBody">
+   <section class="perfPage active" data-perf-page="overview"><div class="perfGrid" id="perfOverviewGrid"></div><div class="perfActions"><button class="primary" id="perfLatestAI">🤖 Analyze Latest Test</button><button class="ghost" id="perfRefresh">↻ Refresh</button></div><div class="perfCard"><h3>Data Coach</h3><div id="perfCoach" class="perfSmall">Loading your tracker history…</div></div></section>
+   <section class="perfPage" data-perf-page="mastery"><div class="perfCard"><h3>Add or update chapter mastery</h3><div class="perfForm"><select id="pmSubject"><option>Physics</option><option>Chemistry</option><option>Mathematics</option></select><input id="pmChapter" placeholder="Chapter name"><input id="pmMastery" type="number" min="0" max="100" placeholder="Mastery %"></div><div class="perfActions"><button class="primary" id="pmSave">Save chapter</button></div></div><div class="perfList" id="pmList"></div></section>
+   <section class="perfPage" data-perf-page="mistakes"><div class="perfCard"><h3>Mistake intelligence</h3><div class="perfForm"><select id="mkCategory"><option>Conceptual</option><option>Calculation</option><option>Silly mistake</option><option>Formula recall</option><option>Question interpretation</option><option>Time pressure</option><option>Guessing</option><option>Incomplete knowledge</option></select><input id="mkNote" placeholder="What went wrong?" class="wide"><button class="primary" id="mkSave">Log mistake</button></div></div><div class="perfList" id="mkList"></div></section>
+   <section class="perfPage" data-perf-page="planner"><div class="perfCard"><h3>Smart study planner</h3><div class="perfForm"><input id="plDate" type="date"><input id="plTime" type="time"><input id="plTask" placeholder="Task"><select id="plSubject"><option>Physics</option><option>Chemistry</option><option>Mathematics</option><option>Revision</option><option>Test</option></select><button class="primary" id="plSave">Add task</button></div></div><div class="perfList" id="plList"></div></section>
+   <section class="perfPage" data-perf-page="timer"><div class="perfCard"><h3>Deep-work timer</h3><div id="timerDisplay" class="timerDisplay">25:00</div><div class="perfActions" style="justify-content:center"><button class="primary" id="timerStart">Start</button><button class="ghost" id="timerPause">Pause</button><button class="ghost" id="timerReset">Reset</button><select id="timerPreset"><option value="25">25 min</option><option value="45">45 min</option><option value="60">60 min</option><option value="90">90 min</option></select></div></div></section>
+   <section class="perfPage" data-perf-page="records"><div class="perfGrid" id="perfRecordsGrid"></div></section>
+   <section class="perfPage" data-perf-page="data"><div class="perfCard"><h3>Data Center</h3><p class="perfSmall">Export your tracker data and Performance OS data as a portable JSON backup. This does not delete cloud data.</p><div class="perfActions"><button class="primary" id="perfExport">Export JSON Backup</button><button class="ghost" id="perfImportBtn">Import JSON Backup</button><input id="perfImportFile" type="file" accept="application/json" style="display:none"></div><div class="perfSmall" id="perfDataStatus"></div></div></section>
+   <section class="perfPage" data-perf-page="experiments"><div class="perfCard"><h3>Study Experiment Lab</h3><div class="perfForm"><input id="exName" placeholder="Experiment name"><input id="exHypothesis" placeholder="Hypothesis"><input id="exResult" placeholder="Result / observation"><button class="primary" id="exSave">Save experiment</button></div></div><div class="perfList" id="exList"></div></section>
+  </div>
+ </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "1.7.1";
+  var APP_VERSION = "1.8.0";
   var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
+  window.state = state;
   var LS_KEY = "jee_test_tracker_v1";
   var NOTIFICATIONS_KEY_BASE = "jee_tracker_notifications_v2_";
 
@@ -3272,6 +3318,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     return count;
   }
 
+  window.analyzeTestAI = analyzeTestAI;
   async function analyzeTestAI(testId){
     if (!state.user || !sb || !testId) return null;
     var sessionRes = await sb.auth.getSession();
@@ -3287,6 +3334,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     return data;
   }
 
+  window.refreshAIInsights = refreshAIInsights;
   async function refreshAIInsights(){
     var el = document.getElementById("aiInsightContent");
     if (!el || !state.user || !sb) return;
@@ -4179,7 +4227,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
     advanced:{title:"Advanced",sub:"System controls, diagnostics and future developer options."}
   };
   function applyTrackerTheme(theme){
-    var allowed={terminal:1,midnight:1,light:1,oled:1,cyber:1};
+    var allowed={terminal:1,midnight:1,light:1,oled:1,cyber:1,matrix:1,aurora:1,solarized:1,paper:1,nebula:1};
     if (!allowed[theme]) theme="terminal";
     document.documentElement.setAttribute("data-theme", theme);
     try { localStorage.setItem(SETTINGS_THEME_KEY, theme); } catch(e){}
@@ -4221,6 +4269,42 @@ Mistakes: Physics: sign error in kinematics"></textarea>
   document.getElementById("settingsAIOpenBtn").addEventListener("click", function(){ closeSettings(); var b=document.querySelector('#mainTabNav .tabbtn[data-tab="analysis"]'); if(b) b.click(); });
   document.getElementById("settingsCalendarBtn").addEventListener("click", function(){ closeSettings(); var b=document.querySelector('#mainTabNav .tabbtn[data-tab="schedule"]'); if(b) b.click(); });
   document.getElementById("settingsAdvancedAdminBtn").addEventListener("click", function(){ closeSettings(); var b=document.getElementById("adminTabBtn"); if(b && b.style.display !== "none") b.click(); else toast("Control Center is available to the admin account only"); });
+
+
+/* v1.8.0 Performance OS runtime */
+(function(){
+  var PKEY={mastery:'jee_perf_mastery_v1',mistakes:'jee_perf_mistakes_v1',planner:'jee_perf_planner_v1',experiments:'jee_perf_experiments_v1'};
+  function arr(k){try{return JSON.parse(localStorage.getItem(k)||'[]')}catch(e){return[]}}
+  function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+  function el(id){return document.getElementById(id)}
+  function tests(){return (window.state&&Array.isArray(window.state.tests))?window.state.tests:[]}
+  function pct(v){return isFinite(v)?Math.round(v*10)/10:0}
+  function open(){var b=el('performanceOSBg');if(!b)return;b.classList.add('open');b.setAttribute('aria-hidden','false');renderAll()}
+  function close(){var b=el('performanceOSBg');if(b){b.classList.remove('open');b.setAttribute('aria-hidden','true')}}
+  function tab(name){document.querySelectorAll('.perfTab').forEach(function(x){x.classList.toggle('active',x.dataset.perfTab===name)});document.querySelectorAll('.perfPage').forEach(function(x){x.classList.toggle('active',x.dataset.perfPage===name)}); if(name==='overview'||name==='records'||name==='mastery'||name==='mistakes'||name==='planner'||name==='experiments')renderAll()}
+  function renderOverview(){var ts=tests(), n=ts.length, avg=n?ts.reduce(function(a,t){return a+(+t.percentage||0)},0)/n:0, acc=n?ts.reduce(function(a,t){return a+(+t.accuracy||0)},0)/n:0, best=n?Math.max.apply(null,ts.map(function(t){return +t.percentage||0})):0, q=ts.reduce(function(a,t){return a+(+t.totalQuestions||+t.correct||0)+(+t.incorrect||0)+(+t.unattempted||0)},0);var g=el('perfOverviewGrid');if(g)g.innerHTML='<div class="perfCard"><h3>Tests</h3><div class="perfBig">'+n+'</div><div class="perfSmall">Recorded tests</div></div><div class="perfCard"><h3>Average percentage</h3><div class="perfBig">'+pct(avg)+'%</div><div class="perfSmall">Across recorded tests</div></div><div class="perfCard"><h3>Average accuracy</h3><div class="perfBig">'+pct(acc)+'%</div><div class="perfSmall">Across recorded tests</div></div><div class="perfCard"><h3>Best percentage</h3><div class="perfBig">'+pct(best)+'%</div><div class="perfSmall">Personal record</div></div><div class="perfCard"><h3>Questions tracked</h3><div class="perfBig">'+q+'</div><div class="perfSmall">Attempted + unattempted where available</div></div><div class="perfCard"><h3>Latest test</h3><div class="perfBig">'+(n?(ts[ts.length-1].percentage!=null?pct(ts[ts.length-1].percentage)+'%':'—'):'—')+'</div><div class="perfSmall">'+(n?(ts[ts.length-1].name||'Latest test'):'No tests yet')+'</div></div>';var coach=el('perfCoach');if(coach){var s='';if(!n)s='Add your first test to activate the data coach.';else{s='Based on '+n+' recorded test'+(n===1?'':'s')+', your current average is '+pct(avg)+'% with '+pct(acc)+'% accuracy. ';if(n>=3){var recent=ts.slice(-3),ra=recent.reduce(function(a,t){return a+(+t.percentage||0)},0)/recent.length;s+='Your last 3-test average is '+pct(ra)+'%. ';if(ra>avg+2)s+='Recent results are above your overall average.';else if(ra<avg-2)s+='Recent results are below your overall average; review recent mistakes and weak chapters.';else s+='Recent results are close to your overall average.';}else s+='Record at least 3 tests for trend commentary.'}coach.textContent=s}}
+  function renderMastery(){var a=arr(PKEY.mastery),c=el('pmList');if(!c)return;c.innerHTML=a.length?a.map(function(x,i){return '<div class="perfItem"><b>'+x.subject+' — '+x.chapter+'</b><div class="perfSmall">'+x.mastery+'% mastery</div><div class="perfBar"><i style="width:'+Math.max(0,Math.min(100,x.mastery))+'%"></i></div><div class="perfActions"><button class="small ghost" data-del-mastery="'+i+'">Delete</button></div></div>'}).join(''):'<div class="perfItem">No chapter mastery entries yet.</div>'}
+  function renderMistakes(){var a=arr(PKEY.mistakes),c=el('mkList');if(!c)return;var counts={};a.forEach(function(x){counts[x.category]=(counts[x.category]||0)+1});var summary=Object.keys(counts).map(function(k){return k+': '+counts[k]}).join(' • ');c.innerHTML='<div class="perfItem"><b>Pattern summary</b><div class="perfSmall">'+(summary||'No logged categories yet.')+'</div></div>'+(a.length?a.slice().reverse().map(function(x,i){return '<div class="perfItem"><b>'+x.category+'</b><div class="perfSmall">'+x.note+' · '+new Date(x.ts).toLocaleString()+'</div></div>'}).join(''):'')}
+  function renderPlanner(){var a=arr(PKEY.planner).sort(function(x,y){return (x.date+' '+x.time).localeCompare(y.date+' '+y.time)}),c=el('plList');if(!c)return;c.innerHTML=a.length?a.map(function(x,i){return '<div class="perfItem"><b>'+x.task+'</b><div class="perfSmall">'+x.date+' '+x.time+' · '+x.subject+'</div><div class="perfActions"><button class="small ghost" data-del-plan="'+i+'">Delete</button></div></div>'}).join(''):'<div class="perfItem">No planned sessions.</div>'}
+  function renderRecords(){var ts=tests(),best=ts.length?ts.reduce(function(a,b){return (+b.percentage||0)>(+a.percentage||0)?b:a}):null,acc=ts.length?ts.reduce(function(a,b){return (+b.accuracy||0)>(+a.accuracy||0)?b:a}):null,total=arr(PKEY.mistakes).length;var c=el('perfRecordsGrid');if(c)c.innerHTML='<div class="perfCard"><h3>Highest percentage</h3><div class="perfBig">'+(best?pct(best.percentage)+'%':'—')+'</div><div class="perfSmall">'+(best?(best.name||'Test'):'No data')+'</div></div><div class="perfCard"><h3>Highest accuracy</h3><div class="perfBig">'+(acc?pct(acc.accuracy)+'%':'—')+'</div><div class="perfSmall">'+(acc?(acc.name||'Test'):'No data')+'</div></div><div class="perfCard"><h3>Logged mistakes</h3><div class="perfBig">'+total+'</div><div class="perfSmall">Performance OS category log</div></div>'}
+  function renderExperiments(){var a=arr(PKEY.experiments),c=el('exList');if(c)c.innerHTML=a.length?a.slice().reverse().map(function(x){return '<div class="perfItem"><b>'+x.name+'</b><div class="perfSmall">Hypothesis: '+x.hypothesis+'</div><div class="perfSmall">Observation: '+x.result+'</div></div>'}).join(''):'<div class="perfItem">No experiments recorded.</div>'}
+  function renderAll(){renderOverview();renderMastery();renderMistakes();renderPlanner();renderRecords();renderExperiments()}
+  var timer={sec:1500,id:null};function drawTimer(){var m=Math.floor(timer.sec/60),s=timer.sec%60;if(el('timerDisplay'))el('timerDisplay').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
+  function bind(){var b=el('performanceOSBtn');if(b)b.addEventListener('click',open);if(el('performanceClose'))el('performanceClose').addEventListener('click',close);document.querySelectorAll('.perfTab').forEach(function(x){x.addEventListener('click',function(){tab(x.dataset.perfTab)})});if(el('performanceOSBg'))el('performanceOSBg').addEventListener('click',function(e){if(e.target===this)close()});
+    el('pmSave')&&el('pmSave').addEventListener('click',function(){var a=arr(PKEY.mastery),x={subject:el('pmSubject').value,chapter:el('pmChapter').value.trim(),mastery:+el('pmMastery').value};if(!x.chapter||isNaN(x.mastery))return;if(x.mastery<0||x.mastery>100)return;var old=a.find(function(y){return y.subject===x.subject&&y.chapter.toLowerCase()===x.chapter.toLowerCase()});if(old)old.mastery=x.mastery;else a.push(x);save(PKEY.mastery,a);el('pmChapter').value='';el('pmMastery').value='';renderMastery()});
+    el('mkSave')&&el('mkSave').addEventListener('click',function(){var a=arr(PKEY.mistakes),n=el('mkNote').value.trim();if(!n)return;a.push({category:el('mkCategory').value,note:n,ts:Date.now()});save(PKEY.mistakes,a);el('mkNote').value='';renderMistakes()});
+    el('plSave')&&el('plSave').addEventListener('click',function(){var a=arr(PKEY.planner),x={date:el('plDate').value,time:el('plTime').value,task:el('plTask').value.trim(),subject:el('plSubject').value};if(!x.date||!x.task)return;a.push(x);save(PKEY.planner,a);el('plTask').value='';renderPlanner()});
+    el('exSave')&&el('exSave').addEventListener('click',function(){var a=arr(PKEY.experiments),x={name:el('exName').value.trim(),hypothesis:el('exHypothesis').value.trim(),result:el('exResult').value.trim(),ts:Date.now()};if(!x.name)return;a.push(x);save(PKEY.experiments,a);['exName','exHypothesis','exResult'].forEach(function(id){el(id).value=''});renderExperiments()});
+    el('timerPreset')&&el('timerPreset').addEventListener('change',function(){timer.sec=+this.value*60;drawTimer()});el('timerStart')&&el('timerStart').addEventListener('click',function(){if(timer.id)return;timer.id=setInterval(function(){if(timer.sec>0){timer.sec--;drawTimer()}else{clearInterval(timer.id);timer.id=null;if(window.toast)toast('Study session complete. Nice work.') }},1000)});el('timerPause')&&el('timerPause').addEventListener('click',function(){if(timer.id){clearInterval(timer.id);timer.id=null}});el('timerReset')&&el('timerReset').addEventListener('click',function(){if(timer.id)clearInterval(timer.id);timer.id=null;timer.sec=+(el('timerPreset').value||25)*60;drawTimer()});
+    el('perfRefresh')&&el('perfRefresh').addEventListener('click',renderAll);
+    el('perfLatestAI')&&el('perfLatestAI').addEventListener('click',async function(){var ts=tests();if(!ts.length){alert('Add a test first.');return}try{if(typeof window.analyzeTestAI==='function'){await window.analyzeTestAI(ts[ts.length-1].id);if(typeof window.refreshAIInsights==='function')await window.refreshAIInsights();alert('AI analysis requested for the latest test.')}else alert('AI analysis is not available in this build.')}catch(e){alert(e.message||'AI analysis failed')}});
+    el('perfExport')&&el('perfExport').addEventListener('click',function(){var backup={version:'1.8.0',exportedAt:new Date().toISOString(),tests:tests(),performance:{mastery:arr(PKEY.mastery),mistakes:arr(PKEY.mistakes),planner:arr(PKEY.planner),experiments:arr(PKEY.experiments)}};var blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='jee-tracker-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(function(){URL.revokeObjectURL(u)},1000)});
+    el('perfImportBtn')&&el('perfImportBtn').addEventListener('click',function(){el('perfImportFile').click()});el('perfImportFile')&&el('perfImportFile').addEventListener('change',function(){var f=this.files&&this.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var x=JSON.parse(r.result);var p=x.performance||{};Object.keys(PKEY).forEach(function(k){if(Array.isArray(p[k]))save(PKEY[k],p[k])});renderAll();el('perfDataStatus').textContent='Backup imported successfully.'}catch(e){el('perfDataStatus').textContent='Import failed: invalid JSON backup.'}};r.readAsText(f)});
+    document.addEventListener('click',function(e){var d=e.target.closest('[data-del-mastery]');if(d){var a=arr(PKEY.mastery);a.splice(+d.dataset.delMastery,1);save(PKEY.mastery,a);renderMastery()}var p=e.target.closest('[data-del-plan]');if(p){var a2=arr(PKEY.planner);a2.splice(+p.dataset.delPlan,1);save(PKEY.planner,a2);renderPlanner()}});
+    drawTimer();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
+})();
 
 </script>
 </body>
