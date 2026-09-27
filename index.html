@@ -2859,8 +2859,10 @@ window.openSmartGoals190=open;
       setGoogleCalendarStatus("Connected. Loading all of your visible Google Calendars…");
       await loadGoogleCalendarDay();
     } catch(e) {
-      clearGoogleCalendarConnection();
-      setGoogleCalendarStatus("Google Calendar is not connected. Click Connect Google Calendar to authorize it once.");
+      // Keep the saved connection marker on transient token/API failures.
+      // A later app load or sign-in can retry without forcing OAuth again.
+      state.gcalAccessToken = null;
+      setGoogleCalendarStatus("Could not restore Google Calendar: " + (e.message || "temporary error") + ". Your saved connection was kept. Try again; if Google access was revoked, reconnect.");
     }
   }
 
