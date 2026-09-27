@@ -1389,6 +1389,7 @@ body.settings-open { overflow:hidden !important; height:100%; overscroll-behavio
 
     <div class="card">
       <div class="sectionTitle">AI mistake analysis</div>
+      <div class="hint" style="color:var(--text-dim);font-size:12px;margin-bottom:8px;">Grouped by test — open a row to view its analysis.</div>
       <div class="planText" id="aiInsightContent"><span style="color:var(--text-dim)">No AI analysis yet. Add mistake images to a test and save it.</span></div>
     </div>
 
@@ -3858,20 +3859,21 @@ window.openSmartGoals190=open;
         }
       }
       if (status === "failed" && r.last_error) detail = " · " + String(r.last_error).slice(0,180);
-      return '<span class="pill '+cls+'">AI: '+label+'</span><span style="font-size:11.5px;color:var(--text-dim);margin-left:7px;">'+detail+'</span>';
+      return '<span class="pill '+cls+'">AI: '+label+'</span><span style="font-size:11.5px;color:var(--text-dim);margin-left:7px;">'+escapeHtml(detail)+'</span>';
     }
     var html = rows.slice(0,5).map(function(r){
       var test = state.tests.find(function(t){return t.id===r.test_id;});
-      var title = test ? test.name : r.test_id;
+      var title = test ? test.name : (r.test_id||'Test');
       var ma = Array.isArray(r.mistakes_analysis) ? r.mistakes_analysis : [];
       var pa = r.plan_analysis || {};
       var patterns = Array.isArray(pa.patterns) ? pa.patterns : [];
       var plan = Array.isArray(pa.plan) ? pa.plan : [];
-      var out = '<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b>'+title+'</b>'+statusHtml(r)+'</div>';
-      if (patterns.length) out += '<div style="margin-top:7px"><span class="tag">Patterns</span>'+patterns.map(function(x){return '<div style="margin:4px 0">'+(x.topic||'Pattern')+': '+(x.observation||'')+'</div>';}).join('')+'</div>';
-      if (ma.length) out += '<div style="margin-top:7px"><span class="tag">Mistakes</span>'+ma.map(function(x){return '<div style="margin:4px 0">'+(x.subject?'<b>'+x.subject+'</b> — ':'')+(x.topic||'')+(x.observation?' — '+x.observation:'')+(x.action?' <span style="color:var(--text-dim)">→ '+x.action+'</span>':'')+'</div>';}).join('')+'</div>';
-      if (plan.length) out += '<div style="margin-top:7px"><span class="tag">Plan</span>'+plan.map(function(x){return '<div style="margin:4px 0"><b>'+((x.priority||'').toUpperCase())+'</b> — '+(x.topic||'')+': '+(x.action||'')+'</div>';}).join('')+'</div>';
-      return out+'</div>';
+      var testDate = test && test.date ? test.date : '';
+      var out = '<details class="mistakeTestGroup"><summary><b>'+escapeHtml(title)+'</b>'+(testDate?'<span class="tag">'+escapeHtml(testDate)+'</span>':'')+'<span class="pill">'+ma.length+' mistake'+(ma.length===1?'':'s')+' · '+patterns.length+' pattern'+(patterns.length===1?'':'s')+' · '+plan.length+' plan item'+(plan.length===1?'':'s')+'</span>'+statusHtml(r)+'</summary><div class="mistakeTestItems">';
+      if (patterns.length) out += '<div style="margin:5px 0 8px"><span class="tag">Patterns</span>'+patterns.map(function(x){return '<div style="margin:5px 0">'+escapeHtml(x.topic||'Pattern')+': '+escapeHtml(x.observation||'')+'</div>';}).join('')+'</div>';
+      if (ma.length) out += '<div style="margin:5px 0 8px"><span class="tag">Mistakes</span>'+ma.map(function(x){return '<div style="margin:5px 0">'+(x.subject?'<b>'+escapeHtml(x.subject)+'</b> — ':'')+escapeHtml(x.topic||'')+(x.observation?' — '+escapeHtml(x.observation):'')+(x.action?' <span style="color:var(--text-dim)">→ '+escapeHtml(x.action)+'</span>':'')+'</div>';}).join('')+'</div>';
+      if (plan.length) out += '<div style="margin:5px 0 8px"><span class="tag">Plan</span>'+plan.map(function(x){return '<div style="margin:5px 0"><b>'+escapeHtml((x.priority||'').toUpperCase())+'</b> — '+escapeHtml(x.topic||'')+': '+escapeHtml(x.action||'')+'</div>';}).join('')+'</div>';
+      return out+'</div></details>';
     }).join('');
     el.innerHTML = html;
     // Re-render mistake analytics so AI-sourced mistakes are included immediately.
