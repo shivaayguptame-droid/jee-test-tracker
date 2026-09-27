@@ -844,10 +844,10 @@ body.settings-open { overflow:hidden !important; height:100%; overscroll-behavio
   h1 { font-size:26px; line-height:1.05; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .sub { font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
-  /* Keep every header action reachable without allowing the page itself to overflow. */
-  .headerActions { width:100%; flex:0 0 100%; display:flex; flex-wrap:nowrap; gap:7px; overflow-x:auto; overflow-y:hidden; padding:2px 1px 6px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
-  .headerActions::-webkit-scrollbar { display:none; }
-  .headerActions > button, .headerActions .notificationWrap { flex:0 0 auto; }
+  /* Keep the action groups tidy and wrapped on narrow screens. */
+  .headerActions { width:100%; flex:0 0 100%; display:flex; flex-wrap:wrap; gap:7px; overflow:visible; padding:2px 1px 6px; }
+  .headerPrimaryActions, .headerUtilityActions { flex-wrap:nowrap; }
+  .headerActions > button, .headerActions .notificationWrap, .headerMenuWrap { flex:0 0 auto; }
   .headerActions button { min-height:44px; }
   .notificationBell, .settingsButton { width:44px; height:44px; min-width:44px; }
   .notificationPanelHead { gap:8px; }
@@ -989,14 +989,22 @@ body.settings-open { overflow:hidden !important; height:100%; overscroll-behavio
 .perfBg.open{display:flex}.perfModal{width:min(1180px,96vw);max-height:min(900px,94vh);overflow:hidden;background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:0 28px 100px rgba(0,0,0,.55);display:flex;flex-direction:column}.perfHead{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--border);background:var(--header-bg)}.perfTitle{font-size:20px;font-weight:900;color:var(--heading)}.perfSub{font-size:11px;color:var(--text-dim);margin-top:3px}.perfTabs{display:flex;gap:6px;overflow:auto;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--nav-bg)}.perfTab{border:1px solid var(--border);background:var(--control-bg);color:var(--control-text);border-radius:9px;padding:9px 12px;white-space:nowrap;cursor:pointer}.perfTab.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}.perfBody{overflow:auto;padding:16px}.perfPage{display:none}.perfPage.active{display:block}.perfGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.perfCard{border:1px solid var(--border);background:var(--card-bg);border-radius:var(--radius);padding:14px;min-width:0}.perfCard h3{margin:0 0 8px;font-size:13px;color:var(--heading)}.perfBig{font-size:28px;font-weight:900;color:var(--accent)}.perfSmall{font-size:11px;color:var(--text-dim)}.perfBar{height:8px;border-radius:999px;background:var(--surface-3);overflow:hidden;margin-top:8px}.perfBar i{display:block;height:100%;background:var(--accent);border-radius:inherit}.perfTable{width:100%;border-collapse:collapse;font-size:12px}.perfTable th,.perfTable td{padding:8px;border-bottom:1px solid var(--border);text-align:left}.perfActions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.perfForm{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.perfForm input,.perfForm select,.perfForm textarea{width:100%;box-sizing:border-box}.perfList{display:grid;gap:8px;margin-top:10px}.perfItem{border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--surface-2)}.timerDisplay{font-size:58px;font-weight:900;text-align:center;letter-spacing:.04em;padding:24px;color:var(--accent)}
 @media(max-width:760px){.perfBg{padding:0}.perfModal{width:100%;height:100%;max-height:none;border-radius:0}.perfHead{padding-top:calc(12px + env(safe-area-inset-top,0px))}.perfGrid{grid-template-columns:1fr}.perfForm{grid-template-columns:1fr}.perfBody{padding:12px}.timerDisplay{font-size:46px}.perfTabs{padding-bottom:10px}.perfTab{min-height:42px}}
 
-/* v2.0.5 header action layout */
-.headerActions{display:flex;align-items:center;gap:10px;flex-wrap:nowrap;}
-.headerPrimaryActions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end;}
-.headerUtilityActions{display:flex;align-items:center;gap:7px;position:relative;flex:0 0 auto;}
+/* Header action groups and compact dropdowns */
+.headerActions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+.headerPrimaryActions,.headerUtilityActions{display:flex;align-items:center;gap:5px;flex-wrap:nowrap;padding:4px;border:1px solid var(--border);border-radius:calc(var(--radius) * .8);background:color-mix(in srgb,var(--surface) 80%,transparent);}
+.headerUtilityActions{position:relative;flex:0 0 auto;}
+.headerMenuWrap{position:relative;flex:0 0 auto;}
+.headerMenuToggle{display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;}
+.headerMenuToggle .menuChevron{font-size:10px;transition:transform .12s ease;}
+.headerMenuToggle[aria-expanded="true"] .menuChevron{transform:rotate(180deg);}
+.headerDropdown{position:absolute;z-index:160;top:calc(100% + 7px);right:0;min-width:220px;display:grid;gap:4px;padding:6px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:0 14px 38px rgba(0,0,0,.32);}
+.headerDropdown[hidden]{display:none;}
+.headerDropdown button{width:100%;min-height:38px;padding:8px 10px;text-align:left;border:0;border-radius:calc(var(--radius) * .65);background:transparent;color:var(--text);font-size:12.5px;}
+.headerDropdown button:hover{background:var(--accent-soft);color:var(--accent);}
 .headerActions .notificationWrap{position:relative;order:0;}
 .headerActions .notificationPanel{left:auto;right:0;}
-@media(max-width:1100px){.headerActions{align-items:flex-start;flex-wrap:wrap;}.headerPrimaryActions{justify-content:flex-start;}.headerUtilityActions{margin-left:auto;}}
-@media(max-width:700px){.headerActions{width:100%;}.headerPrimaryActions{width:100%;}.headerUtilityActions{margin-left:0;width:100%;justify-content:flex-end;}.headerActions .notificationPanel{right:0;left:auto;max-width:min(92vw,380px);}}
+@media(max-width:1100px){.headerActions{align-items:flex-start;justify-content:flex-start;}.headerPrimaryActions{justify-content:flex-start;}.headerUtilityActions{margin-left:auto;}}
+@media(max-width:700px){.headerActions{width:100%;}.headerPrimaryActions{width:100%;max-width:100%;flex-wrap:wrap;}.headerUtilityActions{margin-left:auto;width:auto;justify-content:flex-end;}.headerDropdown{right:0;}.headerActions .notificationPanel{right:0;left:auto;max-width:min(92vw,380px);}}
 
 
 /* v2.0.5 FINAL — Workspace layout: Left (Original) or Top only. */
@@ -1226,15 +1234,25 @@ body.settings-open { overflow:hidden !important; height:100%; overscroll-behavio
     </div>
     <div class="btnrow headerActions">
       <div class="headerPrimaryActions">
-      <button class="ghost" id="accountBtn">⚙ Sign in</button>
-      <button class="ghost" id="importLocalBtn">Import Old Data</button>
-      <button class="ghost" id="pasteBtn">Paste Results</button>
-      <button class="ghost" id="screenshotImportBtn">📷 Screenshot → Test</button>
-      <button class="ghost" id="compareBtn">Compare</button>
-      <button class="primary" id="addBtn">+ Add Test</button>
-      <button class="ghost" id="performanceOSBtn" title="Performance OS">⚡ Command Center</button>
+        <div class="headerMenuWrap">
+          <button type="button" class="primary headerMenuToggle" id="addTestMenuButton" aria-expanded="false" aria-controls="addTestMenu">+ Add Test <span class="menuChevron" aria-hidden="true">▾</span></button>
+          <div class="headerDropdown" id="addTestMenu" hidden>
+            <button type="button" class="headerMenuItem" id="addBtn">Enter test manually</button>
+            <button type="button" class="headerMenuItem" id="pasteBtn">Paste results</button>
+            <button type="button" class="headerMenuItem" id="screenshotImportBtn">📷 Import result screenshot</button>
+          </div>
+        </div>
+        <button class="ghost" id="compareBtn">Compare</button>
+        <button class="ghost" id="performanceOSBtn" title="Performance OS">⚡ Performance</button>
+        <div class="headerMenuWrap">
+          <button type="button" class="ghost headerMenuToggle" id="moreActionsMenuButton" aria-expanded="false" aria-controls="moreActionsMenu">More <span class="menuChevron" aria-hidden="true">▾</span></button>
+          <div class="headerDropdown" id="moreActionsMenu" hidden>
+            <button type="button" class="headerMenuItem" id="importLocalBtn">Import old tracker data</button>
+          </div>
+        </div>
       </div>
       <div class="headerUtilityActions">
+      <button class="ghost" id="accountBtn">Sign in</button>
       <div class="notificationWrap" id="notificationWrap">
         <button class="ghost notificationBell" id="notificationBell" aria-label="Notifications" title="Notifications">
           <span class="bellGlyph" aria-hidden="true">🔔</span>
@@ -2466,8 +2484,15 @@ window.openSmartGoals190=open;
   function setAccountButton(){
     var b = document.getElementById("accountBtn");
     if (!b) return;
-    if (state.user) b.textContent = "Account: " + ((state.user.email || "").split("@")[0] || "Signed in");
-    else b.textContent = sb ? "Sign in" : "Account";
+    if (state.user) {
+      b.textContent = "Account";
+      b.title = "Signed in as " + (state.user.email || "your account") + ". Click to sign out.";
+      b.setAttribute("aria-label", b.title);
+    } else {
+      b.textContent = sb ? "Sign in" : "Account";
+      b.title = sb ? "Sign in to sync your tracker" : "Account";
+      b.setAttribute("aria-label", b.title);
+    }
   }
 
   function openAuth(mode){
@@ -4793,6 +4818,35 @@ window.openSmartGoals190=open;
   document.addEventListener("keydown", function(e){ if(e.key==="Escape") closeSettings(); });
   document.querySelectorAll(".settingsNavBtn").forEach(function(b){ b.addEventListener("click", function(){ switchSettingsPage(b.getAttribute("data-settings-page")); }); });
   document.querySelectorAll(".themeChoice").forEach(function(b){ b.addEventListener("click", function(){ applyTrackerTheme(b.getAttribute("data-theme-choice")); }); });
+  (function bindHeaderActionMenus(){
+    var menus=[
+      {button:document.getElementById("addTestMenuButton"),panel:document.getElementById("addTestMenu")},
+      {button:document.getElementById("moreActionsMenuButton"),panel:document.getElementById("moreActionsMenu")}
+    ];
+    function closeMenus(returnFocus){
+      menus.forEach(function(item){
+        if(!item.button||!item.panel)return;
+        var wasOpen=item.button.getAttribute("aria-expanded")==="true";
+        item.button.setAttribute("aria-expanded","false");
+        item.panel.hidden=true;
+        if(returnFocus&&wasOpen)item.button.focus();
+      });
+    }
+    menus.forEach(function(item){
+      if(!item.button||!item.panel)return;
+      item.button.addEventListener("click",function(){
+        var willOpen=item.panel.hidden;
+        closeMenus(false);
+        item.panel.hidden=!willOpen;
+        item.button.setAttribute("aria-expanded",willOpen?"true":"false");
+      });
+    });
+    document.addEventListener("click",function(e){
+      if(!e.target.closest(".headerMenuWrap")){closeMenus(false);return;}
+      if(e.target.closest(".headerMenuItem"))closeMenus(false);
+    });
+    document.addEventListener("keydown",function(e){if(e.key==="Escape")closeMenus(true);});
+  })();
   document.getElementById("settingsAccountBtn").addEventListener("click", function(){ closeSettings(); if(typeof openAuth === "function") openAuth(state.user ? "signin" : "signin"); });
   document.getElementById("settingsNotificationsBtn").addEventListener("click", function(){ closeSettings(); var b=document.getElementById("notificationBell"); if(b) b.click(); });
   document.getElementById("settingsImportBtn").addEventListener("click", function(){ closeSettings(); var b=document.getElementById("importLocalBtn"); if(b) b.click(); });
