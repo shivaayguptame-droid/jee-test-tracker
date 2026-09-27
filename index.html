@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>JEE Test Tracker v1.9.2</title>
+<title>JEE Test Tracker v2.0.0</title>
 <!-- VERSION: 1.9.1 | Smart Planner + Goals 2.0 with theme-correct notification panel and viewport-safe notifications. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -141,7 +141,7 @@
   .pill.bad { background: color-mix(in srgb, var(--bad) 15%, transparent); color: var(--bad); }
   .pill.warn { background: color-mix(in srgb, var(--warn) 15%, transparent); color: var(--warn); }
   .empty { color: var(--text-dim); font-size: 13.5px; text-align: center; padding: 30px 10px; }
-  .modalBg { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: flex-start; justify-content: center; z-index: 50; overflow-y: auto; padding: 30px 14px; }
+  .modalBg { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: flex-start; justify-content: center; z-index: 150; overflow-y: auto; padding: 30px 14px; }
   .modalBg.open { display: flex; }
   .modal { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); width: 100%; max-width: 640px; padding: 20px; margin-bottom: 40px; }
   .modal h2 { font-family: var(--font-display); margin: 0 0 4px; font-size: 18px; }
@@ -506,7 +506,7 @@ tr:hover td { background:var(--table-hover); }
 .settingsGlyph { font-size:18px; line-height:1; }
 .settingsModalBg { position:fixed; inset:0; z-index:140; display:none; align-items:center; justify-content:center; padding:22px; background:rgba(0,0,0,.66); backdrop-filter:blur(5px); }
 .settingsModalBg.open { display:flex; }
-.settingsModal { width:min(920px,96vw); max-height:min(760px,92vh); overflow:hidden; display:grid; grid-template-columns:220px minmax(0,1fr); background:var(--surface); border:1px solid var(--border); border-radius:18px; box-shadow:0 28px 90px rgba(0,0,0,.5); }
+.settingsModal { width:min(920px,96vw); height:min(760px,92vh); max-height:min(760px,92vh); min-height:0; overflow:hidden; display:grid; grid-template-columns:220px minmax(0,1fr); grid-template-rows:minmax(0,1fr); background:var(--surface); border:1px solid var(--border); border-radius:18px; box-shadow:0 28px 90px rgba(0,0,0,.5); }
 .settingsSide { padding:14px; border-right:1px solid var(--border); background:color-mix(in srgb,var(--surface) 88%,var(--bg)); overflow:auto; }
 .settingsBrand { padding:8px 10px 14px; border-bottom:1px solid var(--border); margin-bottom:10px; }
 .settingsBrandTitle { font-size:16px; font-weight:800; color:var(--text); }
@@ -514,7 +514,7 @@ tr:hover td { background:var(--table-hover); }
 .settingsNavBtn { width:100%; display:flex; align-items:center; gap:9px; text-align:left; border:1px solid transparent; border-radius:10px; padding:10px 11px; margin:3px 0; color:var(--text-dim); background:transparent; }
 .settingsNavBtn:hover { background:var(--accent-soft); color:var(--text); }
 .settingsNavBtn.active { background:var(--accent-soft); color:var(--accent); border-color:color-mix(in srgb,var(--accent) 30%,var(--border)); }
-.settingsContent { min-width:0; overflow:auto; }
+.settingsContent { min-width:0; min-height:0; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
 .settingsHead { position:sticky; top:0; z-index:2; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:17px 20px; border-bottom:1px solid var(--border); background:color-mix(in srgb,var(--surface) 94%,var(--bg)); }
 .settingsHead h2 { margin:0; font-family:var(--font-display); font-size:21px; font-weight:500; color:var(--text); }
 .settingsHead p { margin:3px 0 0; font-size:11px; color:var(--text-dim); }
@@ -536,12 +536,50 @@ tr:hover td { background:var(--table-hover); }
 .settingsFuture { border-style:dashed; opacity:.88; }
 .settingsFuture .futureBadge { float:right; font-size:9px; padding:2px 6px; border:1px solid var(--border); border-radius:999px; color:var(--text-dim); }
 @media(max-width:760px){
-  .settingsModal { grid-template-columns:1fr; max-height:94vh; }
+  .settingsModal { width:100%; grid-template-columns:1fr; grid-template-rows:auto minmax(0,1fr); height:94vh; max-height:94vh; min-height:0; }
+  .settingsContent { min-height:0; height:100%; overflow-y:auto; }
   .settingsSide { display:flex; gap:5px; overflow-x:auto; border-right:none; border-bottom:1px solid var(--border); padding:9px; }
   .settingsBrand { display:none; }
   .settingsNavBtn { width:auto; flex:0 0 auto; white-space:nowrap; }
   .themeGrid { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
+
+
+/* v2.0.5 — Settings modal scroll + background lock */
+.appearanceControlsGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+.appearanceControl{border:1px solid var(--border);border-radius:11px;padding:10px;background:color-mix(in srgb,var(--surface) 82%,transparent);}
+.appearanceControl label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:7px;}
+.appearanceControl select{width:100%;}
+.appearanceInline{display:flex;align-items:center;gap:8px;}
+.appearanceInline input[type=color]{width:42px;height:34px;padding:2px;border:1px solid var(--border);border-radius:8px;background:var(--bg);cursor:pointer;}
+.appearanceToggle{display:flex;align-items:flex-start;gap:9px;border:1px solid var(--border);border-radius:11px;padding:10px;cursor:pointer;background:color-mix(in srgb,var(--surface) 82%,transparent);}
+.appearanceToggle input{margin-top:2px;accent-color:var(--accent);}
+.appearanceToggle b{display:block;font-size:12px;color:var(--text);}
+.appearanceToggle small{display:block;font-size:10.5px;color:var(--text-dim);margin-top:3px;line-height:1.4;}
+.stageRoadmap{display:grid;gap:7px;}
+.stageRoadmap>div{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:color-mix(in srgb,var(--surface) 80%,transparent);}
+.stageRoadmap b{display:block;font-size:12px;}
+.stageRoadmap small{display:block;color:var(--text-dim);font-size:10.5px;margin-top:2px;}
+.stageBadge{width:25px;height:25px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 25px;border-radius:50%;font-size:11px;font-weight:800;border:1px solid var(--border);color:var(--text-dim);}
+.stageBadge.done,.stageBadge.active{color:var(--accent);border-color:var(--accent);background:var(--accent-soft);}
+:root[data-appearance-density="compact"] .card,:root[data-appearance-density="compact"] .settingsSection{padding:10px;}
+:root[data-appearance-density="compact"] #kpis{gap:7px;}
+:root[data-appearance-density="spacious"] .card{padding:22px;}
+:root[data-appearance-density="spacious"] #kpis{gap:16px;}
+:root[data-appearance-compact="1"] .card{padding:11px;}
+:root[data-appearance-compact="1"] .field{margin-bottom:7px;}
+:root[data-appearance-compact="1"] #kpis{gap:7px;}
+:root[data-appearance-layout="focus"] .wrap{grid-template-columns:1fr;}
+:root[data-appearance-layout="focus"] #mainTabNav{grid-column:1;position:static;flex-direction:row;overflow-x:auto;}
+:root[data-appearance-layout="focus"] #mainTabNav .tabbtn{width:auto;flex:0 0 auto;}
+:root[data-appearance-layout="wide"] .wrap{width:min(1600px,calc(100% - 24px));}
+:root[data-appearance-large-text="1"] body{font-size:calc(100% + 1px);}
+:root[data-appearance-large-text="1"] .sub,:root[data-appearance-large-text="1"] .hint,:root[data-appearance-large-text="1"] .settingsSectionDesc{font-size:calc(100% + 1px);}
+:root[data-appearance-contrast="1"]{--border:color-mix(in srgb,var(--text) 42%,var(--bg));}
+:root[data-appearance-contrast="1"] .card,:root[data-appearance-contrast="1"] button,:root[data-appearance-contrast="1"] input,:root[data-appearance-contrast="1"] select,:root[data-appearance-contrast="1"] textarea{border-width:1.5px;}
+:root[data-appearance-motion="off"] *, :root[data-appearance-motion="reduced"] *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important;}
+:root[data-appearance-motion="off"] .themePreview::after{animation:none !important;}
+@media(max-width:760px){.appearanceControlsGrid{grid-template-columns:1fr;}}
 
 /* Theme palettes — each theme changes structure, typography, controls and accents, not just colors. */
 :root[data-theme="terminal"] {
@@ -790,6 +828,7 @@ body { font-family:var(--font-ui); }
 */
 @media (max-width: 760px) {
   html, body { width:100%; max-width:100%; overflow-x:hidden; }
+body.settings-open { overflow:hidden !important; height:100%; overscroll-behavior:none; }
   body { -webkit-tap-highlight-color: transparent; padding-bottom: env(safe-area-inset-bottom, 0px); }
   .wrap { width:100%; max-width:none; box-sizing:border-box; margin:0; padding:12px 12px calc(84px + env(safe-area-inset-bottom, 0px)); }
 
@@ -848,7 +887,7 @@ body { font-family:var(--font-ui); }
   .modalBg { align-items:flex-start; padding:10px; padding-top:calc(10px + env(safe-area-inset-top, 0px)); padding-bottom:calc(10px + env(safe-area-inset-bottom, 0px)); }
   .modal { width:100%; max-width:none; max-height:calc(100dvh - 20px); overflow-y:auto; box-sizing:border-box; padding:16px; margin:0; border-radius:12px; }
 
-  .settingsModal { width:100%; max-width:none; max-height:calc(100dvh - 20px); }
+  .settingsModal { width:100%; max-width:none; height:calc(100dvh - 20px); max-height:calc(100dvh - 20px); min-height:0; }
   .settingsSide { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
   .settingsSide::-webkit-scrollbar { display:none; }
   .settingsNavBtn { min-height:44px; }
@@ -883,7 +922,7 @@ body { font-family:var(--font-ui); }
   #mainTabNav { position:static; }
 }
 
-/* v1.9.2 — Theme Engine 2.0: Glass + Industrial replace Matrix + Nebula */
+/* v2.0.0 — Theme Engine 2.0: Glass + Industrial replace Matrix + Nebula */
 :root[data-theme="glass"]{--font-ui:Inter,ui-sans-serif,system-ui,sans-serif;--font-display:"Space Grotesk",Inter,sans-serif;--bg:#08111f;--surface:rgba(255,255,255,.10);--surface-2:rgba(255,255,255,.14);--surface-3:rgba(255,255,255,.18);--border:rgba(180,225,255,.28);--text:#edf8ff;--text-dim:#9db8c9;--accent:#8de1ff;--accent-soft:rgba(141,225,255,.13);--good:#8dffcf;--bad:#ff8299;--warn:#ffd27d;--radius:22px;--header-bg:rgba(10,25,43,.58);--nav-bg:rgba(10,25,43,.50);--card-bg:linear-gradient(145deg,rgba(255,255,255,.14),rgba(255,255,255,.055));--control-bg:rgba(255,255,255,.09);--control-hover:rgba(141,225,255,.16);--control-border:rgba(180,225,255,.30);--control-text:#edf8ff;--input-bg:rgba(4,14,27,.52);--table-bg:rgba(255,255,255,.06);--table-head-bg:rgba(141,225,255,.10);--table-hover:rgba(141,225,255,.08);--heading:#ffffff;}
 :root[data-theme="industrial"]{--font-ui:"IBM Plex Mono",ui-monospace,monospace;--font-display:"IBM Plex Mono",ui-monospace,monospace;--bg:#1b1d1f;--surface:#25282b;--surface-2:#2d3033;--surface-3:#35393c;--border:#62676b;--text:#e8e3d7;--text-dim:#a9aaa6;--accent:#ffb347;--accent-soft:#3a2b1a;--good:#8fd694;--bad:#ff7373;--warn:#ffd166;--radius:3px;--header-bg:#222527;--nav-bg:#202326;--card-bg:linear-gradient(145deg,#292d30,#202326);--control-bg:#292d30;--control-hover:#3a3e41;--control-border:#676d72;--control-text:#eee9dd;--input-bg:#1d2022;--table-bg:#25282b;--table-head-bg:#303438;--table-hover:#353a3e;--heading:#ffd08a;}
 :root[data-theme="aurora"]{--font-ui:"Manrope",sans-serif;--font-display:"Space Grotesk",sans-serif;--bg:#07141a;--surface:rgba(15,31,39,.88);--surface-2:#12252d;--surface-3:#17323a;--border:#2b6871;--text:#e5fffb;--text-dim:#8bb9b9;--accent:#61ffd7;--accent-soft:#123a39;--good:#65f5b5;--bad:#ff779c;--warn:#ffd166;--radius:18px;--header-bg:rgba(10,28,34,.86);--nav-bg:rgba(10,28,34,.86);--card-bg:linear-gradient(135deg,rgba(16,43,49,.92),rgba(11,27,35,.88));--control-bg:#0c252c;--control-hover:#14363d;--control-border:#2b6871;--control-text:#e5fffb;--input-bg:#08191f;--table-bg:#0d252d;--table-head-bg:#14343b;--table-hover:#173a40;--heading:#b9fff1;}
@@ -943,16 +982,35 @@ body { font-family:var(--font-ui); }
 .perfBg{position:fixed;inset:0;z-index:170;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.7);backdrop-filter:blur(7px)}
 .perfBg.open{display:flex}.perfModal{width:min(1180px,96vw);max-height:min(900px,94vh);overflow:hidden;background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:0 28px 100px rgba(0,0,0,.55);display:flex;flex-direction:column}.perfHead{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--border);background:var(--header-bg)}.perfTitle{font-size:20px;font-weight:900;color:var(--heading)}.perfSub{font-size:11px;color:var(--text-dim);margin-top:3px}.perfTabs{display:flex;gap:6px;overflow:auto;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--nav-bg)}.perfTab{border:1px solid var(--border);background:var(--control-bg);color:var(--control-text);border-radius:9px;padding:9px 12px;white-space:nowrap;cursor:pointer}.perfTab.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}.perfBody{overflow:auto;padding:16px}.perfPage{display:none}.perfPage.active{display:block}.perfGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.perfCard{border:1px solid var(--border);background:var(--card-bg);border-radius:var(--radius);padding:14px;min-width:0}.perfCard h3{margin:0 0 8px;font-size:13px;color:var(--heading)}.perfBig{font-size:28px;font-weight:900;color:var(--accent)}.perfSmall{font-size:11px;color:var(--text-dim)}.perfBar{height:8px;border-radius:999px;background:var(--surface-3);overflow:hidden;margin-top:8px}.perfBar i{display:block;height:100%;background:var(--accent);border-radius:inherit}.perfTable{width:100%;border-collapse:collapse;font-size:12px}.perfTable th,.perfTable td{padding:8px;border-bottom:1px solid var(--border);text-align:left}.perfActions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.perfForm{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.perfForm input,.perfForm select,.perfForm textarea{width:100%;box-sizing:border-box}.perfList{display:grid;gap:8px;margin-top:10px}.perfItem{border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--surface-2)}.timerDisplay{font-size:58px;font-weight:900;text-align:center;letter-spacing:.04em;padding:24px;color:var(--accent)}
 @media(max-width:760px){.perfBg{padding:0}.perfModal{width:100%;height:100%;max-height:none;border-radius:0}.perfHead{padding-top:calc(12px + env(safe-area-inset-top,0px))}.perfGrid{grid-template-columns:1fr}.perfForm{grid-template-columns:1fr}.perfBody{padding:12px}.timerDisplay{font-size:46px}.perfTabs{padding-bottom:10px}.perfTab{min-height:42px}}
+
+/* v2.0.5 header action layout */
+.headerActions{display:flex;align-items:center;gap:10px;flex-wrap:nowrap;}
+.headerPrimaryActions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end;}
+.headerUtilityActions{display:flex;align-items:center;gap:7px;position:relative;flex:0 0 auto;}
+.headerActions .notificationWrap{position:relative;order:0;}
+.headerActions .notificationPanel{left:auto;right:0;}
+@media(max-width:1100px){.headerActions{align-items:flex-start;flex-wrap:wrap;}.headerPrimaryActions{justify-content:flex-start;}.headerUtilityActions{margin-left:auto;}}
+@media(max-width:700px){.headerActions{width:100%;}.headerPrimaryActions{width:100%;}.headerUtilityActions{margin-left:0;width:100%;justify-content:flex-end;}.headerActions .notificationPanel{right:0;left:auto;max-width:min(92vw,380px);}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v1.9.2</span></h1>
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v2.0.0</span></h1>
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow headerActions">
+      <div class="headerPrimaryActions">
+      <button class="ghost" id="accountBtn">⚙ Sign in</button>
+      <button class="ghost" id="importLocalBtn">Import Old Data</button>
+      <button class="ghost" id="pasteBtn">Paste Results</button>
+      <button class="ghost" id="screenshotImportBtn">📷 Screenshot → Test</button>
+      <button class="ghost" id="compareBtn">Compare</button>
+      <button class="primary" id="addBtn">+ Add Test</button>
+      <button class="ghost" id="performanceOSBtn" title="Performance OS">⚡ Command Center</button>
+      </div>
+      <div class="headerUtilityActions">
       <div class="notificationWrap" id="notificationWrap">
         <button class="ghost notificationBell" id="notificationBell" aria-label="Notifications" title="Notifications">
           <span class="bellGlyph" aria-hidden="true">🔔</span>
@@ -972,14 +1030,9 @@ body { font-family:var(--font-ui); }
           <div class="notificationList" id="notificationList"></div>
         </div>
       </div>
+      </div>
       <button class="ghost settingsButton" id="settingsBtn" aria-label="Settings" title="Settings">⚙</button>
-      <button class="ghost" id="accountBtn">Account</button>
-      <button class="ghost" id="importLocalBtn">Import Old Data</button>
-      <button class="ghost" id="pasteBtn">Paste Results</button>
-      <button class="ghost" id="screenshotImportBtn">📷 Screenshot → Test</button>
-      <button class="ghost" id="compareBtn">Compare</button>
-      <button class="primary" id="addBtn">+ Add Test</button>
-      <button class="ghost" id="performanceOSBtn" title="Performance OS">⚡ Command Center</button>
+      </div>
     </div>
   </header>
 
@@ -1250,7 +1303,20 @@ body { font-family:var(--font-ui); }
             <button class="themeChoice" data-theme-choice="industrial"><div class="themePreview" style="--preview-bg:#242424;--preview-accent:#ffb347"></div><div class="themeChoiceName">Industrial</div><div class="themeChoiceDesc">Engineering control desk</div></button>
           </div>
         </div>
-        <div class="settingsSection settingsFuture"><span class="futureBadge">READY FOR MORE</span><div class="settingsSectionTitle">Future appearance controls</div><div class="settingsSectionDesc">Accent colors, compact mode, density, animations, dashboard layout and accessibility options can be added here later without changing the settings architecture.</div></div>
+        <div class="settingsSection">
+          <div class="settingsSectionTitle">Interface controls</div>
+          <div class="settingsSectionDesc">Fine-tune the dashboard without changing your test data, themes or core tracker logic. These preferences are saved locally on this browser.</div>
+          <div class="appearanceControlsGrid">
+            <div class="appearanceControl"><label for="appearanceAccent">Accent color</label><div class="appearanceInline"><input id="appearanceAccent" type="color" value="#39ff6a" aria-label="Accent color"><button class="ghost small" id="appearanceAccentReset">Reset</button></div></div>
+            <div class="appearanceControl"><label for="appearanceDensity">UI density</label><select id="appearanceDensity"><option value="comfortable">Comfortable</option><option value="compact">Compact</option><option value="spacious">Spacious</option></select></div>
+            <div class="appearanceControl"><label for="appearanceAnimations">Animations</label><select id="appearanceAnimations"><option value="full">Full</option><option value="reduced">Reduced</option><option value="off">Off</option></select></div>
+            <div class="appearanceControl"><label for="appearanceLayout">Dashboard layout</label><select id="appearanceLayout"><option value="auto">Adaptive</option><option value="wide">Wide dashboard</option><option value="focus">Focus mode</option></select></div>
+            <label class="appearanceToggle"><input id="appearanceCompact" type="checkbox"><span><b>Compact mode</b><small>Reduce card and control spacing.</small></span></label>
+            <label class="appearanceToggle"><input id="appearanceLargeText" type="checkbox"><span><b>Larger text</b><small>Increase interface text for readability.</small></span></label>
+            <label class="appearanceToggle"><input id="appearanceHighContrast" type="checkbox"><span><b>High contrast</b><small>Strengthen borders and text contrast.</small></span></label>
+            <label class="appearanceToggle"><input id="appearanceReducedMotion" type="checkbox"><span><b>Reduce motion</b><small>Disable decorative transitions and animation.</small></span></label>
+          </div>
+        </div>
       </div>
       <div class="settingsPage" data-settings-content="account">
         <div class="settingsSection"><div class="settingsSectionTitle">Your account</div><div class="settingsSectionDesc">Manage sign-in and the account used for cloud sync.</div><div class="settingsActionRow"><button class="primary" id="settingsAccountBtn">Open account</button></div></div>
@@ -1273,6 +1339,19 @@ body { font-family:var(--font-ui); }
       </div>
       <div class="settingsPage" data-settings-content="advanced">
         <div class="settingsSection"><div class="settingsSectionTitle">Advanced</div><div class="settingsSectionDesc">Developer-facing and system-level controls can be placed here without cluttering the main dashboard.</div><div class="settingsActionRow"><button class="ghost" id="settingsAdvancedAdminBtn">Open Control Center</button></div></div>
+        <div class="settingsSection">
+          <div class="settingsSectionTitle">Stage roadmap</div>
+          <div class="settingsSectionDesc">The tracker uses one continuous seven-stage intelligence roadmap. Existing stages stay in the same architecture as new features are added.</div>
+          <div class="stageRoadmap">
+            <div><span class="stageBadge done">1</span><span><b>Zero-manual-entry ingestion</b><small>Verified</small></span></div>
+            <div><span class="stageBadge done">2</span><span><b>Auto-generated pre-test briefing</b><small>Implemented</small></span></div>
+            <div><span class="stageBadge active">3</span><span><b>Cross-test pattern mining</b><small>Implemented</small></span></div>
+            <div><span class="stageBadge active">4</span><span><b>Auto-updating JEE schedule</b><small>Implemented</small></span></div>
+            <div><span class="stageBadge active">5</span><span><b>Predictive percentile trajectory</b><small>Implemented</small></span></div>
+            <div><span class="stageBadge active">6</span><span><b>Spaced-repetition mistake resurfacing</b><small>Implemented</small></span></div>
+            <div><span class="stageBadge active">7</span><span><b>Auto-tagging</b><small>Implemented</small></span></div>
+          </div>
+        </div>
         <div class="settingsSection settingsFuture"><span class="futureBadge">FUTURE</span><div class="settingsSectionTitle">System information</div><div class="settingsSectionDesc">Version history, deployment ID, diagnostics, feature flags and storage information can be surfaced here later.</div></div>
       </div>
     </section>
@@ -1581,6 +1660,13 @@ Mistakes: Physics: sign error in kinematics"></textarea>
 </div>
 
 
+
+<style id="aiCoach20CSS">
+.aiCoachBg{position:fixed;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(8px);display:none;z-index:12000;padding:18px;overflow:auto}.aiCoachBg.open{display:flex;align-items:center;justify-content:center}.aiCoachModal{width:min(1100px,100%);max-height:calc(100vh - 36px);overflow:auto;background:var(--panel,#101510);color:var(--text,#eaffea);border:1px solid var(--border,#39ff6a);border-radius:18px;box-shadow:0 24px 80px rgba(0,0,0,.45)}.aiCoachHead{display:flex;justify-content:space-between;gap:15px;align-items:flex-start;padding:20px 22px;border-bottom:1px solid var(--border,#39ff6a)}.aiCoachTitle{font-size:24px;font-weight:800}.aiCoachSub{color:var(--text-dim,#8aa08a);font-size:13px;margin-top:5px}.aiCoachBody{padding:20px}.coachGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.coachStat,.coachCard{background:var(--card,#0b100b);border:1px solid var(--border,#39ff6a);border-radius:14px;padding:15px}.coachStat b{display:block;font-size:24px;margin-top:5px}.coachLabel{font-size:11px;color:var(--text-dim,#8aa08a);text-transform:uppercase;letter-spacing:.08em}.coachGrid2{display:grid;grid-template-columns:1.2fr .8fr;gap:14px;margin-top:14px}.coachList{display:grid;gap:8px;margin-top:10px}.coachRow{padding:10px 12px;border-radius:10px;background:rgba(127,127,127,.08);display:flex;justify-content:space-between;gap:10px}.coachGood{border-left:3px solid var(--success,#39ff6a)}.coachWarn{border-left:3px solid var(--warning,#f5b942)}.coachDanger{border-left:3px solid var(--danger,#ff5c5c)}.coachProgress{height:8px;border-radius:99px;background:rgba(127,127,127,.18);overflow:hidden;margin-top:8px}.coachProgress i{display:block;height:100%;background:var(--accent,#39ff6a);border-radius:99px}.coachActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}@media(max-width:760px){.coachGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.coachGrid2{grid-template-columns:1fr}.aiCoachBg{padding:8px}.aiCoachModal{max-height:calc(100vh - 16px)}}
+</style>
+
+<div class="aiCoachBg" id="aiCoachBg" aria-hidden="true"><div class="aiCoachModal" role="dialog" aria-modal="true" aria-label="AI Coach"><div class="aiCoachHead"><div><div class="aiCoachTitle">🤖 AI Coach</div><div class="aiCoachSub">Unified view of tests, mistakes, mastery, goals and planner activity.</div></div><button class="ghost" id="aiCoachClose">✕</button></div><div class="aiCoachBody"><div class="coachGrid" id="coachStats"></div><div class="coachGrid2"><div class="coachCard"><h3>What your data says</h3><div id="coachInsights" class="coachList"></div></div><div class="coachCard"><h3>Priority chapters</h3><div id="coachChapters" class="coachList"></div></div></div><div class="coachCard" style="margin-top:14px"><h3>Goal & planner alignment</h3><div id="coachPlan" class="coachList"></div></div><div class="coachActions"><button class="primary" id="coachRefresh">↻ Refresh Coach</button><button class="ghost" id="coachOpenPlanner">📅 Open Planner & Goals</button><button class="ghost" id="coachOpenPerformance">⚡ Performance OS</button></div></div></div></div>
+
 <div class="perfBg" id="performanceOSBg" aria-hidden="true">
  <div class="perfModal" role="dialog" aria-modal="true" aria-label="JEE Performance OS">
   <div class="perfHead"><div><div class="perfTitle">⚡ Performance OS</div><button class="ghost" id="smartGoals190Open" style="margin-left:auto">🎯 Planner & Goals</button><div class="perfSub">Your tests, mastery, mistakes, planning and study system in one place.</div></div><button class="ghost" id="performanceClose">✕</button></div>
@@ -1588,7 +1674,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
    <button class="perfTab active" data-perf-tab="overview">Overview</button><button class="perfTab" data-perf-tab="mastery">Chapter Mastery</button><button class="perfTab" data-perf-tab="mistakes">Mistakes</button><button class="perfTab" data-perf-tab="planner">Planner</button><button class="perfTab" data-perf-tab="timer">Study Timer</button><button class="perfTab" data-perf-tab="records">Records</button><button class="perfTab" data-perf-tab="data">Data Center</button><button class="perfTab" data-perf-tab="experiments">Experiments</button>
   </div>
   <div class="perfBody">
-   <section class="perfPage active" data-perf-page="overview"><div class="perfGrid" id="perfOverviewGrid"></div><div class="perfActions"><button class="primary" id="perfLatestAI">🤖 Analyze Latest Test</button><button class="ghost" id="perfRefresh">↻ Refresh</button></div><div class="perfCard"><h3>Data Coach</h3><div id="perfCoach" class="perfSmall">Loading your tracker history…</div></div></section>
+   <section class="perfPage active" data-perf-page="overview"><div class="perfGrid" id="perfOverviewGrid"></div><div class="perfActions"><button class="primary" id="perfLatestAI">🤖 Analyze Latest Test</button><button class="ghost" id="openAICoach">🤖 AI Coach</button><button class="ghost" id="perfRefresh">↻ Refresh</button></div><div class="perfCard"><h3>Data Coach</h3><div id="perfCoach" class="perfSmall">Loading your tracker history…</div></div></section>
    <section class="perfPage" data-perf-page="mastery"><div class="perfCard"><h3>Add or update chapter mastery</h3><div class="perfForm"><select id="pmSubject"><option>Physics</option><option>Chemistry</option><option>Mathematics</option></select><input id="pmChapter" placeholder="Chapter name"><input id="pmMastery" type="number" min="0" max="100" placeholder="Mastery %"></div><div class="perfActions"><button class="primary" id="pmSave">Save chapter</button></div></div><div class="perfList" id="pmList"></div></section>
    <section class="perfPage" data-perf-page="mistakes"><div class="perfCard"><h3>Mistake intelligence</h3><div class="perfForm"><select id="mkCategory"><option>Conceptual</option><option>Calculation</option><option>Silly mistake</option><option>Formula recall</option><option>Question interpretation</option><option>Time pressure</option><option>Guessing</option><option>Incomplete knowledge</option></select><input id="mkNote" placeholder="What went wrong?" class="wide"><button class="primary" id="mkSave">Log mistake</button></div></div><div class="perfList" id="mkList"></div></section>
    <section class="perfPage" data-perf-page="planner"><div class="perfCard"><h3>Smart study planner</h3><div class="perfForm"><input id="plDate" type="date"><input id="plTime" type="time"><input id="plTask" placeholder="Task"><select id="plSubject"><option>Physics</option><option>Chemistry</option><option>Mathematics</option><option>Revision</option><option>Test</option></select><button class="primary" id="plSave">Add task</button></div></div><div class="perfList" id="plList"></div></section>
@@ -1623,7 +1709,7 @@ window.openSmartGoals190=open;
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "1.9.2";
+  var APP_VERSION = "2.0.2";
   var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   window.state = state;
   var LS_KEY = "jee_test_tracker_v1";
@@ -4290,6 +4376,38 @@ window.openSmartGoals190=open;
 })();
 
 
+
+  // v2.0.2 Appearance preferences
+  var APPEARANCE_KEY = "jee_tracker_appearance_v1";
+  var DEFAULT_APPEARANCE = {accent:"",density:"comfortable",animations:"full",layout:"auto",compact:false,largeText:false,highContrast:false,reducedMotion:false};
+  function loadAppearance(){
+    try{return Object.assign({},DEFAULT_APPEARANCE,JSON.parse(localStorage.getItem(APPEARANCE_KEY)||"{}"));}catch(e){return Object.assign({},DEFAULT_APPEARANCE);}
+  }
+  function saveAppearance(a){try{localStorage.setItem(APPEARANCE_KEY,JSON.stringify(a));}catch(e){}}
+  function applyAppearance(a){
+    a=Object.assign({},DEFAULT_APPEARANCE,a||{});
+    var root=document.documentElement;
+    root.setAttribute("data-appearance-density",a.density);
+    root.setAttribute("data-appearance-layout",a.layout);
+    root.setAttribute("data-appearance-compact",a.compact?"1":"0");
+    root.setAttribute("data-appearance-large-text",a.largeText?"1":"0");
+    root.setAttribute("data-appearance-contrast",a.highContrast?"1":"0");
+    root.setAttribute("data-appearance-motion",a.reducedMotion?"reduced":a.animations);
+    if(a.accent){root.style.setProperty("--user-accent",a.accent);root.style.setProperty("--accent",a.accent);}
+    else {root.style.removeProperty("--user-accent");}
+    var accent=document.getElementById("appearanceAccent"),density=document.getElementById("appearanceDensity"),anim=document.getElementById("appearanceAnimations"),layout=document.getElementById("appearanceLayout"),compact=document.getElementById("appearanceCompact"),large=document.getElementById("appearanceLargeText"),contrast=document.getElementById("appearanceHighContrast"),motion=document.getElementById("appearanceReducedMotion");
+    if(accent) accent.value=a.accent||getComputedStyle(root).getPropertyValue("--accent").trim()||"#39ff6a";
+    if(density)density.value=a.density;if(anim)anim.value=a.animations;if(layout)layout.value=a.layout;if(compact)compact.checked=!!a.compact;if(large)large.checked=!!a.largeText;if(contrast)contrast.checked=!!a.highContrast;if(motion)motion.checked=!!a.reducedMotion;
+  }
+  function syncAppearance(){
+    var a={accent:document.getElementById("appearanceAccent")?.value||"",density:document.getElementById("appearanceDensity")?.value||"comfortable",animations:document.getElementById("appearanceAnimations")?.value||"full",layout:document.getElementById("appearanceLayout")?.value||"auto",compact:!!document.getElementById("appearanceCompact")?.checked,largeText:!!document.getElementById("appearanceLargeText")?.checked,highContrast:!!document.getElementById("appearanceHighContrast")?.checked,reducedMotion:!!document.getElementById("appearanceReducedMotion")?.checked};
+    saveAppearance(a);applyAppearance(a);
+  }
+  var initialAppearance=loadAppearance();
+  applyAppearance(initialAppearance);
+  ["appearanceAccent","appearanceDensity","appearanceAnimations","appearanceLayout","appearanceCompact","appearanceLargeText","appearanceHighContrast","appearanceReducedMotion"].forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener("change",syncAppearance);});
+  document.getElementById("appearanceAccentReset").addEventListener("click",function(){var a=loadAppearance();a.accent="";saveAppearance(a);applyTrackerTheme(document.documentElement.getAttribute("data-theme")||"terminal");applyAppearance(a);});
+
   // ---------- Universal settings ----------
   var SETTINGS_THEME_KEY = "jee_tracker_theme_v1";
   var SETTINGS_META = {
@@ -4316,9 +4434,10 @@ window.openSmartGoals190=open;
   function openSettings(page){
     var bg=document.getElementById("settingsModalBg"); if(!bg) return;
     bg.classList.add("open"); bg.setAttribute("aria-hidden","false");
+    document.body.classList.add("settings-open");
     switchSettingsPage(page || "appearance");
   }
-  function closeSettings(){ var bg=document.getElementById("settingsModalBg"); if(bg){ bg.classList.remove("open"); bg.setAttribute("aria-hidden","true"); } }
+  function closeSettings(){ var bg=document.getElementById("settingsModalBg"); if(bg){ bg.classList.remove("open"); bg.setAttribute("aria-hidden","true"); } document.body.classList.remove("settings-open"); }
   function switchSettingsPage(page){
     if(!SETTINGS_META[page]) page="appearance";
     document.querySelectorAll(".settingsNavBtn").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-settings-page")===page); });
@@ -4382,5 +4501,17 @@ window.openSmartGoals190=open;
 })();
 
 </script>
-<script>document.addEventListener('DOMContentLoaded',function(){var b=document.getElementById('smartGoals190Open');if(b)b.addEventListener('click',function(){if(window.openSmartGoals190)window.openSmartGoals190()});var c=document.getElementById('smartGoals190Bg');if(c)c.addEventListener('click',function(e){if(e.target===c)c.classList.remove('open')});});</script></body>
+<script>document.addEventListener('DOMContentLoaded',function(){var b=document.getElementById('smartGoals190Open');if(b)b.addEventListener('click',function(){if(window.openSmartGoals190)window.openSmartGoals190()});var c=document.getElementById('smartGoals190Bg');if(c)c.addEventListener('click',function(e){if(e.target===c)c.classList.remove('open')});});</script>\n<script id="aiCoach20JS">
+(function(){
+function q(id){return document.getElementById(id)}
+function esc(v){return String(v==null?'':v).replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]})}
+function tests(){return window.state&&Array.isArray(window.state.tests)?window.state.tests:[]}
+function arr(k){try{return JSON.parse(localStorage.getItem(k)||'[]')}catch(e){return[]}}
+function avg(a,k){var x=a.map(function(t){return +t[k]||0});return x.length?x.reduce(function(s,v){return s+v},0)/x.length:0}
+function coachData(){var ts=tests(), mistakes=arr('jee_perf_mistakes_v1'), mastery=arr('jee_perf_mastery_v1'), planner=arr('jee_perf_planner_v1'), goals=arr('jee_smart_goals_v1');var accuracy=avg(ts,'accuracy'), pct=avg(ts,'percentage'), best=ts.length?Math.max.apply(null,ts.map(function(t){return +t.percentage||0})):0;var completed=planner.filter(function(x){return x.done||x.completed}).length;var totalPlan=planner.length;var cats={};mistakes.forEach(function(m){var c=m.category||'Other';cats[c]=(cats[c]||0)+1});var weak=mastery.slice().sort(function(a,b){return (+a.mastery||0)-(+b.mastery||0)}).slice(0,5);return {ts:ts,mistakes:mistakes,mastery:mastery,planner:planner,goals:goals,accuracy:accuracy,pct:pct,best:best,completed:completed,totalPlan:totalPlan,cats:cats,weak:weak}}
+function render(){var d=coachData(), stats=q('coachStats');if(!stats)return;stats.innerHTML=[['Tests',d.ts.length],['Avg score',d.pct.toFixed(1)+'%'],['Avg accuracy',d.accuracy.toFixed(1)+'%'],['Best score',d.best.toFixed(1)+'%']].map(function(x){return '<div class="coachStat"><span class="coachLabel">'+x[0]+'</span><b>'+esc(x[1])+'</b></div>'}).join('');var insights=[];if(!d.ts.length)insights.push(['coachWarn','No tests yet — add a test and the Coach will start building your profile.']);else{if(d.accuracy<70)insights.push(['coachWarn','Accuracy is currently below 70%. Review incorrect and unattempted questions before chasing speed.']);else insights.push(['coachGood','Accuracy is at '+d.accuracy.toFixed(1)+'%. Keep tracking whether this holds under timed conditions.']);if(d.ts.length>=2){var recent=d.ts.slice(-3), old=d.ts.slice(0,Math.max(1,d.ts.length-3));var ra=avg(recent,'percentage'),oa=avg(old,'percentage');insights.push([ra>=oa?'coachGood':'coachWarn','Recent average score is '+ra.toFixed(1)+'% versus '+oa.toFixed(1)+'% for earlier tests.']);}}var keys=Object.keys(d.cats).sort(function(a,b){return d.cats[b]-d.cats[a]});if(keys.length)insights.push(['coachWarn','Most logged mistake type: '+keys[0]+' ('+d.cats[keys[0]]+').']);q('coachInsights').innerHTML=insights.map(function(x){return '<div class="coachRow '+x[0]+'">'+esc(x[1])+'</div>'}).join('');q('coachChapters').innerHTML=d.weak.length?d.weak.map(function(m){var v=Math.max(0,Math.min(100,+m.mastery||0));return '<div class="coachRow"><div><b>'+esc((m.subject||'')+' — '+(m.chapter||m.name||'Chapter'))+'</b><div class="coachProgress"><i style="width:'+v+'%"></i></div></div><span>'+v+'%</span></div>'}).join(''):'<div class="coachRow">No chapter mastery data yet.</div>';var planText=d.totalPlan?((d.completed/d.totalPlan)*100).toFixed(0)+'% of planner tasks completed ('+d.completed+'/'+d.totalPlan+')':'No planner tasks yet.';q('coachPlan').innerHTML='<div class="coachRow '+(d.completed===d.totalPlan&&d.totalPlan?'coachGood':'coachWarn')+'"><span>'+esc(planText)+'</span></div>'+ (d.goals.length?'<div class="coachRow"><span>'+d.goals.length+' active goal(s) are being tracked.</span></div>':'<div class="coachRow">No Goals 2.0 targets found yet.</div>')}
+function open(){var b=q('aiCoachBg');if(b){b.classList.add('open');b.setAttribute('aria-hidden','false');render()}}function close(){var b=q('aiCoachBg');if(b){b.classList.remove('open');b.setAttribute('aria-hidden','true')}}
+document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('#openAICoach'))open();if(e.target.closest&&e.target.closest('#aiCoachClose'))close();if(e.target.closest&&e.target.closest('#coachRefresh'))render();if(e.target.closest&&e.target.closest('#coachOpenPerformance')){close();var b=q('performanceOSBg');if(b)b.classList.add('open')}if(e.target.closest&&e.target.closest('#coachOpenPlanner')){close();var b=q('performanceOSBg');if(b){b.classList.add('open');var t=document.querySelector('.perfTab[data-perf-tab="planner"]');if(t)t.click()}}});
+})();
+</script>\n</body>
 </html>
