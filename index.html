@@ -566,6 +566,7 @@ tr:hover td { background:var(--table-hover); }
 .stageRoadmap small{display:block;color:var(--text-dim);font-size:10.5px;margin-top:2px;}
 .stageBadge{width:25px;height:25px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 25px;border-radius:50%;font-size:11px;font-weight:800;border:1px solid var(--border);color:var(--text-dim);}
 .stageBadge.done,.stageBadge.active{color:var(--accent);border-color:var(--accent);background:var(--accent-soft);}
+.stageBadge.partial{color:var(--warn);border-color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent);}
 :root[data-appearance-density="compact"] .card,:root[data-appearance-density="compact"] .settingsSection{padding:10px;}
 :root[data-appearance-density="compact"] #kpis{gap:7px;}
 :root[data-appearance-density="spacious"] .card{padding:22px;}
@@ -1592,15 +1593,15 @@ body.settings-open { overflow:hidden !important; height:100%; overscroll-behavio
         <div class="settingsSection"><div class="settingsSectionTitle">Advanced</div><div class="settingsSectionDesc">Developer-facing and system-level controls can be placed here without cluttering the main dashboard.</div><div class="settingsActionRow"><button class="ghost" id="settingsAdvancedAdminBtn">Open Control Center</button></div></div>
         <div class="settingsSection">
           <div class="settingsSectionTitle">Stage roadmap</div>
-          <div class="settingsSectionDesc">The tracker uses one continuous seven-stage intelligence roadmap. Existing stages stay in the same architecture as new features are added.</div>
+          <div class="settingsSectionDesc">Status reflects what is available now; partial stages still have work remaining.</div>
           <div class="stageRoadmap">
-            <div><span class="stageBadge done">1</span><span><b>Zero-manual-entry ingestion</b><small>Verified</small></span></div>
-            <div><span class="stageBadge done">2</span><span><b>Auto-generated pre-test briefing</b><small>Implemented</small></span></div>
-            <div><span class="stageBadge active">3</span><span><b>Cross-test pattern mining</b><small>Implemented</small></span></div>
-            <div><span class="stageBadge active">4</span><span><b>Auto-updating JEE schedule</b><small>Implemented</small></span></div>
-            <div><span class="stageBadge active">5</span><span><b>Predictive percentile trajectory</b><small>Implemented</small></span></div>
-            <div><span class="stageBadge active">6</span><span><b>Spaced-repetition mistake resurfacing</b><small>Implemented</small></span></div>
-            <div><span class="stageBadge active">7</span><span><b>Auto-tagging</b><small>Implemented</small></span></div>
+            <div><span class="stageBadge done">1</span><span><b>Result ingestion</b><small>Screenshot and paste extraction; review before saving</small></span></div>
+            <div><span class="stageBadge done">2</span><span><b>Pre-test briefing</b><small>Upcoming test, recent results, weak areas, and relevant mistakes</small></span></div>
+            <div><span class="stageBadge partial">3</span><span><b>Cross-test pattern mining</b><small>Repeated mistake patterns work; broader subject and timing trends remain</small></span></div>
+            <div><span class="stageBadge partial">4</span><span><b>Adaptive JEE scheduling</b><small>Claude can read and save private plans on request; automatic adjustments remain</small></span></div>
+            <div><span class="stageBadge partial">5</span><span><b>Percentile trajectory</b><small>Trend estimate from logged tests; a fuller trajectory view remains</small></span></div>
+            <div><span class="stageBadge partial">6</span><span><b>Spaced mistake resurfacing</b><small>7- and 14-day reminders work; recurrence tracking remains</small></span></div>
+            <div><span class="stageBadge partial">7</span><span><b>Automatic test tags</b><small>Keyword and AI-based tags work; wider planner and analytics use remains</small></span></div>
           </div>
         </div>
         <div class="settingsSection settingsFuture"><span class="futureBadge">FUTURE</span><div class="settingsSectionTitle">System information</div><div class="settingsSectionDesc">Version history, deployment ID, diagnostics, feature flags and storage information can be surfaced here later.</div></div>
