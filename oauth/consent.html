@@ -39,7 +39,7 @@
   const statusEl = document.getElementById("status");
   const signedOutEl = document.getElementById("signedOut");
   const actionsEl = document.getElementById("actions");
-  let supabase;
+  let trackerClient;
   let authDetails;
 
   function showError(message){ statusEl.textContent = message; }
@@ -57,10 +57,10 @@
       detailsEl.textContent="Setup needed: copy your Supabase project URL and public anon/publishable key from index.html into this consent page, then publish it.";
       return;
     }
-    supabase = supabase || window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-    const {data:{user},error:userError}=await supabase.auth.getUser();
+    trackerClient = trackerClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+    const {data:{user},error:userError}=await trackerClient.auth.getUser();
     if (userError || !user){ detailsEl.textContent="You are not signed in to the tracker in this browser."; signedOutEl.classList.remove("hidden"); return; }
-    const {data,error}=await supabase.auth.oauth.getAuthorizationDetails(authorizationId);
+    const {data,error}=await trackerClient.auth.oauth.getAuthorizationDetails(authorizationId);
     if (error || !data){ detailsEl.textContent="This approval request could not be loaded."; showError(error?.message || "Please close the tab and try Connect again."); return; }
     if (!("authorization_id" in data) && data.redirect_url){ location.replace(data.redirect_url); return; }
     authDetails=data;
@@ -70,13 +70,13 @@
   document.getElementById("retry").addEventListener("click",loadRequest);
   document.getElementById("approve").addEventListener("click",async function(){
     this.disabled=true; showError("Approving access…");
-    const {data,error}=await supabase.auth.oauth.approveAuthorization(authorizationId);
+    const {data,error}=await trackerClient.auth.oauth.approveAuthorization(authorizationId);
     if(error || !data?.redirect_url){this.disabled=false;showError(error?.message || "Approval failed. Please retry.");return;}
     location.assign(data.redirect_url);
   });
   document.getElementById("deny").addEventListener("click",async function(){
     this.disabled=true; showError("Denying access…");
-    const {data,error}=await supabase.auth.oauth.denyAuthorization(authorizationId);
+    const {data,error}=await trackerClient.auth.oauth.denyAuthorization(authorizationId);
     if(error || !data?.redirect_url){this.disabled=false;showError(error?.message || "Could not deny the request.");return;}
     location.assign(data.redirect_url);
   });
@@ -84,3 +84,4 @@
 </script>
 </body>
 </html>
+
