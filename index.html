@@ -539,6 +539,8 @@ tr:hover td { background:var(--table-hover); }
 .themeChoiceName { font-size:11.5px; font-weight:800; }
 .themeChoiceDesc { font-size:9.5px; color:var(--text-dim); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .settingsActionRow { display:flex; gap:8px; flex-wrap:wrap; }
+.settingsActionRow a.ghost{border:1px solid var(--control-border);border-radius:calc(var(--radius) * .7);background:var(--control-bg);color:var(--control-text);padding:7px 10px;font-size:12px;}
+.settingsActionRow a.ghost:hover{background:var(--control-hover);border-color:var(--accent);color:var(--accent);}
 .settingsFuture { border-style:dashed; opacity:.88; }
 .settingsFuture .futureBadge { float:right; font-size:9px; padding:2px 6px; border:1px solid var(--border); border-radius:999px; color:var(--text-dim); }
 @media(max-width:760px){
@@ -567,6 +569,11 @@ tr:hover td { background:var(--table-hover); }
 .stageBadge{width:25px;height:25px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 25px;border-radius:50%;font-size:11px;font-weight:800;border:1px solid var(--border);color:var(--text-dim);}
 .stageBadge.done,.stageBadge.active{color:var(--accent);border-color:var(--accent);background:var(--accent-soft);}
 .stageBadge.partial{color:var(--warn);border-color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent);}
+.systemInfoGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0;}
+.systemInfoItem{min-width:0;padding:10px;border:1px solid var(--border);border-radius:10px;background:color-mix(in srgb,var(--surface) 78%,transparent);}
+.systemInfoItem span{display:block;font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
+.systemInfoItem b{display:block;font-size:12px;overflow-wrap:anywhere;}
+@media(max-width:600px){.systemInfoGrid{grid-template-columns:1fr;}}
 :root[data-appearance-density="compact"] .card,:root[data-appearance-density="compact"] .settingsSection{padding:10px;}
 :root[data-appearance-density="compact"] #kpis{gap:7px;}
 :root[data-appearance-density="spacious"] .card{padding:22px;}
@@ -1604,7 +1611,18 @@ body.settings-open { overflow:hidden !important; height:100%; overscroll-behavio
             <div><span class="stageBadge partial">7</span><span><b>Automatic test tags</b><small>Keyword and AI-based tags work; wider planner and analytics use remains</small></span></div>
           </div>
         </div>
-        <div class="settingsSection settingsFuture"><span class="futureBadge">FUTURE</span><div class="settingsSectionTitle">System information</div><div class="settingsSectionDesc">Version history, deployment ID, diagnostics, feature flags and storage information can be surfaced here later.</div></div>
+        <div class="settingsSection">
+          <div class="settingsSectionTitle">System information</div>
+          <div class="settingsSectionDesc">Current tracker version and how future updates will be numbered.</div>
+          <div class="systemInfoGrid">
+            <div class="systemInfoItem"><span>Current version</span><b id="systemAppVersion">v2.1.0</b></div>
+            <div class="systemInfoItem"><span>Version standard</span><b>Semantic Versioning · MAJOR.MINOR.PATCH</b></div>
+            <div class="systemInfoItem"><span>Release automation</span><b>GitHub Actions + Release Please</b></div>
+            <div class="systemInfoItem"><span>Release steps</span><b>Commit update → review release PR → merge</b></div>
+          </div>
+          <div class="hint" style="font-size:11.5px;color:var(--text-dim);margin:8px 0 10px;">Automatic releases begin after the one-time GitHub setup. Feature commits use <code>feat:</code>, fixes use <code>fix:</code>, and breaking changes use <code>feat!:</code>.</div>
+          <div class="settingsActionRow"><a class="ghost small" href="https://github.com/shivaayguptame-droid/jee-test-tracker/releases" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;">View GitHub releases</a></div>
+        </div>
       </div>
     </section>
   </div>
@@ -4703,6 +4721,8 @@ window.openSmartGoals190=open;
   document.title = "JEE Test Tracker v" + APP_VERSION;
   var versionEl = document.getElementById("appVersion");
   if (versionEl) versionEl.textContent = "v" + APP_VERSION;
+  var systemVersionEl = document.getElementById("systemAppVersion");
+  if (systemVersionEl) systemVersionEl.textContent = "v" + APP_VERSION;
   loadNotifications();
   ensureVersionNotification();
 
