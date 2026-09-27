@@ -1940,7 +1940,7 @@ window.openSmartGoals190=open;
 (function(){
   "use strict";
   var APP_VERSION = "2.0.5";
-  var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
+  var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   window.state = state;
   var LS_KEY = "jee_test_tracker_v1";
   var NOTIFICATIONS_KEY_BASE = "jee_tracker_notifications_v2_";
@@ -2259,18 +2259,24 @@ window.openSmartGoals190=open;
     if(!card || !content || !meta) return;
 
     var today=isoLocalDate(new Date());
-    var todaysEvents=(state.gcalEvents||[]).filter(function(ev){
-      var v=ev && ev.start && (ev.start.date || ev.start.dateTime);
-      if(!v) return false;
-      return isoLocalDate(ev.start.date ? new Date(v+"T00:00:00") : new Date(v))===today;
+    var futureEvents=(state.gcalUpcomingTestEvents||[]).filter(function(ev){
+      if(!isLikelyTestEvent(ev)) return false;
+      var eventDay=eventDateForDay(ev);
+      return eventDay && isoLocalDate(eventDay)>=today;
+    }).sort(function(a,b){
+      var aStart=eventDateForDay(a), bStart=eventDateForDay(b);
+      return (aStart?aStart.getTime():0)-(bStart?bStart.getTime():0);
     });
-    var testEvents=todaysEvents.filter(isLikelyTestEvent);
-
-    // Stage 2 is a test-day briefing. Calendar is the source of truth for scheduled tests.
-    if(!testEvents.length){
-      card.style.display="none";
+    var nextTest=futureEvents[0];
+    // Brief against the next scheduled test, including any other test events on that day.
+    if(!nextTest){
+      content.innerHTML='<div style="font-size:12px;color:var(--text-dim);">Add your next JEE test to a connected Google Calendar. The briefing will use it with your recent test results and saved mistakes.</div>';
+      meta.textContent="Waiting for next test";
+      card.style.display="block";
       return;
     }
+    var nextTestDay=isoLocalDate(eventDateForDay(nextTest));
+    var testEvents=futureEvents.filter(function(ev){return isoLocalDate(eventDateForDay(ev))===nextTestDay;});
 
     var recent=tests.slice(-5);
     var subjects=["physics","chemistry","maths"];
@@ -2331,7 +2337,9 @@ window.openSmartGoals190=open;
     }
     var budgetBase=latestWithBudget ? num(latestWithBudget.totalTimeAllotted) : 0;
 
-    var html='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;">';
+    var nextDateLabel=new Date(nextTestDay+"T00:00:00").toLocaleDateString([], {weekday:"long",month:"short",day:"numeric"});
+    var html='<div style="margin-bottom:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--accent-soft);"><span style="font-size:11px;color:var(--text-dim);">NEXT TEST · '+escapeHtml(nextDateLabel)+'</span><div style="font-weight:700;margin-top:3px;">'+escapeHtml(nextTest.summary||"JEE test")+'</div></div>';
+    html+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;">';
     if(weak){
       html+='<div style="padding:11px;border:1px solid var(--border);border-radius:10px;background:var(--accent-soft);"><div style="font-size:11px;color:var(--text-dim);">Watch closely</div><b>'+labels[weak]+'</b><div style="font-size:12px;margin-top:4px;">Recent accuracy average: '+metrics[weak].accuracy.toFixed(1)+'%</div></div>';
     }
@@ -2339,7 +2347,7 @@ window.openSmartGoals190=open;
       html+='<div style="padding:11px;border:1px solid var(--border);border-radius:10px;"><div style="font-size:11px;color:var(--text-dim);">Skip tendency</div><b>'+labels[skipSub]+' has the highest skip rate</b><div style="font-size:12px;margin-top:4px;">Recent average: '+metrics[skipSub].skip.toFixed(1)+'% unattempted</div></div>';
     }
     var fatigueText;
-    if(multiPaper) fatigueText='Multiple test-like events are on today\'s calendar.';
+    if(multiPaper) fatigueText='Multiple test-like events are scheduled on the same day.';
     else if(avgFatigue!==null) fatigueText='Historical same-session change: '+(avgFatigue>=0?'+':'')+avgFatigue.toFixed(1)+' accuracy points from first to last paper.';
     else fatigueText='No enough same-session history yet.';
     html+='<div style="padding:11px;border:1px solid var(--border);border-radius:10px;"><div style="font-size:11px;color:var(--text-dim);">Fatigue risk</div><b>'+((multiPaper|| (avgFatigue!==null && avgFatigue<=-5))?'Pay attention to fatigue':'No strong fatigue signal')+'</b><div style="font-size:12px;margin-top:4px;">'+fatigueText+'</div></div>';
@@ -2353,9 +2361,31 @@ window.openSmartGoals190=open;
       html+='<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;color:var(--text-dim);">Time budget: recent section timing is available, but no explicit total-time allowance is logged yet, so no fixed minute budget is shown.</div>';
     }
 
-    html+='<div style="margin-top:10px;font-size:11.5px;color:var(--text-dim);">Generated from your latest '+recent.length+' logged tests and today\'s Google Calendar test schedule. It updates automatically when your test history changes.</div>';
+    var eventText=testEvents.map(function(ev){return String(ev.summary||"");}).join(" ").toLowerCase();
+    var focusedSubjects=[];
+    if(/\bphysics\b/.test(eventText)) focusedSubjects.push("physics");
+    if(/\bchem(?:istry)?\b/.test(eventText)) focusedSubjects.push("chemistry");
+    if(/\bmaths?\b/.test(eventText)) focusedSubjects.push("maths");
+    var previousMistakes=mistakeTextRows(recent).filter(function(row){
+      if(!focusedSubjects.length) return true;
+      var text=(String(row.raw||"")+" "+String(row.text||"")).toLowerCase();
+      var tagged=[];
+      if(/\bphysics\b/.test(text)) tagged.push("physics");
+      if(/\bchem(?:istry)?\b/.test(text)) tagged.push("chemistry");
+      if(/\bmaths?\b/.test(text)) tagged.push("maths");
+      return !tagged.length || tagged.some(function(s){return focusedSubjects.indexOf(s)>=0;});
+    }).sort(function(a,b){return String(b.date||"").localeCompare(String(a.date||""));}).slice(0,6);
+    html+='<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">Relevant previous mistakes</div>';
+    if(previousMistakes.length){
+      html+=previousMistakes.map(function(row){return '<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;"><span class="tag">'+escapeHtml(row.source||"mistake")+'</span>'+escapeHtml(row.test&&row.test.name?row.test.name:"Previous test")+' · '+escapeHtml(row.text)+'</div>';}).join("");
+    }else{
+      html+='<div style="font-size:12px;color:var(--text-dim);">No previous mistake notes are logged for the recent tests yet.</div>';
+    }
+    html+='</div>';
+
+    html+='<div style="margin-top:10px;font-size:11.5px;color:var(--text-dim);">Generated from your latest '+recent.length+' logged tests, saved mistakes, and the next test in Google Calendar.</div>';
     content.innerHTML=html;
-    meta.textContent=testEvents.length+(testEvents.length===1?' test':' tests')+' today';
+    meta.textContent='Next test · '+nextDateLabel;
     card.style.display="block";
   }
 
@@ -2906,6 +2936,9 @@ window.openSmartGoals190=open;
 
       var calendars = (list.items || []).filter(function(c){ return c.selected !== false && c.accessRole !== "freeBusyReader"; });
       var all = [];
+      var upcoming = [];
+      var upcomingStart = new Date(); upcomingStart.setHours(0,0,0,0);
+      var upcomingEnd = new Date(upcomingStart); upcomingEnd.setDate(upcomingEnd.getDate()+45);
       for (var i=0;i<calendars.length;i++){
         var c = calendars[i];
         var url = "https://www.googleapis.com/calendar/v3/calendars/"+encodeURIComponent(c.id)+"/events"+
@@ -2915,6 +2948,13 @@ window.openSmartGoals190=open;
           var data = await gcalFetch(url);
           (data.items || []).forEach(function(ev){ ev._calendarId=c.id; all.push(ev); });
         } catch(e){ console.warn("Could not load calendar",c.summary,e); }
+        try {
+          var upcomingUrl = "https://www.googleapis.com/calendar/v3/calendars/"+encodeURIComponent(c.id)+"/events"+
+            "?singleEvents=true&orderBy=startTime&showDeleted=false"+
+            "&timeMin="+encodeURIComponent(upcomingStart.toISOString())+"&timeMax="+encodeURIComponent(upcomingEnd.toISOString())+"&maxResults=2500";
+          var upcomingData = await gcalFetch(upcomingUrl);
+          (upcomingData.items || []).forEach(function(ev){ if(isLikelyTestEvent(ev)){ev._calendarId=c.id;upcoming.push(ev);} });
+        } catch(e){ console.warn("Could not load upcoming test events from calendar",c.summary,e); }
       }
       all.sort(function(a,b){
         var av=(a.start&& (a.start.dateTime||a.start.date))||"";
@@ -2922,6 +2962,11 @@ window.openSmartGoals190=open;
         return new Date(av).getTime()-new Date(bv).getTime();
       });
       state.gcalEvents = all;
+      upcoming.sort(function(a,b){
+        var av=a.start&&(a.start.dateTime||a.start.date)||"", bv=b.start&&(b.start.dateTime||b.start.date)||"";
+        return new Date(av.length===10?av+"T00:00:00":av).getTime()-new Date(bv.length===10?bv+"T00:00:00":bv).getTime();
+      });
+      state.gcalUpcomingTestEvents = upcoming;
       document.getElementById("googleCalendarStatus").textContent = "Connected to your Google Calendars. Colors, reminders and event details are shown here; Google Calendar remains the source of truth.";
       state.renderedPanels.schedule = false;
       state.renderedPanels.overview = false;
