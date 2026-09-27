@@ -1486,6 +1486,16 @@ body.settings-open { overflow:hidden !important; height:100%; overscroll-behavio
     <div id="scheduleDays"></div>
     <div class="empty" id="scheduleEmpty" style="display:none">No calendar events found for this day.</div>
   </div>
+
+  <div class="card">
+    <div class="sectionTitle" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span>Saved JEE study plan</span>
+      <button class="ghost small" id="refreshTrackerPlanBtn">Refresh plan</button>
+    </div>
+    <div class="hint" style="margin-bottom:10px;">Plans Claude saves are listed here for the selected day. Your Google Calendar remains connected separately above.</div>
+    <div id="trackerPlanStatus" style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Sign in to see saved study blocks.</div>
+    <div id="trackerPlanItems"></div>
+  </div>
 </div>
 
 <!-- Universal Settings -->
@@ -2592,7 +2602,7 @@ window.openSmartGoals190=open;
   }
 
   async function onSignedIn(user){
-    state.user = user; state.cloud = true; loadNotifications(); ensureVersionNotification(); setAccountButton();
+    state.user = user; state.cloud = true; state.renderedPanels.schedule = false; loadNotifications(); ensureVersionNotification(); setAccountButton();
     try {
       // Do not automatically upload browser-local tests when a user signs in.
       // localStorage is shared by accounts on the same browser/origin, so an
@@ -2637,7 +2647,7 @@ window.openSmartGoals190=open;
       sb.auth.onAuthStateChange(function(event, session){
         setTimeout(async function(){
           if (session && session.user) await onSignedIn(session.user);
-          else { state.user = null; state.cloud = false; loadNotifications(); setAccountButton(); state.tests = loadLocal().map(normalizeTest); render(); }
+          else { state.user = null; state.cloud = false; state.renderedPanels.schedule = false; loadNotifications(); setAccountButton(); state.tests = loadLocal().map(normalizeTest); render(); }
         }, 0);
       });
     } catch(e) { state.ready = true; setAccountButton(); render(); }
@@ -2929,6 +2939,50 @@ window.openSmartGoals190=open;
     return ev.start.date ? new Date(value+"T00:00:00") : new Date(value);
   }
 
+  async function loadTrackerPlanForDay(dayKey){
+    var statusEl=document.getElementById("trackerPlanStatus"), itemsEl=document.getElementById("trackerPlanItems");
+    if(!statusEl||!itemsEl) return;
+    if(!sb||!state.user){ statusEl.textContent="Sign in to the tracker to see saved study blocks."; itemsEl.innerHTML=""; return; }
+    statusEl.textContent="Loading saved study blocks…";
+    try{
+      var schedulesRes=await sb.from("tracker_schedules").select("id,title").eq("user_id",state.user.id).limit(100);
+      if(schedulesRes.error) throw schedulesRes.error;
+      var schedules=schedulesRes.data||[], titles={};
+      schedules.forEach(function(row){titles[row.id]=row.title;});
+      if(!schedules.length){ statusEl.textContent="No saved study plans yet. Ask Claude to create and save one through JEE Test Tracker."; itemsEl.innerHTML=""; return; }
+      var ids=schedules.map(function(row){return row.id;});
+      var itemsRes=await sb.from("tracker_schedule_items")
+        .select("id,schedule_id,scheduled_date,start_time,duration_minutes,subject,topic,activity,status,feedback,position")
+        .eq("user_id",state.user.id).eq("scheduled_date",dayKey).in("schedule_id",ids)
+        .order("start_time",{ascending:true,nullsFirst:false}).order("position",{ascending:true}).limit(100);
+      if(itemsRes.error) throw itemsRes.error;
+      if(dayKey!==isoLocalDate(state.scheduleWeekStart||new Date())) return;
+      var rows=itemsRes.data||[];
+      statusEl.textContent=rows.length ? rows.length+" saved study block"+(rows.length===1?"":"s")+" for this day." : "No saved study blocks for this day.";
+      if(!rows.length){ itemsEl.innerHTML=""; return; }
+      itemsEl.innerHTML=rows.map(function(item){
+        var status=item.status||"planned", when=item.start_time ? item.start_time.slice(0,5)+" · " : "";
+        var title=titles[item.schedule_id]||"JEE study plan";
+        var detail=[item.topic,item.activity].filter(Boolean).join(" · ");
+        var actions=status==="planned"||status==="rescheduled"
+          ? '<div class="rowbtns" style="margin-top:8px"><button class="primary small" data-plan-action="completed" data-plan-item="'+escapeHtml(item.id)+'">Mark done</button><button class="ghost small" data-plan-action="skipped" data-plan-item="'+escapeHtml(item.id)+'">Skip</button></div>'
+          : "";
+        return '<div class="sectionBlock" style="margin-top:8px"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><b>'+escapeHtml(when+item.subject)+'</b><span class="tag">'+escapeHtml(status)+'</span></div><div style="font-size:12px;color:var(--text-dim);margin-top:3px">'+escapeHtml(title)+' · '+escapeHtml(String(item.duration_minutes))+' min</div>'+(detail?'<div style="font-size:12.5px;margin-top:5px">'+escapeHtml(detail)+'</div>':'')+(item.feedback?'<div style="font-size:12px;color:var(--text-dim);margin-top:5px">Feedback: '+escapeHtml(item.feedback)+'</div>':'')+actions+'</div>';
+      }).join("");
+      itemsEl.querySelectorAll("[data-plan-action]").forEach(function(button){
+        button.addEventListener("click",async function(){
+          var itemId=button.getAttribute("data-plan-item"), nextStatus=button.getAttribute("data-plan-action");
+          button.disabled=true; statusEl.textContent="Updating study block…";
+          try{
+            var updated=await sb.from("tracker_schedule_items").update({status:nextStatus,updated_at:new Date().toISOString()}).eq("id",itemId).eq("user_id",state.user.id);
+            if(updated.error) throw updated.error;
+            await loadTrackerPlanForDay(dayKey);
+          }catch(error){ statusEl.textContent="Could not update this block: "+(error.message||"please try again"); button.disabled=false; }
+        });
+      });
+    }catch(error){ statusEl.textContent="Could not load saved plans: "+(error.message||"please try again"); itemsEl.innerHTML=""; }
+  }
+
   function openGcalEvent(ev){
     var title=document.getElementById("gcalEventModalTitle");
     var content=document.getElementById("gcalEventModalContent");
@@ -2966,6 +3020,7 @@ window.openSmartGoals190=open;
     if(!state.scheduleWeekStart) state.scheduleWeekStart=new Date();
     var day=new Date(state.scheduleWeekStart.getFullYear(),state.scheduleWeekStart.getMonth(),state.scheduleWeekStart.getDate());
     input.value=isoLocalDate(day);
+    loadTrackerPlanForDay(isoLocalDate(day));
     title.textContent=formatDateLabel(day);
     var key=isoLocalDate(day);
     var dayStart=new Date(day.getFullYear(),day.getMonth(),day.getDate());
@@ -4490,6 +4545,7 @@ window.openSmartGoals190=open;
     state.scheduleWeekStart = new Date();
     if (state.gcalAccessToken) await loadGoogleCalendarDay(); else { state.renderedPanels.schedule=false; renderPanel("schedule", sortedTests()); }
   });
+  document.getElementById("refreshTrackerPlanBtn").addEventListener("click", function(){ loadTrackerPlanForDay(isoLocalDate(state.scheduleWeekStart||new Date())); });
   document.getElementById("scheduleWeekInput").addEventListener("change", async function(){
     var chosen=new Date(this.value+"T00:00:00"); if(isNaN(chosen.getTime())) return;
     state.scheduleWeekStart=chosen;
