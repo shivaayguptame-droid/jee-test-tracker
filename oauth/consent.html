@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Connect Claude to JEE Test Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body{margin:0;min-height:100vh;display:grid;place-items:center;background:#07101c;color:#e8eef7;font:16px system-ui,sans-serif}
+    main{width:min(560px,calc(100% - 32px));padding:28px;border:1px solid #31577f;border-radius:18px;background:#0d1726;box-shadow:0 18px 55px #0006}
+    h1{font-size:23px;margin:0 0 8px}p{line-height:1.55;color:#b9c8da}.panel{padding:14px;border:1px solid #31577f;border-radius:12px;background:#091421;margin:18px 0;overflow-wrap:anywhere}
+    button,a.button{display:inline-block;border:0;border-radius:10px;padding:11px 16px;background:#58a6ff;color:#061322;font-weight:700;text-decoration:none;cursor:pointer;margin:5px 8px 0 0}
+    button.secondary{background:transparent;color:#d9ecff;border:1px solid #31577f}.status{margin-top:14px;font-size:14px;white-space:pre-wrap}.hidden{display:none}
+  </style>
+</head>
+<body>
+<main>
+  <h1>Connect Claude to JEE Test Tracker</h1>
+  <p>This approval lets Claude read your JEE goals, tests, mistakes, and schedules, and save study plans and progress updates in your tracker account. Your Google Calendar tokens are not available to this connector.</p>
+  <div id="details" class="panel">Checking your signed-in tracker account…</div>
+  <div id="signedOut" class="hidden">
+    <p>First sign in to your tracker in another tab using this same browser. Then return here and press <b>Check again</b>.</p>
+    <a class="button" href="/jee-test-tracker/" target="_blank" rel="noopener">Open JEE Test Tracker</a>
+    <button id="retry" class="secondary">Check again</button>
+  </div>
+  <div id="actions" class="hidden">
+    <button id="approve">Approve Claude</button>
+    <button id="deny" class="secondary">Deny</button>
+  </div>
+  <div id="status" class="status" role="status"></div>
+</main>
+<script>
+  // Copy these two public client values from the tracker index.html.
+  // The publishable/anon key is intended for browser use; never put a service-role key here.
+  const SUPABASE_URL = "https://isbhjnezkqiazrtbcrdi.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_TdkiN3P82zEpA7jmlO_KxQ_Ds5hf0g2";
+  const authorizationId = new URLSearchParams(location.search).get("authorization_id");
+  const detailsEl = document.getElementById("details");
+  const statusEl = document.getElementById("status");
+  const signedOutEl = document.getElementById("signedOut");
+  const actionsEl = document.getElementById("actions");
+  let trackerClient;
+  let authDetails;
+
+  function showError(message){ statusEl.textContent = message; }
+  function showDetails(details){
+    detailsEl.textContent = "Claude is requesting access as: " + (details.client?.name || "Claude") +
+      "\nRequested permissions: " + (details.scope || "JEE tracker schedule tools") +
+      "\nReturn address: " + (details.redirect_uri || "Claude Desktop");
+  }
+  async function loadRequest(){
+    actionsEl.classList.add("hidden");
+    signedOutEl.classList.add("hidden");
+    statusEl.textContent = "";
+    if (!authorizationId){ detailsEl.textContent="Missing authorization request. Close this tab and reconnect Claude."; return; }
+    if (SUPABASE_URL.startsWith("PASTE_") || SUPABASE_PUBLISHABLE_KEY.startsWith("PASTE_")){
+      detailsEl.textContent="Setup needed: copy your Supabase project URL and public anon/publishable key from index.html into this consent page, then publish it.";
+      return;
+    }
+    trackerClient = trackerClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+    const {data:{user},error:userError}=await trackerClient.auth.getUser();
+    if (userError || !user){ detailsEl.textContent="You are not signed in to the tracker in this browser."; signedOutEl.classList.remove("hidden"); return; }
+    const {data,error}=await trackerClient.auth.oauth.getAuthorizationDetails(authorizationId);
+    if (error || !data){ detailsEl.textContent="This approval request could not be loaded."; showError(error?.message || "Please close the tab and try Connect again."); return; }
+    if (!("authorization_id" in data) && data.redirect_url){ location.replace(data.redirect_url); return; }
+    authDetails=data;
+    showDetails(data);
+    actionsEl.classList.remove("hidden");
+  }
+  document.getElementById("retry").addEventListener("click",loadRequest);
+  document.getElementById("approve").addEventListener("click",async function(){
+    this.disabled=true; showError("Approving access…");
+    const {data,error}=await trackerClient.auth.oauth.approveAuthorization(authorizationId);
+    if(error || !data?.redirect_url){this.disabled=false;showError(error?.message || "Approval failed. Please retry.");return;}
+    location.assign(data.redirect_url);
+  });
+  document.getElementById("deny").addEventListener("click",async function(){
+    this.disabled=true; showError("Denying access…");
+    const {data,error}=await trackerClient.auth.oauth.denyAuthorization(authorizationId);
+    if(error || !data?.redirect_url){this.disabled=false;showError(error?.message || "Could not deny the request.");return;}
+    location.assign(data.redirect_url);
+  });
+  loadRequest().catch(error=>showError(error.message || "Could not load the approval request."));
+</script>
+</body>
+</html>
+
