@@ -556,8 +556,6 @@ tr:hover td { background:var(--table-hover); }
 .appearanceControl{border:1px solid var(--border);border-radius:11px;padding:10px;background:color-mix(in srgb,var(--surface) 82%,transparent);}
 .appearanceControl label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:7px;}
 .appearanceControl select{width:100%;}
-.appearanceInline{display:flex;align-items:center;gap:8px;}
-.appearanceInline input[type=color]{width:42px;height:34px;padding:2px;border:1px solid var(--border);border-radius:8px;background:var(--bg);cursor:pointer;}
 .appearanceToggle{display:flex;align-items:flex-start;gap:9px;border:1px solid var(--border);border-radius:11px;padding:10px;cursor:pointer;background:color-mix(in srgb,var(--surface) 82%,transparent);}
 .appearanceToggle input{margin-top:2px;accent-color:var(--accent);}
 .appearanceToggle b{display:block;font-size:12px;color:var(--text);}
@@ -937,7 +935,6 @@ body.settings-open { overflow:hidden !important; height:100%; overscroll-behavio
 :root[data-theme="aurora"]{--font-ui:"Manrope",sans-serif;--font-display:"Space Grotesk",sans-serif;--bg:#07141a;--surface:rgba(15,31,39,.88);--surface-2:#12252d;--surface-3:#17323a;--border:#2b6871;--text:#e5fffb;--text-dim:#8bb9b9;--accent:#61ffd7;--accent-soft:#123a39;--good:#65f5b5;--bad:#ff779c;--warn:#ffd166;--radius:18px;--header-bg:rgba(10,28,34,.86);--nav-bg:rgba(10,28,34,.86);--card-bg:linear-gradient(135deg,rgba(16,43,49,.92),rgba(11,27,35,.88));--control-bg:#0c252c;--control-hover:#14363d;--control-border:#2b6871;--control-text:#e5fffb;--input-bg:#08191f;--table-bg:#0d252d;--table-head-bg:#14343b;--table-hover:#173a40;--heading:#b9fff1;}
 :root[data-theme="solarized"]{--font-ui:"Manrope",sans-serif;--font-display:"Space Grotesk",sans-serif;--bg:#fdf6e3;--surface:#eee8d5;--surface-2:#f7f0dc;--surface-3:#e4dcc5;--border:#93a1a1;--text:#586e75;--text-dim:#839496;--accent:#b58900;--accent-soft:#eee3bd;--good:#2aa198;--bad:#dc322f;--warn:#cb4b16;--radius:8px;--header-bg:#eee8d5;--nav-bg:#eee8d5;--card-bg:#f7f0dc;--control-bg:#fdf6e3;--control-hover:#eee8d5;--control-border:#93a1a1;--control-text:#586e75;--input-bg:#fdf6e3;--table-bg:#f7f0dc;--table-head-bg:#e4dcc5;--table-hover:#eee8d5;--heading:#657b83;}
 :root[data-theme="paper"]{--font-ui:"Manrope",sans-serif;--font-display:"Manrope",sans-serif;--bg:#f7f3ea;--surface:#fffdf7;--surface-2:#faf6ee;--surface-3:#f1eadc;--border:#d8cbb5;--text:#3f3a33;--text-dim:#7c7265;--accent:#b45309;--accent-soft:#fff0dd;--good:#15803d;--bad:#b91c1c;--warn:#a16207;--radius:4px;--header-bg:#fffdf7;--nav-bg:#fffdf7;--card-bg:#fffdf7;--control-bg:#fffdf7;--control-hover:#f1eadc;--control-border:#d8cbb5;--control-text:#3f3a33;--input-bg:#fffdf7;--table-bg:#fffdf7;--table-head-bg:#f1eadc;--table-hover:#faf6ee;--heading:#7c2d12;}
-:root[data-theme="industrial"]{--font-ui:"Space Grotesk",sans-serif;--font-display:"Space Grotesk",sans-serif;--bg:#0b0618;--surface:#160d2a;--surface-2:#1e1037;--surface-3:#281447;--border:#633f82;--text:#f8ecff;--text-dim:#b99dcc;--accent:#ff75c3;--accent-soft:#351738;--good:#62f5d2;--bad:#ff657a;--warn:#ffca68;--radius:16px;--header-bg:rgba(18,8,35,.9);--nav-bg:rgba(18,8,35,.9);--card-bg:linear-gradient(135deg,#160d2a,#25133e);--control-bg:#160d2a;--control-hover:#291641;--control-border:#633f82;--control-text:#f8ecff;--input-bg:#0f0820;--table-bg:#160d2a;--table-head-bg:#281447;--table-hover:#211238;--heading:#ffc2e2;}
 :root[data-theme="aurora"] body{background:radial-gradient(circle at 10% 10%,rgba(97,255,215,.13),transparent 25%),radial-gradient(circle at 90% 80%,rgba(89,145,255,.13),transparent 25%),var(--bg)}
 :root[data-theme="aurora"] .card,:root[data-theme="aurora"] #kpis .kpi{backdrop-filter:blur(12px);box-shadow:0 18px 50px rgba(0,0,0,.18)}
 :root[data-theme="paper"] .card{box-shadow:0 3px 12px rgba(80,60,30,.08)}
@@ -1542,9 +1539,8 @@ body.settings-open { overflow:hidden !important; height:100%; overscroll-behavio
         </div>
         <div class="settingsSection">
           <div class="settingsSectionTitle">Interface controls</div>
-          <div class="settingsSectionDesc">Fine-tune the dashboard without changing your test data, themes or core tracker logic. These preferences are saved locally on this browser.</div>
+          <div class="settingsSectionDesc">Fine-tune the dashboard. Accent colors follow the selected theme. These preferences are saved locally on this browser.</div>
           <div class="appearanceControlsGrid">
-            <div class="appearanceControl"><label for="appearanceAccent">Accent color</label><div class="appearanceInline"><input id="appearanceAccent" type="color" value="#39ff6a" aria-label="Accent color"><button class="ghost small" id="appearanceAccentReset">Reset</button></div></div>
             <div class="appearanceControl"><label for="appearanceDensity">UI density</label><select id="appearanceDensity"><option value="comfortable">Comfortable</option><option value="compact">Compact</option><option value="spacious">Spacious</option></select></div>
             <div class="appearanceControl"><label for="appearanceAnimations">Animations</label><select id="appearanceAnimations"><option value="full">Full</option><option value="reduced">Reduced</option><option value="off">Off</option></select></div>
             <div class="appearanceControl"><label for="appearanceLayout">Dashboard layout</label><select id="appearanceLayout"><option value="left">Left (Original)</option><option value="top">Top</option></select></div>
@@ -4715,10 +4711,11 @@ window.openSmartGoals190=open;
 
   // v2.0.5 Appearance preferences
   var APPEARANCE_KEY = "jee_tracker_appearance_v2";
-  var DEFAULT_APPEARANCE = {accent:"",density:"comfortable",animations:"full",layout:"left",compact:false,largeText:false,highContrast:false,reducedMotion:false};
+  var DEFAULT_APPEARANCE = {density:"comfortable",animations:"full",layout:"left",compact:false,largeText:false,highContrast:false,reducedMotion:false};
   function loadAppearance(){
     try{
       var a=Object.assign({},DEFAULT_APPEARANCE,JSON.parse(localStorage.getItem(APPEARANCE_KEY)||"{}"));
+      delete a.accent;
       if(a.layout!=="left" && a.layout!=="top") a.layout="left";
       return a;
     }catch(e){return Object.assign({},DEFAULT_APPEARANCE);}
@@ -4734,20 +4731,18 @@ window.openSmartGoals190=open;
     root.setAttribute("data-appearance-large-text",a.largeText?"1":"0");
     root.setAttribute("data-appearance-contrast",a.highContrast?"1":"0");
     root.setAttribute("data-appearance-motion",a.reducedMotion?"reduced":a.animations);
-    if(a.accent){root.style.setProperty("--user-accent",a.accent);root.style.setProperty("--accent",a.accent);}
-    else {root.style.removeProperty("--user-accent");}
-    var accent=document.getElementById("appearanceAccent"),density=document.getElementById("appearanceDensity"),anim=document.getElementById("appearanceAnimations"),layout=document.getElementById("appearanceLayout"),compact=document.getElementById("appearanceCompact"),large=document.getElementById("appearanceLargeText"),contrast=document.getElementById("appearanceHighContrast"),motion=document.getElementById("appearanceReducedMotion");
-    if(accent) accent.value=a.accent||getComputedStyle(root).getPropertyValue("--accent").trim()||"#39ff6a";
+    root.style.removeProperty("--accent");
+    root.style.removeProperty("--user-accent");
+    var density=document.getElementById("appearanceDensity"),anim=document.getElementById("appearanceAnimations"),layout=document.getElementById("appearanceLayout"),compact=document.getElementById("appearanceCompact"),large=document.getElementById("appearanceLargeText"),contrast=document.getElementById("appearanceHighContrast"),motion=document.getElementById("appearanceReducedMotion");
     if(density)density.value=a.density;if(anim)anim.value=a.animations;if(layout)layout.value=a.layout;if(compact)compact.checked=!!a.compact;if(large)large.checked=!!a.largeText;if(contrast)contrast.checked=!!a.highContrast;if(motion)motion.checked=!!a.reducedMotion;
   }
   function syncAppearance(){
-    var a={accent:document.getElementById("appearanceAccent")?.value||"",density:document.getElementById("appearanceDensity")?.value||"comfortable",animations:document.getElementById("appearanceAnimations")?.value||"full",layout:document.getElementById("appearanceLayout")?.value||"left",compact:!!document.getElementById("appearanceCompact")?.checked,largeText:!!document.getElementById("appearanceLargeText")?.checked,highContrast:!!document.getElementById("appearanceHighContrast")?.checked,reducedMotion:!!document.getElementById("appearanceReducedMotion")?.checked};
+    var a={density:document.getElementById("appearanceDensity")?.value||"comfortable",animations:document.getElementById("appearanceAnimations")?.value||"full",layout:document.getElementById("appearanceLayout")?.value||"left",compact:!!document.getElementById("appearanceCompact")?.checked,largeText:!!document.getElementById("appearanceLargeText")?.checked,highContrast:!!document.getElementById("appearanceHighContrast")?.checked,reducedMotion:!!document.getElementById("appearanceReducedMotion")?.checked};
     saveAppearance(a);applyAppearance(a);
   }
   var initialAppearance=loadAppearance();
   applyAppearance(initialAppearance);
-  ["appearanceAccent","appearanceDensity","appearanceAnimations","appearanceLayout","appearanceCompact","appearanceLargeText","appearanceHighContrast","appearanceReducedMotion"].forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener("change",syncAppearance);});
-  document.getElementById("appearanceAccentReset").addEventListener("click",function(){var a=loadAppearance();a.accent="";saveAppearance(a);applyTrackerTheme(document.documentElement.getAttribute("data-theme")||"terminal");applyAppearance(a);});
+  ["appearanceDensity","appearanceAnimations","appearanceLayout","appearanceCompact","appearanceLargeText","appearanceHighContrast","appearanceReducedMotion"].forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener("change",syncAppearance);});
 
   // ---------- Universal settings ----------
   var SETTINGS_THEME_KEY = "jee_tracker_theme_v1";
