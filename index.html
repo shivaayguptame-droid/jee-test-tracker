@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>JEE Test Tracker v2.0.0</title>
+<title>JEE Test Tracker v2.0.5</title>
 <!-- VERSION: 1.9.1 | Smart Planner + Goals 2.0 with theme-correct notification panel and viewport-safe notifications. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -572,7 +572,10 @@ tr:hover td { background:var(--table-hover); }
 :root[data-appearance-layout="focus"] .wrap{grid-template-columns:1fr;}
 :root[data-appearance-layout="focus"] #mainTabNav{grid-column:1;position:static;flex-direction:row;overflow-x:auto;}
 :root[data-appearance-layout="focus"] #mainTabNav .tabbtn{width:auto;flex:0 0 auto;}
-:root[data-appearance-layout="wide"] .wrap{width:min(1600px,calc(100% - 24px));}
+:root[data-appearance-layout="wide"] .wrap{width:min(1600px,calc(100% - 24px));grid-template-columns:1fr;grid-template-areas:"header" "kpis" "nav" "main";}
+:root[data-appearance-layout="wide"] #mainTabNav{position:static;flex-direction:row;align-items:stretch;overflow-x:auto;}
+:root[data-appearance-layout="wide"] #mainTabNav::before{display:none;}
+:root[data-appearance-layout="wide"] #mainTabNav .tabbtn{width:auto;flex:0 0 auto;text-align:center;justify-content:center;}
 :root[data-appearance-large-text="1"] body{font-size:calc(100% + 1px);}
 :root[data-appearance-large-text="1"] .sub,:root[data-appearance-large-text="1"] .hint,:root[data-appearance-large-text="1"] .settingsSectionDesc{font-size:calc(100% + 1px);}
 :root[data-appearance-contrast="1"]{--border:color-mix(in srgb,var(--text) 42%,var(--bg));}
@@ -922,7 +925,7 @@ body.settings-open { overflow:hidden !important; height:100%; overscroll-behavio
   #mainTabNav { position:static; }
 }
 
-/* v2.0.0 — Theme Engine 2.0: Glass + Industrial replace Matrix + Nebula */
+/* v2.0.5 — Theme Engine 2.0: Glass + Industrial replace Matrix + Nebula */
 :root[data-theme="glass"]{--font-ui:Inter,ui-sans-serif,system-ui,sans-serif;--font-display:"Space Grotesk",Inter,sans-serif;--bg:#08111f;--surface:rgba(255,255,255,.10);--surface-2:rgba(255,255,255,.14);--surface-3:rgba(255,255,255,.18);--border:rgba(180,225,255,.28);--text:#edf8ff;--text-dim:#9db8c9;--accent:#8de1ff;--accent-soft:rgba(141,225,255,.13);--good:#8dffcf;--bad:#ff8299;--warn:#ffd27d;--radius:22px;--header-bg:rgba(10,25,43,.58);--nav-bg:rgba(10,25,43,.50);--card-bg:linear-gradient(145deg,rgba(255,255,255,.14),rgba(255,255,255,.055));--control-bg:rgba(255,255,255,.09);--control-hover:rgba(141,225,255,.16);--control-border:rgba(180,225,255,.30);--control-text:#edf8ff;--input-bg:rgba(4,14,27,.52);--table-bg:rgba(255,255,255,.06);--table-head-bg:rgba(141,225,255,.10);--table-hover:rgba(141,225,255,.08);--heading:#ffffff;}
 :root[data-theme="industrial"]{--font-ui:"IBM Plex Mono",ui-monospace,monospace;--font-display:"IBM Plex Mono",ui-monospace,monospace;--bg:#1b1d1f;--surface:#25282b;--surface-2:#2d3033;--surface-3:#35393c;--border:#62676b;--text:#e8e3d7;--text-dim:#a9aaa6;--accent:#ffb347;--accent-soft:#3a2b1a;--good:#8fd694;--bad:#ff7373;--warn:#ffd166;--radius:3px;--header-bg:#222527;--nav-bg:#202326;--card-bg:linear-gradient(145deg,#292d30,#202326);--control-bg:#292d30;--control-hover:#3a3e41;--control-border:#676d72;--control-text:#eee9dd;--input-bg:#1d2022;--table-bg:#25282b;--table-head-bg:#303438;--table-hover:#353a3e;--heading:#ffd08a;}
 :root[data-theme="aurora"]{--font-ui:"Manrope",sans-serif;--font-display:"Space Grotesk",sans-serif;--bg:#07141a;--surface:rgba(15,31,39,.88);--surface-2:#12252d;--surface-3:#17323a;--border:#2b6871;--text:#e5fffb;--text-dim:#8bb9b9;--accent:#61ffd7;--accent-soft:#123a39;--good:#65f5b5;--bad:#ff779c;--warn:#ffd166;--radius:18px;--header-bg:rgba(10,28,34,.86);--nav-bg:rgba(10,28,34,.86);--card-bg:linear-gradient(135deg,rgba(16,43,49,.92),rgba(11,27,35,.88));--control-bg:#0c252c;--control-hover:#14363d;--control-border:#2b6871;--control-text:#e5fffb;--input-bg:#08191f;--table-bg:#0d252d;--table-head-bg:#14343b;--table-hover:#173a40;--heading:#b9fff1;}
@@ -991,13 +994,231 @@ body.settings-open { overflow:hidden !important; height:100%; overscroll-behavio
 .headerActions .notificationPanel{left:auto;right:0;}
 @media(max-width:1100px){.headerActions{align-items:flex-start;flex-wrap:wrap;}.headerPrimaryActions{justify-content:flex-start;}.headerUtilityActions{margin-left:auto;}}
 @media(max-width:700px){.headerActions{width:100%;}.headerPrimaryActions{width:100%;}.headerUtilityActions{margin-left:0;width:100%;justify-content:flex-end;}.headerActions .notificationPanel{right:0;left:auto;max-width:min(92vw,380px);}}
+
+
+/* v2.0.5 FINAL — Workspace layout: Left (Original) or Top only. */
+:root[data-appearance-layout="left"] .wrap{
+  width:min(1800px,calc(100% - 56px)) !important;
+  max-width:none !important;
+  grid-template-columns:286px minmax(0,1fr) !important;
+  grid-template-areas:"header header" "kpis kpis" "nav main" !important;
+  gap:20px 24px !important;
+}
+:root[data-appearance-layout="left"] #mainTabNav{
+  grid-area:nav !important;
+  width:auto !important;
+  min-width:0 !important;
+  box-sizing:border-box !important;
+  position:sticky !important;
+  top:105px !important;
+  align-self:start !important;
+  display:flex !important;
+  flex-direction:column !important;
+  gap:6px !important;
+  padding:10px !important;
+  margin:0 !important;
+  border:1px solid var(--border) !important;
+  border-radius:17px !important;
+  background:var(--nav-bg) !important;
+  overflow-x:hidden !important;
+}
+:root[data-appearance-layout="left"] #mainTabNav::before{
+  display:block !important;
+  content:"WORKSPACE" !important;
+  padding:7px 10px 9px !important;
+  font-size:10px !important;
+  font-weight:700 !important;
+  letter-spacing:1.3px !important;
+  color:var(--text-dim) !important;
+}
+:root[data-appearance-layout="left"] #mainTabNav .tabbtn{
+  width:100% !important;
+  min-width:0 !important;
+  flex:0 0 auto !important;
+  box-sizing:border-box !important;
+  justify-content:flex-start !important;
+  text-align:left !important;
+  padding:11px 12px !important;
+}
+:root[data-appearance-layout="left"] .tabpanel{
+  grid-area:main !important;
+  grid-column:auto !important;
+}
+:root[data-appearance-layout="top"] .wrap{
+  width:min(1800px,calc(100% - 56px)) !important;
+  max-width:none !important;
+  grid-template-columns:1fr !important;
+  grid-template-areas:"header" "kpis" "nav" "main" !important;
+  gap:16px !important;
+}
+:root[data-appearance-layout="top"] #mainTabNav{
+  grid-area:nav !important;
+  width:auto !important;
+  position:static !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  overflow-x:auto !important;
+  min-width:0 !important;
+  padding:8px !important;
+}
+:root[data-appearance-layout="top"] #mainTabNav::before{display:none !important;}
+:root[data-appearance-layout="top"] #mainTabNav .tabbtn{
+  width:auto !important;
+  min-width:max-content !important;
+  flex:0 0 auto !important;
+  text-align:center !important;
+  justify-content:center !important;
+}
+:root[data-appearance-layout="top"] .tabpanel{
+  grid-area:main !important;
+  grid-column:auto !important;
+}
+@media(max-width:900px){
+  :root[data-appearance-layout="left"] .wrap,
+  :root[data-appearance-layout="top"] .wrap{
+    width:calc(100% - 20px) !important;
+    grid-template-columns:1fr !important;
+    grid-template-areas:"header" "kpis" "nav" "main" !important;
+  }
+  :root[data-appearance-layout="left"] #mainTabNav{
+    position:static !important;
+    flex-direction:row !important;
+    overflow-x:auto !important;
+  }
+  :root[data-appearance-layout="left"] #mainTabNav::before{display:none !important;}
+  :root[data-appearance-layout="left"] #mainTabNav .tabbtn{
+    width:auto !important;
+    min-width:max-content !important;
+    text-align:center !important;
+    justify-content:center !important;
+  }
+}
+
+/* FINAL WORKSPACE FIX — v2.0.5
+   Left = original compact sidebar; Top = horizontal bar.
+   The left layout is static (not sticky) so it never overlays dashboard content. */
+:root:not([data-appearance-layout="top"]) .wrap{
+  display:grid !important;
+  grid-template-columns:286px minmax(0,1fr) !important;
+  grid-template-areas:"header header" "kpis kpis" "nav main" !important;
+  width:min(1800px,calc(100% - 56px)) !important;
+  max-width:none !important;
+  gap:20px 24px !important;
+}
+:root:not([data-appearance-layout="top"]) #mainTabNav{
+  grid-area:nav !important;
+  grid-column:1 !important;
+  grid-row:3 !important;
+  position:static !important;
+  align-self:start !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+  display:flex !important;
+  flex-direction:column !important;
+  gap:6px !important;
+  padding:10px !important;
+  margin:0 !important;
+  border:1px solid var(--border) !important;
+  border-radius:17px !important;
+  background:var(--nav-bg) !important;
+  overflow:visible !important;
+}
+:root:not([data-appearance-layout="top"]) #mainTabNav::before{
+  display:block !important;
+  content:"WORKSPACE" !important;
+  padding:7px 10px 9px !important;
+  font-size:10px !important;
+  font-weight:700 !important;
+  letter-spacing:1.3px !important;
+  color:var(--text-dim) !important;
+}
+:root:not([data-appearance-layout="top"]) #mainTabNav .tabbtn{
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  flex:0 0 auto !important;
+  box-sizing:border-box !important;
+  justify-content:flex-start !important;
+  text-align:left !important;
+  padding:11px 12px !important;
+}
+:root:not([data-appearance-layout="top"]) .tabpanel{
+  grid-area:main !important;
+  grid-column:2 !important;
+  grid-row:3 !important;
+  min-width:0 !important;
+}
+
+:root[data-appearance-layout="top"] .wrap{
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  grid-template-areas:"header" "kpis" "nav" "main" !important;
+  width:min(1800px,calc(100% - 56px)) !important;
+  max-width:none !important;
+  gap:16px !important;
+}
+:root[data-appearance-layout="top"] #mainTabNav{
+  grid-area:nav !important;
+  grid-column:1 !important;
+  grid-row:3 !important;
+  position:static !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  gap:6px !important;
+  padding:8px !important;
+  margin:0 !important;
+  overflow-x:auto !important;
+}
+:root[data-appearance-layout="top"] #mainTabNav::before{display:none !important;}
+:root[data-appearance-layout="top"] #mainTabNav .tabbtn{
+  width:auto !important;
+  min-width:max-content !important;
+  flex:0 0 auto !important;
+  justify-content:center !important;
+  text-align:center !important;
+}
+:root[data-appearance-layout="top"] .tabpanel{
+  grid-area:main !important;
+  grid-column:1 !important;
+  grid-row:4 !important;
+  min-width:0 !important;
+}
+@media(max-width:900px){
+  :root:not([data-appearance-layout="top"]) .wrap,
+  :root[data-appearance-layout="top"] .wrap{
+    width:calc(100% - 20px) !important;
+    grid-template-columns:1fr !important;
+    grid-template-areas:"header" "kpis" "nav" "main" !important;
+  }
+  :root:not([data-appearance-layout="top"]) #mainTabNav{
+    grid-column:1 !important;
+    grid-row:3 !important;
+    flex-direction:row !important;
+    overflow-x:auto !important;
+  }
+  :root:not([data-appearance-layout="top"]) #mainTabNav::before{display:none !important;}
+  :root:not([data-appearance-layout="top"]) #mainTabNav .tabbtn{
+    width:auto !important;
+    min-width:max-content !important;
+    text-align:center !important;
+    justify-content:center !important;
+  }
+  :root:not([data-appearance-layout="top"]) .tabpanel{
+    grid-column:1 !important;
+    grid-row:4 !important;
+  }
+}
+
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v2.0.0</span></h1>
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v2.0.5</span></h1>
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow headerActions">
@@ -1032,7 +1253,6 @@ body.settings-open { overflow:hidden !important; height:100%; overscroll-behavio
       </div>
       </div>
       <button class="ghost settingsButton" id="settingsBtn" aria-label="Settings" title="Settings">⚙</button>
-      </div>
     </div>
   </header>
 
@@ -1310,7 +1530,7 @@ body.settings-open { overflow:hidden !important; height:100%; overscroll-behavio
             <div class="appearanceControl"><label for="appearanceAccent">Accent color</label><div class="appearanceInline"><input id="appearanceAccent" type="color" value="#39ff6a" aria-label="Accent color"><button class="ghost small" id="appearanceAccentReset">Reset</button></div></div>
             <div class="appearanceControl"><label for="appearanceDensity">UI density</label><select id="appearanceDensity"><option value="comfortable">Comfortable</option><option value="compact">Compact</option><option value="spacious">Spacious</option></select></div>
             <div class="appearanceControl"><label for="appearanceAnimations">Animations</label><select id="appearanceAnimations"><option value="full">Full</option><option value="reduced">Reduced</option><option value="off">Off</option></select></div>
-            <div class="appearanceControl"><label for="appearanceLayout">Dashboard layout</label><select id="appearanceLayout"><option value="auto">Adaptive</option><option value="wide">Wide dashboard</option><option value="focus">Focus mode</option></select></div>
+            <div class="appearanceControl"><label for="appearanceLayout">Dashboard layout</label><select id="appearanceLayout"><option value="left">Left (Original)</option><option value="top">Top</option></select></div>
             <label class="appearanceToggle"><input id="appearanceCompact" type="checkbox"><span><b>Compact mode</b><small>Reduce card and control spacing.</small></span></label>
             <label class="appearanceToggle"><input id="appearanceLargeText" type="checkbox"><span><b>Larger text</b><small>Increase interface text for readability.</small></span></label>
             <label class="appearanceToggle"><input id="appearanceHighContrast" type="checkbox"><span><b>High contrast</b><small>Strengthen borders and text contrast.</small></span></label>
@@ -1709,7 +1929,7 @@ window.openSmartGoals190=open;
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "2.0.2";
+  var APP_VERSION = "2.0.5";
   var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   window.state = state;
   var LS_KEY = "jee_test_tracker_v1";
@@ -4377,16 +4597,21 @@ window.openSmartGoals190=open;
 
 
 
-  // v2.0.2 Appearance preferences
-  var APPEARANCE_KEY = "jee_tracker_appearance_v1";
-  var DEFAULT_APPEARANCE = {accent:"",density:"comfortable",animations:"full",layout:"auto",compact:false,largeText:false,highContrast:false,reducedMotion:false};
+  // v2.0.5 Appearance preferences
+  var APPEARANCE_KEY = "jee_tracker_appearance_v2";
+  var DEFAULT_APPEARANCE = {accent:"",density:"comfortable",animations:"full",layout:"left",compact:false,largeText:false,highContrast:false,reducedMotion:false};
   function loadAppearance(){
-    try{return Object.assign({},DEFAULT_APPEARANCE,JSON.parse(localStorage.getItem(APPEARANCE_KEY)||"{}"));}catch(e){return Object.assign({},DEFAULT_APPEARANCE);}
+    try{
+      var a=Object.assign({},DEFAULT_APPEARANCE,JSON.parse(localStorage.getItem(APPEARANCE_KEY)||"{}"));
+      if(a.layout!=="left" && a.layout!=="top") a.layout="left";
+      return a;
+    }catch(e){return Object.assign({},DEFAULT_APPEARANCE);}
   }
   function saveAppearance(a){try{localStorage.setItem(APPEARANCE_KEY,JSON.stringify(a));}catch(e){}}
   function applyAppearance(a){
     a=Object.assign({},DEFAULT_APPEARANCE,a||{});
     var root=document.documentElement;
+    if(a.layout!=="left" && a.layout!=="top") a.layout="left";
     root.setAttribute("data-appearance-density",a.density);
     root.setAttribute("data-appearance-layout",a.layout);
     root.setAttribute("data-appearance-compact",a.compact?"1":"0");
@@ -4400,7 +4625,7 @@ window.openSmartGoals190=open;
     if(density)density.value=a.density;if(anim)anim.value=a.animations;if(layout)layout.value=a.layout;if(compact)compact.checked=!!a.compact;if(large)large.checked=!!a.largeText;if(contrast)contrast.checked=!!a.highContrast;if(motion)motion.checked=!!a.reducedMotion;
   }
   function syncAppearance(){
-    var a={accent:document.getElementById("appearanceAccent")?.value||"",density:document.getElementById("appearanceDensity")?.value||"comfortable",animations:document.getElementById("appearanceAnimations")?.value||"full",layout:document.getElementById("appearanceLayout")?.value||"auto",compact:!!document.getElementById("appearanceCompact")?.checked,largeText:!!document.getElementById("appearanceLargeText")?.checked,highContrast:!!document.getElementById("appearanceHighContrast")?.checked,reducedMotion:!!document.getElementById("appearanceReducedMotion")?.checked};
+    var a={accent:document.getElementById("appearanceAccent")?.value||"",density:document.getElementById("appearanceDensity")?.value||"comfortable",animations:document.getElementById("appearanceAnimations")?.value||"full",layout:document.getElementById("appearanceLayout")?.value||"left",compact:!!document.getElementById("appearanceCompact")?.checked,largeText:!!document.getElementById("appearanceLargeText")?.checked,highContrast:!!document.getElementById("appearanceHighContrast")?.checked,reducedMotion:!!document.getElementById("appearanceReducedMotion")?.checked};
     saveAppearance(a);applyAppearance(a);
   }
   var initialAppearance=loadAppearance();
