@@ -160,6 +160,12 @@
   textarea { resize: vertical; min-height: 56px; }
   .sectionBlock { border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin-top: 10px; }
   .mistakeImageGrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-top:10px; }
+  .mistakeTestGroup { border:1px solid var(--border); border-radius:10px; margin:7px 0; background:var(--surface-2); }
+  .mistakeTestGroup > summary { display:flex; align-items:center; gap:8px; flex-wrap:wrap; cursor:pointer; list-style:none; padding:10px 12px; font-size:12.5px; }
+  .mistakeTestGroup > summary::-webkit-details-marker { display:none; }
+  .mistakeTestGroup > summary::before { content:'▸'; color:var(--text-dim); transition:transform .12s ease; }
+  .mistakeTestGroup[open] > summary::before { transform:rotate(90deg); }
+  .mistakeTestGroup .mistakeTestItems { padding:0 12px 8px; max-height:280px; overflow:auto; }
   .mistakeImageCard { border:1px solid var(--border); border-radius:10px; overflow:hidden; background:var(--surface-2); cursor:pointer; transition:transform .12s ease,border-color .12s ease; }
   .mistakeImageCard:hover { transform:translateY(-1px); border-color:var(--accent); }
   .mistakeImageCard img { display:block; width:100%; height:150px; object-fit:cover; background:#0b0f14; }
@@ -3877,11 +3883,13 @@ window.openSmartGoals190=open;
 
   function renderMistakes(tests){
     var list = document.getElementById("mistakeList"), empty = document.getElementById("mistakeEmpty");
-    var rows = [];
+    var groups = [], byTest = {};
     var secCounts = { Physics:0, Chemistry:0, Maths:0, Other:0 };
     function addRow(t,text,source){
       var clean=String(text||'').trim(); if(!clean) return;
-      rows.push({ test:t.name, date:t.date, text:clean, source:source });
+      var key=String(t.id||((t.date||'')+'::'+(t.name||'Test')));
+      if(!byTest[key]){byTest[key]={test:t.name||'Test',date:t.date||'',rows:[]};groups.push(byTest[key]);}
+      byTest[key].rows.push({ text:clean, source:source });
       var lower=clean.toLowerCase();
       if (lower.indexOf("physics") === 0) secCounts.Physics++;
       else if (lower.indexOf("chemistry") === 0) secCounts.Chemistry++;
@@ -3892,11 +3900,14 @@ window.openSmartGoals190=open;
       (t.mistakes||[]).forEach(function(m){addRow(t,m,'manual');});
       aiMistakeRowsForTest(t).forEach(function(m){addRow(t,m,'ai');});
     });
-    if (!rows.length){ list.innerHTML = ""; empty.style.display = "block"; return; }
+    if (!groups.length){ list.innerHTML = ""; empty.style.display = "block"; return; }
     empty.style.display = "none";
-    var breakdown = '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">By section: Physics '+secCounts.Physics+' · Chemistry '+secCounts.Chemistry+' · Maths '+secCounts.Maths+(secCounts.Other?(' · Other '+secCounts.Other):'')+' · AI-identified mistakes are included</div>';
-    list.innerHTML = breakdown + rows.map(function(r){
-      return '<div style="padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span class="tag">'+r.date+'</span> <span class="tag">'+(r.source==='ai'?'AI':'Manual')+'</span> '+escapeHtml(r.text)+' <span style="color:var(--text-dim)">— '+escapeHtml(r.test)+'</span></div>';
+    var total=groups.reduce(function(n,g){return n+g.rows.length;},0);
+    var breakdown = '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">'+total+' mistakes across '+groups.length+' tests · By section: Physics '+secCounts.Physics+' · Chemistry '+secCounts.Chemistry+' · Maths '+secCounts.Maths+(secCounts.Other?(' · Other '+secCounts.Other):'')+' · Open a test to view its mistakes.</div>';
+    list.innerHTML = breakdown + groups.map(function(g){
+      var aiCount=g.rows.filter(function(r){return r.source==='ai';}).length;
+      var label=g.rows.length+' mistake'+(g.rows.length===1?'':'s')+(aiCount?' · '+aiCount+' AI':'');
+      return '<details class="mistakeTestGroup"><summary><b>'+escapeHtml(g.test)+'</b><span class="tag">'+escapeHtml(g.date)+'</span><span class="pill">'+label+'</span></summary><div class="mistakeTestItems">'+g.rows.map(function(r){return '<div style="padding:7px 0;border-top:1px solid var(--border);font-size:13px;"><span class="tag">'+(r.source==='ai'?'AI':'Manual')+'</span> '+escapeHtml(r.text)+'</div>';}).join('')+'</div></details>';
     }).join("");
   }
 
