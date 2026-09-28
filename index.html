@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>document.documentElement.classList.add("tracker-booting");</script>
-<title>JEE Test Tracker v2.4.2</title> <!-- x-release-please-version -->
+<title>JEE Test Tracker v2.4.0</title> <!-- x-release-please-version -->
 <!-- VERSION: 1.9.1 | Smart Planner + Goals 2.0 with theme-correct notification panel and viewport-safe notifications. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -388,6 +388,13 @@ header .btnrow { gap: 7px; }
 .tabpanel.analysisCompact.is-current{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:12px;}
 .tabpanel.analysisCompact.is-current>.card{min-width:0;margin:0;}
 @media(max-width:900px){.tabpanel.analysisCompact.is-current{grid-template-columns:minmax(0,1fr);}}
+.adaptiveScheduleTools{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:11px;margin:0 0 13px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);}
+.adaptiveAutoToggle{display:flex;align-items:flex-start;gap:9px;cursor:pointer;}
+.adaptiveAutoToggle input{width:17px;height:17px;margin:2px 0 0;accent-color:var(--accent);}
+.adaptiveAutoToggle b{display:block;font-size:12px;color:var(--text);}
+.adaptiveAutoToggle small{display:block;margin-top:3px;color:var(--text-dim);font-size:10.5px;line-height:1.45;}
+#adaptiveScheduleStatus{grid-column:1/-1;color:var(--text-dim);font-size:11.5px;}
+@media(max-width:560px){.adaptiveScheduleTools{grid-template-columns:1fr;}.adaptiveScheduleTools .rowbtns{justify-content:flex-start;}}
 @keyframes panelIn { from { opacity:.55; transform:translateY(3px); } to { opacity:1; transform:none; } }
 
 .card {
@@ -1409,7 +1416,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
   </section>
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v2.4.2</span></h1> <!-- x-release-please-version -->
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v2.4.0</span></h1> <!-- x-release-please-version -->
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow headerActions">
@@ -1565,7 +1572,8 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
 
     <div class="card">
       <div class="sectionTitle">Cross-test pattern mining</div>
-      <div class="hint" style="color:var(--text-dim);font-size:12px;margin-bottom:8px;">Recurring mistake descriptions are clustered across your logged tests.</div>
+      <div class="hint" style="color:var(--text-dim);font-size:12px;margin-bottom:8px;">Compare subject accuracy, recent changes, time per attempt, repeated mistakes, and inferred focus tags across your tests.</div>
+      <div id="subjectPatternContent"></div>
       <div id="crossPatternContent"></div>
     </div>
 
@@ -1694,7 +1702,12 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
       <span>Saved JEE study plan</span>
       <button class="ghost small" id="refreshTrackerPlanBtn">Refresh plan</button>
     </div>
-    <div class="hint" style="margin-bottom:10px;">Plans Claude saves are listed here for the selected day. Your Google Calendar remains connected separately above.</div>
+    <div class="hint" style="margin-bottom:10px;">Plans Claude saves and plans generated from your results are listed here. Your Google Calendar remains connected separately above.</div>
+    <div class="adaptiveScheduleTools">
+      <label class="adaptiveAutoToggle"><input type="checkbox" id="adaptiveAutoUpdateToggle"><span><b>Adapt my tracker plan after each saved test</b><small>Creates a private 7-day plan from recent results and avoids busy times in Google Calendar when connected. Existing Claude plans are preserved; it never creates Google Calendar events.</small></span></label>
+      <div class="rowbtns"><button class="primary small" id="generateAdaptiveScheduleBtn">Generate adaptive plan</button></div>
+      <div id="adaptiveScheduleStatus" role="status" aria-live="polite">Sign in to save a private adaptive plan.</div>
+    </div>
     <div id="trackerPlanStatus" style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Sign in to see saved study blocks.</div>
     <div id="trackerPlanItems"></div>
   </div>
@@ -1777,11 +1790,11 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
           <div class="stageRoadmap">
             <div><span class="stageBadge done">1</span><span><b>Result ingestion</b><small>Screenshot and paste extraction; review before saving</small></span></div>
             <div><span class="stageBadge done">2</span><span><b>Pre-test briefing</b><small>Upcoming test, recent results, weak areas, and relevant mistakes</small></span></div>
-            <div><span class="stageBadge partial">3</span><span><b>Cross-test pattern mining</b><small>Repeated mistake patterns work; broader subject and timing trends remain</small></span></div>
-            <div><span class="stageBadge partial">4</span><span><b>Adaptive JEE scheduling</b><small>Claude can read and save private plans on request; automatic adjustments remain</small></span></div>
+            <div><span class="stageBadge done">3</span><span><b>Cross-test pattern mining</b><small>Repeated mistakes, subject accuracy trends, timing efficiency, difficulty, and focus tags</small></span></div>
+            <div><span class="stageBadge done">4</span><span><b>Adaptive JEE scheduling</b><small>Generate a private 7-day plan or opt into updates after each saved test; upcoming calendar tests set the plan end date</small></span></div>
             <div><span class="stageBadge done">5</span><span><b>Percentile trajectory</b><small>History chart, recent progress, goal gap, and a clearly labeled trend estimate</small></span></div>
-            <div><span class="stageBadge partial">6</span><span><b>Spaced mistake resurfacing</b><small>7- and 14-day reminders work; recurrence tracking remains</small></span></div>
-            <div><span class="stageBadge partial">7</span><span><b>Automatic test tags</b><small>Keyword and AI-based tags work; wider planner and analytics use remains</small></span></div>
+            <div><span class="stageBadge done">6</span><span><b>Spaced mistake resurfacing</b><small>Mark mistakes fixed or recurring; recurring items get a user-scoped follow-up date</small></span></div>
+            <div><span class="stageBadge done">7</span><span><b>Automatic test tags</b><small>Infer weak subjects and likely JEE chapters, then use those tags in trends and study plans</small></span></div>
           </div>
         </div>
         <div class="settingsSection">
@@ -2152,7 +2165,7 @@ window.openSmartGoals190=open;
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "2.4.2"; // x-release-please-version
+  var APP_VERSION = "2.4.0"; // x-release-please-version
   var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   window.state = state;
   var LS_KEY = "jee_test_tracker_v1";
@@ -3238,11 +3251,11 @@ window.openSmartGoals190=open;
     if(!sb||!state.user){ statusEl.textContent="Sign in to the tracker to see saved study blocks."; itemsEl.innerHTML=""; return; }
     statusEl.textContent="Loading saved study blocks…";
     try{
-      var schedulesRes=await sb.from("tracker_schedules").select("id,title").eq("user_id",state.user.id).limit(100);
+      var schedulesRes=await sb.from("tracker_schedules").select("id,title").eq("user_id",state.user.id).eq("status","active").limit(100);
       if(schedulesRes.error) throw schedulesRes.error;
       var schedules=schedulesRes.data||[], titles={};
       schedules.forEach(function(row){titles[row.id]=row.title;});
-      if(!schedules.length){ statusEl.textContent="No saved study plans yet. Ask Claude to create and save one through JEE Test Tracker."; itemsEl.innerHTML=""; return; }
+      if(!schedules.length){ statusEl.textContent="No saved study plans for this day yet. Generate one above or ask Claude to save a plan through JEE Test Tracker."; itemsEl.innerHTML=""; return; }
       var ids=schedules.map(function(row){return row.id;});
       var itemsRes=await sb.from("tracker_schedule_items")
         .select("id,schedule_id,scheduled_date,start_time,duration_minutes,subject,topic,activity,status,feedback,position")
@@ -3310,6 +3323,7 @@ window.openSmartGoals190=open;
   function renderSchedule(){
     var input=document.getElementById("scheduleWeekInput"), title=document.getElementById("scheduleRangeTitle"), daysEl=document.getElementById("scheduleDays"), empty=document.getElementById("scheduleEmpty");
     if(!input||!daysEl) return;
+    renderAdaptiveScheduleTools();
     if(!state.scheduleWeekStart) state.scheduleWeekStart=new Date();
     var day=new Date(state.scheduleWeekStart.getFullYear(),state.scheduleWeekStart.getMonth(),state.scheduleWeekStart.getDate());
     input.value=isoLocalDate(day);
@@ -3430,7 +3444,7 @@ window.openSmartGoals190=open;
     var stepsByPanel = {
       overview: [renderGoals, renderPreTestBriefing, renderScoreChart, renderAccChart],
       subjects: [renderSubjects],
-      analysis: [renderTierChart, renderSkipChart, renderFatigue, renderTimeTable, renderCrossTestPatterns, renderTrajectory],
+      analysis: [renderTierChart, renderSkipChart, renderFatigue, renderTimeTable, renderBroaderPatterns, renderCrossTestPatterns, renderTrajectory],
       plan: [renderPlan, renderMistakes, renderSpacedMistakes, renderAutoTags, renderCalendarAutomation],
       tests: [renderHistory],
       schedule: [renderSchedule],
@@ -3868,7 +3882,42 @@ window.openSmartGoals190=open;
     return out;
   }
   function normalizeMistakeKey(text){
-    return text.toLowerCase().replace(/[^a-z0-9\\s]/g,' ').replace(/\\b(the|a|an|in|on|of|to|and|for|with|this|that|question|q)\\b/g,' ').replace(/\\s+/g,' ').trim();
+    return text.toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\b(the|a|an|in|on|of|to|and|for|with|this|that|question|q)\b/g,' ').replace(/\s+/g,' ').trim();
+  }
+  function inferMistakeSubject(raw){
+    var m=String(raw||'').match(/^\s*(physics|phy|chemistry|chem|maths|math)\s*[:—-]/i);
+    if(!m) return null;
+    return /^phy/i.test(m[1])?'physics':(/^chem/i.test(m[1])?'chemistry':'maths');
+  }
+  function inferredChapterTags(test){
+    var rules=[
+      ['physics','Kinematics',/kinematic|projectile|relative motion|motion graph/],['physics','Laws of Motion',/newton|\bnlm\b|friction|free body/],['physics','Work, Energy & Power',/work energy|potential energy|kinetic energy|power/],['physics','Electrostatics',/electrostatic|coulomb|electric field|potential difference/],['physics','Current Electricity',/current electricity|kirchhoff|resistance|electric circuit/],['physics','Optics',/ray optic|lens|mirror|interference|diffraction/],['physics','Modern Physics',/photoelectric|radioactiv|nuclear|bohr|de broglie/],
+      ['chemistry','Mole Concept',/mole concept|molarity|stoichiometr|limiting reagent/],['chemistry','Chemical Bonding',/chemical bond|hybridization|vsepr|molecular orbital/],['chemistry','Equilibrium',/equilibrium|le chatelier|buffer|ionic product/],['chemistry','Thermodynamics',/thermodynamic|enthalpy|entropy|gibbs/],['chemistry','Organic Reactions',/sn1|sn2|e1|e2|substitution|elimination|oxidation|reduction/],['chemistry','Coordination Compounds',/coordination compound|ligand|crystal field|isomerism/],
+      ['maths','Calculus',/calculus|integrat|differentiat|limit|continuity|derivative/],['maths','Coordinate Geometry',/coordinate geometry|straight line|circle|parabola|ellipse|hyperbola/],['maths','Vectors & 3D',/vector|three dimensional|\b3d\b|direction cosine/],['maths','Matrices & Determinants',/matrix|matri|determinant/],['maths','Probability & Statistics',/probability|permutation|combination|statistics/]
+    ];
+    var found={};
+    (test.mistakes||[]).forEach(function(raw){var subject=inferMistakeSubject(raw),text=String(raw||'').toLowerCase();if(!subject)return;rules.forEach(function(rule){if(rule[0]===subject&&rule[2].test(text))found[rule[0]+':'+rule[1]]=rule[1];});});
+    aiMistakeRowsForTest(test).forEach(function(raw){var subject=inferMistakeSubject(raw),text=String(raw||'').toLowerCase();if(!subject)return;rules.forEach(function(rule){if(rule[0]===subject&&rule[2].test(text))found[rule[0]+':'+rule[1]]=rule[1];});});
+    return Object.keys(found).map(function(key){var parts=key.split(':');return SUBJECT_LABELS[parts[0]]+': '+found[key];});
+  }
+  function renderBroaderPatterns(tests){
+    var el=document.getElementById('subjectPatternContent');if(!el)return;
+    var sorted=tests.slice().sort(function(a,b){return new Date(a.date)-new Date(b.date);}),keys=['physics','chemistry','maths'];
+    var rows=keys.map(function(key){
+      var usable=sorted.filter(function(t){var s=t.sections&&t.sections[key];return s&&((s.correct||0)+(s.incorrect||0)>0);});
+      if(!usable.length)return '';
+      var totalAttempts=0,totalCorrect=0,totalMinutes=0;
+      usable.forEach(function(t){var s=t.sections[key],a=(s.correct||0)+(s.incorrect||0);totalAttempts+=a;totalCorrect+=s.correct||0;totalMinutes+=s.time||0;});
+      var recent=usable.slice(-3),prior=usable.slice(Math.max(0,usable.length-6),Math.max(0,usable.length-3));
+      function groupAccuracy(group){var a=0,c=0;group.forEach(function(t){var s=t.sections[key];a+=(s.correct||0)+(s.incorrect||0);c+=s.correct||0;});return a?pct(c,a):null;}
+      var recentAcc=groupAccuracy(recent),priorAcc=prior.length===3?groupAccuracy(prior):null,delta=recentAcc!==null&&priorAcc!==null?recentAcc-priorAcc:null;
+      var speed=totalAttempts?totalMinutes*60/totalAttempts:null;
+      return '<tr><td>'+SUBJECT_LABELS[key]+'</td><td>'+pct(totalCorrect,totalAttempts).toFixed(1)+'%</td><td>'+(delta===null?'—':(delta>=0?'+':'')+delta.toFixed(1)+' pts')+'</td><td>'+(speed===null||!isFinite(speed)?'—':speed.toFixed(0)+' sec')+'</td><td>'+usable.length+'</td></tr>';
+    }).filter(Boolean);
+    var counts={};sorted.forEach(function(t){inferredChapterTags(t).forEach(function(ch){counts[ch]=(counts[ch]||0)+1;});});
+    var focus=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];}).slice(0,4).map(function(ch){return '<span class="tag">'+escapeHtml(ch)+' · '+counts[ch]+' test'+(counts[ch]===1?'':'s')+'</span>';}).join(' ');
+    var table=rows.length?'<div class="tablewrap" style="margin:8px 0 12px"><table><thead><tr><th>Subject</th><th>Overall accuracy</th><th>Last 3 vs previous 3</th><th>Time / attempted Q</th><th>Tests</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>':'<div class="empty">Add section results across tests to compare subject accuracy and time use.</div>';
+    el.innerHTML=table+(focus?'<div style="font-size:11.5px;color:var(--text-dim);margin:0 0 10px">Likely chapter focus from mistake notes: '+focus+'</div>':'');
   }
   function renderCrossTestPatterns(tests){
     var el=document.getElementById('crossPatternContent'); if(!el) return;
@@ -3933,6 +3982,10 @@ window.openSmartGoals190=open;
     if((t.totalTimeAllotted>0 && t.totalTime>0 && t.totalTime/t.totalTimeAllotted>=0.95) || skip>=20) tags.push('time-pressure');
     if(/concept|forgot|didn.t know|formula|theory|revision|content/.test(all)) tags.push('content-gap');
     if(attempted>0 && (t.incorrect||0)/attempted>=0.35) tags.push('guess-heavy');
+    if(t.difficulty) tags.push('difficulty: T'+t.difficulty);
+    var overall=Number(t.accuracy)||0;
+    Object.keys(SUBJECT_LABELS).forEach(function(key){var s=t.sections&&t.sections[key],n=s?((s.correct||0)+(s.incorrect||0)):0;if(!n)return;var acc=pct(s.correct||0,n);if(acc<55||(overall>=55&&acc<overall-12))tags.push('weak subject: '+SUBJECT_LABELS[key]);});
+    inferredChapterTags(t).slice(0,4).forEach(function(ch){tags.push('chapter: '+ch);});
     return tags;
   }
   function renderAutoTags(tests){
@@ -3943,24 +3996,96 @@ window.openSmartGoals190=open;
   }
   function renderSpacedMistakes(tests){
     var el=document.getElementById('spacedMistakesContent'); if(!el) return;
-    var now=new Date(), rows=[];
+    var now=new Date(), todayKey=isoLocalDate(now), rows=[];
     tests.forEach(function(t){
       var combined=(t.mistakes||[]).map(function(m){return {text:String(m),source:'manual'};});
       aiMistakeRowsForTest(t).forEach(function(m){combined.push({text:m,source:'ai'});});
       combined.forEach(function(m){
         var d=new Date(t.date+'T00:00:00');if(isNaN(d))return;
         var age=Math.floor((now-d)/86400000);
-        if(age>=6 && age<=9) rows.push({due:'~1 week',t:t,m:m});
-        if(age>=13 && age<=16) rows.push({due:'~2 weeks',t:t,m:m});
+        t.mistakeReviews=t.mistakeReviews&&typeof t.mistakeReviews==='object'?t.mistakeReviews:{};
+        var key=mistakeReviewKey(m.source,m.text),review=t.mistakeReviews[key]||{};
+        if(review.status==='fixed')return;
+        var due=review.nextReviewDate||'';
+        if(due?due<=todayKey:age>=6){
+          rows.push({due:review.status==='recurring'?'Follow-up due':(age<13?'~1 week':'~2 weeks'),t:t,m:m,key:key,review:review});
+        }
       });
     });
-    if(!rows.length){el.innerHTML='<span style="color:var(--text-dim)">Nothing due right now. Logged mistakes and AI-identified mistakes will appear here around 1 and 2 weeks after their test.</span>';return;}
-    el.innerHTML=rows.slice(0,20).map(function(r){return '<div style="padding:7px 0;border-bottom:1px solid var(--border)"><span class="pill warn">'+r.due+'</span> <span class="tag">'+(r.m.source==='ai'?'AI':'Manual')+'</span> <b>'+escapeHtml(r.t.name)+'</b><div style="font-size:12px;margin-top:3px">'+escapeHtml(r.m.text)+'</div></div>';}).join('');
+    if(!rows.length){el.innerHTML='<span style="color:var(--text-dim)">Nothing due right now. Mistakes appear after about a week; mark them fixed or recurring to control future reminders.</span>';return;}
+    el.innerHTML=rows.slice(0,20).map(function(r){var recurred=Number(r.review.recurrenceCount)||0;return '<div class="spacedMistakeRow" style="padding:8px 0;border-bottom:1px solid var(--border)"><span class="pill warn">'+r.due+'</span> <span class="tag">'+(r.m.source==='ai'?'AI':'Manual')+'</span> <b>'+escapeHtml(r.t.name)+'</b>'+(recurred?'<span class="pill bad">Recurring '+recurred+'×</span>':'')+'<div style="font-size:12px;margin:4px 0 7px">'+escapeHtml(r.m.text)+'</div><div class="rowbtns"><button type="button" class="small primary" data-mistake-review="fixed" data-review-test="'+escapeHtml(r.t.id)+'" data-review-key="'+escapeHtml(r.key)+'">Fixed</button><button type="button" class="small ghost" data-mistake-review="recurring" data-review-test="'+escapeHtml(r.t.id)+'" data-review-key="'+escapeHtml(r.key)+'">Still recurring</button></div></div>';}).join('');
+    el.querySelectorAll('[data-mistake-review]').forEach(function(button){button.addEventListener('click',async function(){var test=state.tests.find(function(x){return x.id===button.getAttribute('data-review-test');}),key=button.getAttribute('data-review-key'),outcome=button.getAttribute('data-mistake-review');if(!test)return;button.disabled=true;test.mistakeReviews=test.mistakeReviews&&typeof test.mistakeReviews==='object'?test.mistakeReviews:{};var previous=test.mistakeReviews[key]||{},now=new Date(),next=new Date(now);if(outcome==='recurring')next.setDate(next.getDate()+7);test.mistakeReviews[key]={status:outcome,recurrenceCount:(Number(previous.recurrenceCount)||0)+(outcome==='recurring'?1:0),lastReviewedAt:now.toISOString(),nextReviewDate:outcome==='recurring'?isoLocalDate(next):null};try{await persistTest(test);renderSpacedMistakes(state.tests);}catch(error){button.disabled=false;toast('Could not save mistake review: '+(error.message||'try again'));}});});
   }
+  function mistakeReviewKey(source,text){return String(source||'manual')+':'+normalizeMistakeKey(String(text||''));}
   function suggestedRevisionBlocks(tests){
-    var blocks=[]; var avgs=sectionAverages(tests); if(!avgs) return blocks;
-    Object.keys(avgs).sort(function(a,b){return avgs[a].accuracy-avgs[b].accuracy;}).forEach(function(k,i){if(i<3) blocks.push({subject:SUBJECT_LABELS[k],minutes:i===0?60:45});});
+    var blocks=[];var ordered=tests.slice().sort(function(a,b){return new Date(a.date)-new Date(b.date);}),recentTests=ordered.slice(-5),avgs=sectionAverages(recentTests); if(!avgs) return blocks;
+    var recent=ordered.slice(-6),chapterCounts={};
+    recent.forEach(function(test){autoTagsForTest(test).forEach(function(tag){if(tag.indexOf('chapter: ')===0)chapterCounts[tag]=(chapterCounts[tag]||0)+1;});});
+    var timePressure=ordered.slice(-3).some(function(t){return autoTagsForTest(t).indexOf('time-pressure')>=0;});
+    Object.keys(avgs).sort(function(a,b){return avgs[a].accuracy-avgs[b].accuracy;}).forEach(function(k,i){
+      if(i>=3)return;
+      var prefix='chapter: '+SUBJECT_LABELS[k]+': ',topics=Object.keys(chapterCounts).filter(function(tag){return tag.indexOf(prefix)===0;}).sort(function(a,b){return chapterCounts[b]-chapterCounts[a];});
+      blocks.push({subject:SUBJECT_LABELS[k],minutes:Math.min(90,(i===0?60:45)+(topics.length?10:0)+(timePressure?10:0)),topic:topics.length?topics[0].slice(9):'Review recent mistakes and solve timed questions'});
+    });
     return blocks;
+  }
+  function adaptiveAutoStorageKey(){return state.user&&state.user.id?'jee_adaptive_plan_auto_v1_'+state.user.id:null;}
+  function adaptiveAutoEnabled(){var key=adaptiveAutoStorageKey();try{return !!key&&localStorage.getItem(key)==='1';}catch(e){return false;}}
+  function setAdaptiveScheduleStatus(message){var el=document.getElementById('adaptiveScheduleStatus');if(el)el.textContent=message;}
+  async function loadAdaptiveBusyEvents(start,end){
+    if(!state.gcalAccessToken&&hasGoogleCalendarConnection())await getServerCalendarAccessToken();
+    if(!state.gcalAccessToken)return [];
+    var calendars=Object.keys(state.gcalCalendars||{}).map(function(key){return state.gcalCalendars[key];}).filter(function(c){return c&&c.selected!==false&&c.accessRole!=='freeBusyReader';});
+    if(!calendars.length){var list=await gcalFetch('https://www.googleapis.com/calendar/v3/users/me/calendarList?showHidden=true&minAccessRole=reader&maxResults=250');calendars=(list.items||[]).filter(function(c){return c.selected!==false&&c.accessRole!=='freeBusyReader';});}
+    var events=[];
+    for(var i=0;i<calendars.length;i++){
+      var url='https://www.googleapis.com/calendar/v3/calendars/'+encodeURIComponent(calendars[i].id)+'/events?singleEvents=true&showDeleted=false&timeMin='+encodeURIComponent(start.toISOString())+'&timeMax='+encodeURIComponent(end.toISOString())+'&maxResults=2500';
+      var result=await gcalFetch(url);(result.items||[]).forEach(function(ev){if(ev.status!=='cancelled'&&ev.transparency!=='transparent')events.push(ev);});
+    }
+    return events;
+  }
+  function adaptiveCalendarSlot(day,minutes,events){
+    var dayStart=new Date(day.getFullYear(),day.getMonth(),day.getDate()),dayEnd=new Date(dayStart);dayEnd.setDate(dayEnd.getDate()+1);
+    var dayEvents=events.filter(function(ev){var start=eventDateForDay(ev),endValue=ev.end&&(ev.end.date||ev.end.dateTime),finish=endValue?(ev.end.date?new Date(endValue+'T00:00:00'):new Date(endValue)):new Date(start?start.getTime()+30*60000:NaN);return start&&finish>dayStart&&start<dayEnd;});
+    if(dayEvents.some(function(ev){return ev.start&&ev.start.date;}))return null;
+    for(var minuteOfDay=17*60;minuteOfDay+minutes<=22*60;minuteOfDay+=30){
+      var startAt=new Date(day.getFullYear(),day.getMonth(),day.getDate(),Math.floor(minuteOfDay/60),minuteOfDay%60),endAt=new Date(startAt.getTime()+minutes*60000);
+      var conflict=dayEvents.some(function(ev){var a=eventDateForDay(ev),raw=ev.end&&(ev.end.date||ev.end.dateTime),b=raw?(ev.end.date?new Date(raw+'T00:00:00'):new Date(raw)):new Date(a.getTime()+30*60000);return a<endAt&&b>startAt;});
+      if(!conflict)return String(startAt.getHours()).padStart(2,'0')+':'+String(startAt.getMinutes()).padStart(2,'0');
+    }
+    return null;
+  }
+  function renderAdaptiveScheduleTools(){
+    var toggle=document.getElementById('adaptiveAutoUpdateToggle'),button=document.getElementById('generateAdaptiveScheduleBtn');if(!toggle||!button)return;
+    var signedIn=!!(state.user&&state.cloud&&sb);toggle.disabled=!signedIn;button.disabled=!signedIn;toggle.checked=adaptiveAutoEnabled();
+    if(!signedIn)setAdaptiveScheduleStatus('Sign in to save a private adaptive plan. Your test history and plans stay under the signed-in account.');
+    else setAdaptiveScheduleStatus('Plan topics and time are recalculated from recent section results, mistake tags, and the next calendar test date.');
+  }
+  async function generateAdaptiveSchedule(trigger){
+    if(!state.user||!state.cloud||!sb)throw new Error('Sign in to save a private adaptive plan.');
+    var tests=sortedTests(),blocks=suggestedRevisionBlocks(tests);
+    if(!blocks.length)throw new Error('Add section results to at least one test before generating a plan.');
+    var today=new Date();today.setHours(0,0,0,0);var start=new Date(today);start.setDate(start.getDate()+1);
+    var end=new Date(today);end.setDate(end.getDate()+7);var upcoming=(state.gcalUpcomingTestEvents||[]).map(function(ev){var when=ev.start&&(ev.start.date||ev.start.dateTime);if(!when)return null;var dt=new Date(when.length===10?when+'T00:00:00':when);dt.setHours(0,0,0,0);return {date:dt,event:ev};}).filter(function(x){return x&&x.date>today&&x.date<end;}).sort(function(a,b){return a.date-b.date;})[0]||null;
+    var busyEvents=await loadAdaptiveBusyEvents(start,end);
+    busyEvents.filter(isLikelyTestEvent).forEach(function(ev){var date=eventDateForDay(ev);if(!date)return;date.setHours(0,0,0,0);if(date>today&&date<end&&(!upcoming||date<upcoming.date))upcoming={date:date,event:ev};});
+    if(upcoming)end=new Date(upcoming.date);
+    setAdaptiveScheduleStatus(state.gcalAccessToken?'Checking available Calendar times and building your plan…':'Building a tracker plan. Connect Google Calendar to avoid busy times automatically.');
+    var dates=[];for(var day=new Date(start);day<end&&dates.length<7;day.setDate(day.getDate()+1))dates.push(new Date(day));
+    if(!dates.length)throw new Error('Your next calendar test is too close for a useful new plan. Review the existing plan and refresh after the test.');
+    var latest=tests[tests.length-1],items=[];dates.forEach(function(day,index){var block=blocks[index%blocks.length],time=state.gcalAccessToken?adaptiveCalendarSlot(day,block.minutes,busyEvents):'18:00';if(!time)return;items.push({scheduled_date:isoLocalDate(day),start_time:time,duration_minutes:block.minutes,subject:block.subject,topic:block.topic,activity:'Review '+block.topic+' and solve a focused set of timed JEE questions. Recheck mistakes before ending the session.',source_test_id:latest?latest.id:null});});
+    if(!items.length)throw new Error('Your calendar is full during the suggested evening study window for the next 7 days. Clear time or disconnect Calendar to create a general tracker plan.');
+    var todayLabel=isoLocalDate(today),pSchedule={title:'Adaptive JEE plan · '+todayLabel,start_date:items[0].scheduled_date,target_date:items[items.length-1].scheduled_date,constraints:{source:'tracker_auto_adaptive_v1',trigger:trigger==='automatic'?'automatic':'manual',generated_from_test_id:latest?latest.id:null,horizon_days:items.length,upcoming_test_date:upcoming?isoLocalDate(upcoming.date):null,calendar_busy_times_checked:!!state.gcalAccessToken},rationale:'Generated from recent subject accuracy, section time use, repeated mistake notes, inferred chapter tags, available calendar times, and the next linked calendar test date.'};
+    setAdaptiveScheduleStatus(trigger==='automatic'?'Updating your private adaptive plan…':'Building your private adaptive plan…');
+    var saved=await sb.rpc('create_tracker_schedule',{p_schedule:pSchedule,p_items:items});
+    if(saved.error)throw saved.error;
+    var scheduleId=saved.data;
+    var previous=await sb.from('tracker_schedules').select('id,constraints').eq('user_id',state.user.id).eq('status','active').neq('id',scheduleId).limit(100);
+    if(!previous.error){var oldIds=(previous.data||[]).filter(function(row){return row.constraints&&row.constraints.source==='tracker_auto_adaptive_v1';}).map(function(row){return row.id;});if(oldIds.length){var archived=await sb.from('tracker_schedules').update({status:'archived',updated_at:new Date().toISOString()}).eq('user_id',state.user.id).in('id',oldIds);if(archived.error)console.warn('The previous adaptive schedule could not be archived:',archived.error.message);}}
+    state.renderedPanels.schedule=false;
+    var activeTab=document.querySelector('#mainTabNav .tabbtn.active');if(activeTab&&activeTab.getAttribute('data-tab')==='schedule')renderPanel('schedule',sortedTests());
+    setAdaptiveScheduleStatus('Saved '+items.length+' focused study block'+(items.length===1?'':'s')+' to your private tracker schedule'+(upcoming?' before your next calendar test.':'.'));
+    return scheduleId;
   }
   async function createCalendarRevisionBlocks(tests){
     if(!state.user || !state.gcalAccessToken) throw new Error('Connect Google Calendar first.');
@@ -3968,7 +4093,7 @@ window.openSmartGoals190=open;
     var base=new Date(); base.setHours(18,0,0,0); var made=0;
     for(var i=0;i<blocks.length;i++){
       var start=new Date(base); start.setDate(start.getDate()+i+1); start.setHours(18,0,0,0); var end=new Date(start); end.setMinutes(end.getMinutes()+blocks[i].minutes);
-      var body={summary:'JEE revision · '+blocks[i].subject,description:'Auto-generated by JEE Test Tracker from recent test performance.',start:{dateTime:start.toISOString()},end:{dateTime:end.toISOString()}};
+      var body={summary:'JEE revision · '+blocks[i].subject,description:'Focus: '+blocks[i].topic+'. Auto-generated by JEE Test Tracker from recent test performance.',start:{dateTime:start.toISOString()},end:{dateTime:end.toISOString()}};
       await gcalFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',false,{method:'POST',body:JSON.stringify(body),headers:{'Content-Type':'application/json'}}); made++;
     }
     return made;
@@ -3977,7 +4102,7 @@ window.openSmartGoals190=open;
     var el=document.getElementById('calendarAutomationContent'); if(!el) return;
     var blocks=suggestedRevisionBlocks(tests);
     if(!blocks.length){el.innerHTML='<span style="color:var(--text-dim)">Log section data first to generate revision blocks.</span>';return;}
-    el.innerHTML='<div style="font-size:12.5px;margin-bottom:8px">Suggested blocks: '+blocks.map(function(b){return b.subject+' '+b.minutes+' min';}).join(' · ')+'</div><button class="primary small" id="createRevisionBlocksBtn">Add next 3 revision blocks to Google Calendar</button><div id="calendarAutomationStatus" style="font-size:11.5px;color:var(--text-dim);margin-top:7px">Calendar write access requires one re-authorization after this update.</div>';
+    el.innerHTML='<div style="font-size:12.5px;margin-bottom:8px">Suggested blocks: '+blocks.map(function(b){return b.subject+' · '+b.topic+' · '+b.minutes+' min';}).join(' · ')+'</div><button class="primary small" id="createRevisionBlocksBtn">Add next 3 revision blocks to Google Calendar</button><div id="calendarAutomationStatus" style="font-size:11.5px;color:var(--text-dim);margin-top:7px">Calendar write access requires one re-authorization after this update.</div>';
     document.getElementById('createRevisionBlocksBtn').onclick=async function(){var b=this;b.disabled=true;try{var n=await createCalendarRevisionBlocks(tests);document.getElementById('calendarAutomationStatus').textContent=n+' revision blocks added to your primary Google Calendar.';}catch(e){document.getElementById('calendarAutomationStatus').textContent=e.message||'Could not add calendar blocks.';}b.disabled=false;};
   }
 
@@ -4484,6 +4609,7 @@ window.openSmartGoals190=open;
     render();
     if (state.user) refreshAIInsights();
     toast("Test saved");
+    if(state.user&&adaptiveAutoEnabled())window.setTimeout(function(){generateAdaptiveSchedule('automatic').catch(function(error){setAdaptiveScheduleStatus('Automatic plan update failed: '+(error.message||'try again from the Schedule tab.'));});},0);
     form.dataset.saving = "";
     if (saveButton) { saveButton.disabled = false; saveButton.textContent = oldSaveText; }
   });
@@ -4870,6 +4996,12 @@ window.openSmartGoals190=open;
     if (state.gcalAccessToken) await loadGoogleCalendarDay(); else { state.renderedPanels.schedule=false; renderPanel("schedule", sortedTests()); }
   });
   document.getElementById("refreshTrackerPlanBtn").addEventListener("click", function(){ loadTrackerPlanForDay(isoLocalDate(state.scheduleWeekStart||new Date())); });
+  document.getElementById("adaptiveAutoUpdateToggle").addEventListener("change",function(){
+    var key=adaptiveAutoStorageKey();if(!key||!state.user){this.checked=false;setAdaptiveScheduleStatus('Sign in before enabling automatic plan updates.');return;}
+    try{localStorage.setItem(key,this.checked?'1':'0');}catch(e){}
+    setAdaptiveScheduleStatus(this.checked?'Automatic updates are on for this tracker account on this browser. The next saved test will create an updated private plan.':'Automatic plan updates are off. You can still generate a plan manually.');
+  });
+  document.getElementById("generateAdaptiveScheduleBtn").addEventListener("click",async function(){var button=this;button.disabled=true;try{await generateAdaptiveSchedule('manual');}catch(error){setAdaptiveScheduleStatus(error.message||'Could not generate an adaptive plan.');}finally{button.disabled=!(state.user&&state.cloud&&sb);}});
   document.getElementById("scheduleWeekInput").addEventListener("change", async function(){
     var chosen=new Date(this.value+"T00:00:00"); if(isNaN(chosen.getTime())) return;
     state.scheduleWeekStart=chosen;
