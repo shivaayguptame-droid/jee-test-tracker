@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>JEE Test Tracker v2.2.0</title> <!-- x-release-please-version -->
+<title>JEE Test Tracker v2.1.0</title> <!-- x-release-please-version -->
 <!-- VERSION: 1.9.1 | Smart Planner + Goals 2.0 with theme-correct notification panel and viewport-safe notifications. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -574,6 +574,39 @@ tr:hover td { background:var(--table-hover); }
 .trajectorySummary strong{color:var(--accent);}
 .trajectoryDisclaimer{font-size:10.5px;line-height:1.45;color:var(--text-dim);margin-top:9px;}
 @media(max-width:560px){.trajectoryMetric{padding:9px;}.trajectoryMetric b{font-size:15px;}.trajectoryChartWrap{padding:7px 4px 2px;}}
+.firstRunWelcome{display:none;max-width:1120px;margin:0 auto;padding:clamp(26px,6vw,68px) 0 30px;}
+body.first-run-active .wrap{display:block;width:min(1120px,calc(100% - 36px));padding:clamp(14px,4vw,36px) 0 48px;}
+body.first-run-active .wrap>header,body.first-run-active .wrap>#kpis,body.first-run-active .wrap>#mainTabNav,body.first-run-active .wrap>.tabpanel{display:none!important;}
+body.first-run-active #firstRunWelcome{display:block;}
+.welcomeEyebrow{display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border:1px solid var(--border);border-radius:999px;background:var(--surface-2);color:var(--text-dim);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;}
+.welcomeEyebrow i{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 14px var(--accent);}
+.welcomeHero{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(260px,.72fr);align-items:center;gap:clamp(24px,5vw,68px);padding:clamp(26px,5vw,56px) 0 34px;}
+.welcomeHero h2{max-width:680px;margin:0;color:var(--text);font-family:var(--font-display);font-size:clamp(36px,6vw,66px);font-weight:600;letter-spacing:-.055em;line-height:1.02;}
+.welcomeHero h2 em{color:var(--accent);font-style:normal;}
+.welcomeLead{max-width:570px;margin:18px 0 0;color:var(--text-dim);font-size:clamp(14px,1.6vw,17px);line-height:1.65;}
+.welcomeActions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:24px;}
+.welcomeActions button{min-height:44px;padding:10px 16px;}
+.welcomeNote{max-width:560px;margin:11px 0 0;color:var(--text-dim);font-size:11px;line-height:1.5;}
+.welcomePreview{position:relative;min-height:285px;padding:20px;border:1px solid var(--border);border-radius:22px;background:linear-gradient(145deg,color-mix(in srgb,var(--accent-soft) 85%,var(--surface)),var(--surface));box-shadow:0 24px 65px rgba(0,0,0,.18);overflow:hidden;}
+.welcomePreview:before{content:"";position:absolute;width:210px;height:210px;right:-80px;top:-105px;border-radius:50%;background:var(--accent-soft);filter:blur(6px);}
+.welcomePreviewHead{position:relative;display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:15px;border-bottom:1px solid var(--border);}
+.welcomePreviewHead b{font-size:13px;}
+.welcomePreviewHead span{font-size:10px;color:var(--text-dim);}
+.welcomePreviewRows{position:relative;display:grid;gap:10px;margin-top:14px;}
+.welcomePreviewRow{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;padding:11px;border:1px solid var(--border);border-radius:12px;background:color-mix(in srgb,var(--surface) 82%,transparent);}
+.welcomePreviewIcon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--accent-soft);color:var(--accent);font-size:15px;}
+.welcomePreviewRow b{display:block;font-size:11px;}
+.welcomePreviewRow small{display:block;margin-top:3px;color:var(--text-dim);font-size:9.5px;}
+.welcomePreviewValue{color:var(--text-dim);font-size:11px;}
+.welcomeTrust{display:flex;align-items:center;gap:8px;margin-top:16px;color:var(--text-dim);font-size:10px;line-height:1.45;}
+.welcomeTrust svg{flex:0 0 auto;color:var(--accent);}
+.welcomeFeatures{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:10px;}
+.welcomeFeature{padding:17px;border:1px solid var(--border);border-radius:15px;background:color-mix(in srgb,var(--surface) 84%,transparent);}
+.welcomeFeatureIcon{font-size:17px;}
+.welcomeFeature b{display:block;margin-top:11px;font-size:12px;color:var(--text);}
+.welcomeFeature p{margin:6px 0 0;color:var(--text-dim);font-size:11px;line-height:1.5;}
+.welcomeExplore{display:block;margin:18px auto 0;border:0;background:transparent;color:var(--text-dim);font-size:11px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;}
+@media(max-width:760px){.welcomeHero{grid-template-columns:1fr;padding-top:34px;}.welcomePreview{min-height:0;}.welcomeFeatures{grid-template-columns:1fr;gap:8px;}.welcomeFeature{display:grid;grid-template-columns:30px 1fr;column-gap:10px;padding:12px;}.welcomeFeatureIcon{grid-row:span 2;}.welcomeFeature b{margin:0;}.welcomeFeature p{margin-top:3px;}}
 .stageRoadmap{display:grid;gap:7px;}
 .stageRoadmap>div{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:color-mix(in srgb,var(--surface) 80%,transparent);}
 .stageRoadmap b{display:block;font-size:12px;}
@@ -1247,9 +1280,38 @@ body.settings-open { overflow:hidden !important; height:100%; overscroll-behavio
 </head>
 <body>
 <div class="wrap">
+  <section class="firstRunWelcome" id="firstRunWelcome" aria-labelledby="welcomeTitle" aria-hidden="true">
+    <div class="welcomeEyebrow"><i aria-hidden="true"></i> JEE PREP, MADE CLEARER</div>
+    <div class="welcomeHero">
+      <div>
+        <h2 id="welcomeTitle">Make every test a <em>clear next step.</em></h2>
+        <p class="welcomeLead">Bring your JEE results, weak areas, and study plan into one calm workspace. Start with one test; the useful insights build as you go.</p>
+        <div class="welcomeActions">
+          <button class="primary" id="welcomePrimaryBtn">Create your account</button>
+          <button class="ghost" id="welcomeSyncBtn">I already have an account</button>
+        </div>
+        <p class="welcomeNote" id="welcomeNote">Your test history stays on this device until you sign in. Sign in first if you want it synced with your tracker account.</p>
+        <div class="welcomeTrust"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.5 13 3.5v4.1c0 3.1-2.1 5.4-5 6.9-2.9-1.5-5-3.8-5-6.9V3.5l5-2Z" stroke="currentColor" stroke-width="1.4"/><path d="m5.6 7.8 1.6 1.6 3.3-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Your tests and goals are kept separate for each signed-in tracker account.</span></div>
+      </div>
+      <div class="welcomePreview" aria-label="Preview of tracker insights">
+        <div class="welcomePreviewHead"><b>Your JEE overview</b><span>Builds from your tests</span></div>
+        <div class="welcomePreviewRows">
+          <div class="welcomePreviewRow"><span class="welcomePreviewIcon">↗</span><span><b>Progress over time</b><small>Scores, accuracy, percentile</small></span><span class="welcomePreviewValue">—</span></div>
+          <div class="welcomePreviewRow"><span class="welcomePreviewIcon">◎</span><span><b>What to focus on</b><small>Subjects and recurring mistakes</small></span><span class="welcomePreviewValue">—</span></div>
+          <div class="welcomePreviewRow"><span class="welcomePreviewIcon">◷</span><span><b>Your next study step</b><small>Goals, schedule, and revisions</small></span><span class="welcomePreviewValue">—</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="welcomeFeatures">
+      <div class="welcomeFeature"><span class="welcomeFeatureIcon">📈</span><div><b>See your progress</b><p>Compare tests and spot changes in score, accuracy, and percentile.</p></div></div>
+      <div class="welcomeFeature"><span class="welcomeFeatureIcon">🧭</span><div><b>Find what needs attention</b><p>Bring weak areas and repeated mistakes into view.</p></div></div>
+      <div class="welcomeFeature"><span class="welcomeFeatureIcon">📅</span><div><b>Plan what comes next</b><p>Use goals and your calendar to shape a manageable study plan.</p></div></div>
+    </div>
+    <button class="welcomeExplore" id="welcomeExploreBtn" type="button">Explore the tracker without adding a test</button>
+  </section>
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v2.2.0</span></h1> <!-- x-release-please-version -->
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v2.1.0</span></h1> <!-- x-release-please-version -->
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow headerActions">
@@ -1991,7 +2053,7 @@ window.openSmartGoals190=open;
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "2.2.0"; // x-release-please-version
+  var APP_VERSION = "2.1.0"; // x-release-please-version
   var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   window.state = state;
   var LS_KEY = "jee_test_tracker_v1";
@@ -2523,6 +2585,33 @@ window.openSmartGoals190=open;
       b.textContent = sb ? "Sign in" : "Account";
       b.title = sb ? "Sign in to sync your tracker" : "Account";
       b.setAttribute("aria-label", b.title);
+    }
+  }
+
+  function firstRunSeenKey(){
+    var uid=state.user&&state.user.id?state.user.id:"guest";
+    return "jee_first_run_seen_v1_"+uid;
+  }
+  function markFirstRunSeen(){
+    try{localStorage.setItem(firstRunSeenKey(),"1");}catch(e){}
+  }
+  function updateFirstRunScreen(tests){
+    var screen=document.getElementById("firstRunWelcome"); if(!screen)return;
+    if(tests.length) markFirstRunSeen();
+    var seen=false; try{seen=localStorage.getItem(firstRunSeenKey())==="1";}catch(e){}
+    var show=!!state.ready&&tests.length===0&&!seen;
+    document.body.classList.toggle("first-run-active",show);
+    screen.setAttribute("aria-hidden",show?"false":"true");
+    var primary=document.getElementById("welcomePrimaryBtn"), sync=document.getElementById("welcomeSyncBtn"), note=document.getElementById("welcomeNote");
+    if(state.user){
+      primary.textContent="Add my first test";
+      sync.style.display="none";
+      note.textContent="Signed in as "+(state.user.email||"your tracker account")+". Your tests will sync to this account.";
+    }else{
+      primary.textContent="Create your account";
+      sync.textContent="I already have an account";
+      sync.style.display="";
+      note.textContent="Sign in first to keep your test history synced. You can explore the tracker without adding a test.";
     }
   }
 
@@ -3269,6 +3358,7 @@ window.openSmartGoals190=open;
 
   function render(){
     var tests = sortedTests();
+    updateFirstRunScreen(tests);
     document.getElementById("subhead").textContent = tests.length
       ? tests.length + " test" + (tests.length>1?"s":"") + " logged"
       : "No tests yet — add your first one";
@@ -4729,6 +4819,11 @@ window.openSmartGoals190=open;
       if (ok) signOut();
     } else { openAuth("signin"); }
   });
+  document.getElementById("welcomePrimaryBtn").addEventListener("click", function(){
+    if(state.user) openModal(null); else openAuth("signup");
+  });
+  document.getElementById("welcomeSyncBtn").addEventListener("click", function(){ openAuth("signin"); });
+  document.getElementById("welcomeExploreBtn").addEventListener("click", function(){ markFirstRunSeen(); render(); });
   document.getElementById("authModeBtn").addEventListener("click", function(){ openAuth(state.authMode === "reset" ? "signin" : (state.authMode === "signup" ? "signin" : "signup")); });
   document.getElementById("forgotPasswordBtn").addEventListener("click", sendPasswordReset);
   document.getElementById("authSubmitBtn").addEventListener("click", handleAuth);
