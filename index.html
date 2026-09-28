@@ -562,6 +562,18 @@ tr:hover td { background:var(--table-hover); }
 .appearanceToggle input{margin-top:2px;accent-color:var(--accent);}
 .appearanceToggle b{display:block;font-size:12px;color:var(--text);}
 .appearanceToggle small{display:block;font-size:10.5px;color:var(--text-dim);margin-top:3px;line-height:1.4;}
+.trajectoryMetrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px;margin:12px 0 8px;}
+.trajectoryMetric{min-width:0;padding:11px 12px;border:1px solid var(--border);border-radius:12px;background:color-mix(in srgb,var(--surface-2) 86%,transparent);}
+.trajectoryMetric span{display:block;color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:.045em;margin-bottom:5px;}
+.trajectoryMetric b{display:block;color:var(--text);font-size:17px;line-height:1.2;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;}
+.trajectoryMetric small{display:block;color:var(--text-dim);font-size:10px;margin-top:4px;line-height:1.35;}
+.trajectoryChartWrap{margin-top:10px;padding:10px 8px 4px;border:1px solid var(--border);border-radius:13px;background:color-mix(in srgb,var(--surface-2) 58%,transparent);}
+.trajectoryChart{display:block;width:100%;height:auto;overflow:visible;}
+.trajectoryChart text{font:11px var(--font-body,system-ui,sans-serif);fill:var(--text-dim);}
+.trajectorySummary{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;margin-top:9px;border-radius:11px;background:var(--accent-soft);color:var(--text);font-size:12px;line-height:1.5;}
+.trajectorySummary strong{color:var(--accent);}
+.trajectoryDisclaimer{font-size:10.5px;line-height:1.45;color:var(--text-dim);margin-top:9px;}
+@media(max-width:560px){.trajectoryMetric{padding:9px;}.trajectoryMetric b{font-size:15px;}.trajectoryChartWrap{padding:7px 4px 2px;}}
 .stageRoadmap{display:grid;gap:7px;}
 .stageRoadmap>div{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:color-mix(in srgb,var(--surface) 80%,transparent);}
 .stageRoadmap b{display:block;font-size:12px;}
@@ -1606,7 +1618,7 @@ body.settings-open { overflow:hidden !important; height:100%; overscroll-behavio
             <div><span class="stageBadge done">2</span><span><b>Pre-test briefing</b><small>Upcoming test, recent results, weak areas, and relevant mistakes</small></span></div>
             <div><span class="stageBadge partial">3</span><span><b>Cross-test pattern mining</b><small>Repeated mistake patterns work; broader subject and timing trends remain</small></span></div>
             <div><span class="stageBadge partial">4</span><span><b>Adaptive JEE scheduling</b><small>Claude can read and save private plans on request; automatic adjustments remain</small></span></div>
-            <div><span class="stageBadge partial">5</span><span><b>Percentile trajectory</b><small>Trend estimate from logged tests; a fuller trajectory view remains</small></span></div>
+            <div><span class="stageBadge done">5</span><span><b>Percentile trajectory</b><small>History chart, recent progress, goal gap, and a clearly labeled trend estimate</small></span></div>
             <div><span class="stageBadge partial">6</span><span><b>Spaced mistake resurfacing</b><small>7- and 14-day reminders work; recurrence tracking remains</small></span></div>
             <div><span class="stageBadge partial">7</span><span><b>Automatic test tags</b><small>Keyword and AI-based tags work; wider planner and analytics use remains</small></span></div>
           </div>
@@ -3687,16 +3699,38 @@ window.openSmartGoals190=open;
 
   function renderTrajectory(tests){
     var el=document.getElementById('trajectoryContent'); if(!el) return;
-    var pts=tests.filter(function(t){return typeof t.percentile==='number' && isFinite(t.percentile) && t.date;}).map(function(t){return {x:new Date(t.date+'T00:00:00').getTime(),y:t.percentile};}).filter(function(p){return isFinite(p.x);});
+    var pts=tests.filter(function(t){return typeof t.percentile==='number' && isFinite(t.percentile) && t.date;}).map(function(t){return {x:new Date(t.date+'T00:00:00').getTime(),y:Math.max(0,Math.min(100,t.percentile)),name:t.name||'Test',date:t.date};}).filter(function(p){return isFinite(p.x);}).sort(function(a,b){return a.x-b.x;});
     var goal=loadGoals();
-    if(pts.length<2){el.innerHTML='<span style="color:var(--text-dim)">Log at least two tests with percentile and date to calculate a trend.</span>';return;}
+    var latest=pts.length?pts[pts.length-1].y:null, previous=pts.length>1?pts[pts.length-2].y:null;
+    var best=pts.length?Math.max.apply(null,pts.map(function(p){return p.y;})):null;
+    var recent=pts.slice(-3), prior=pts.slice(Math.max(0,pts.length-6),Math.max(0,pts.length-3));
+    var recentAvg=recent.length?recent.reduce(function(s,p){return s+p.y;},0)/recent.length:null;
+    var priorAvg=pts.length>=6&&prior.length===3?prior.reduce(function(s,p){return s+p.y;},0)/prior.length:null;
+    var metrics='<div class="trajectoryMetrics">'+
+      '<div class="trajectoryMetric"><span>Latest</span><b>'+(latest===null?'—':latest.toFixed(2))+'</b><small>'+(pts.length?escapeHtml(pts[pts.length-1].date):'Add a test percentile')+'</small></div>'+
+      '<div class="trajectoryMetric"><span>Change from previous</span><b>'+(previous===null?'—':(latest-previous>=0?'+':'')+(latest-previous).toFixed(2))+'</b><small>'+(previous===null?'Log another test to compare':'percentile points')+'</small></div>'+
+      '<div class="trajectoryMetric"><span>Best recorded</span><b>'+(best===null?'—':best.toFixed(2))+'</b><small>Across tests with percentile</small></div>'+
+      '<div class="trajectoryMetric"><span>Recent average</span><b>'+(recentAvg===null?'—':recentAvg.toFixed(2))+'</b><small>Last '+recent.length+' recorded test'+(recent.length===1?'':'s')+'</small></div>'+
+      '<div class="trajectoryMetric"><span>Gap to goal</span><b>'+(latest===null?'—':(latest>=goal.targetPercentile?'Goal met':Math.max(0,goal.targetPercentile-latest).toFixed(2)))+'</b><small>'+(latest===null?'Set a percentile on a test':'Target '+Number(goal.targetPercentile).toFixed(2))+'</small></div></div>';
+    if(pts.length<2){el.innerHTML=metrics+'<div class="trajectorySummary"><span>↗</span><span>Log a percentile on one more test to unlock your history chart and progress comparison.</span></div>';return;}
     var x0=pts[0].x, sx=0,sy=0,sxx=0,sxy=0,n=pts.length;
     pts.forEach(function(p){var x=(p.x-x0)/86400000;sx+=x;sy+=p.y;sxx+=x*x;sxy+=x*p.y;});
     var den=n*sxx-sx*sx, slope=den?((n*sxy-sx*sy)/den):0, intercept=(sy-slope*sx)/n;
     var targetDate=new Date(goal.mainDate+'T00:00:00'), tx=(targetDate.getTime()-x0)/86400000, projected=intercept+slope*tx;
     projected=Math.max(0,Math.min(100,projected));
-    var trend=slope>=0?('+'+slope.toFixed(3)):slope.toFixed(3);
-    el.innerHTML='<div style="display:flex;gap:10px;flex-wrap:wrap"><span class="pill">Historical slope '+trend+' percentile/day</span><span class="pill">Projected '+projected.toFixed(2)+' on '+escapeHtml(goal.mainDate)+'</span></div><div style="font-size:11.5px;color:var(--text-dim);margin-top:8px;">Uses a linear fit to logged percentile history. More tests, especially recent ones, make the trend more informative.</div>';
+    var yMin=Math.max(0,Math.floor(Math.min.apply(null,pts.map(function(p){return p.y;}))-1));
+    var yMax=Math.min(100,Math.ceil(Math.max.apply(null,pts.map(function(p){return p.y;}))+1));
+    if(yMax-yMin<2){yMin=Math.max(0,yMin-1);yMax=Math.min(100,yMax+1);}
+    var W=760,H=240,L=48,R=16,T=16,B=30,plotW=W-L-R,plotH=H-T-B;
+    function px(i){return L+i*plotW/(pts.length-1);}
+    function py(v){return T+(yMax-v)*plotH/(yMax-yMin);}
+    var grid=''; for(var gi=0;gi<4;gi++){var gv=yMax-(yMax-yMin)*gi/3, gy=py(gv);grid+='<line x1="'+L+'" y1="'+gy.toFixed(1)+'" x2="'+(W-R)+'" y2="'+gy.toFixed(1)+'" stroke="var(--border)" stroke-width="1"/><text x="'+(L-8)+'" y="'+(gy+4).toFixed(1)+'" text-anchor="end">'+gv.toFixed(0)+'</text>';}
+    var path=pts.map(function(p,i){return (i?'L':'M')+px(i).toFixed(1)+' '+py(p.y).toFixed(1);}).join(' ');
+    var dots=pts.map(function(p,i){return '<circle cx="'+px(i).toFixed(1)+'" cy="'+py(p.y).toFixed(1)+'" r="4.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"><title>'+escapeHtml(p.name)+' · '+escapeHtml(p.date)+' · '+p.y.toFixed(2)+'</title></circle>';}).join('');
+    var trend=slope>=0?'+'+slope.toFixed(3):slope.toFixed(3);
+    var comparison=priorAvg===null?'Add more tests to compare your latest three-test average with earlier results.':(recentAvg>=priorAvg?'Your recent three-test average is up ':'Your recent three-test average is down ')+Math.abs(recentAvg-priorAvg).toFixed(2)+' percentile points versus the previous group.';
+    var svg='<div class="trajectoryChartWrap"><svg class="trajectoryChart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Percentile history across '+pts.length+' tests">'+grid+'<path d="'+path+'" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'+dots+'<text x="'+L+'" y="'+(H-7)+'">'+escapeHtml(pts[0].date)+'</text><text x="'+(W-R)+'" y="'+(H-7)+'" text-anchor="end">'+escapeHtml(pts[pts.length-1].date)+'</text></svg></div>';
+    el.innerHTML=metrics+svg+'<div class="trajectorySummary"><span>↗</span><span>'+escapeHtml(comparison)+' <strong>Trend estimate for '+escapeHtml(goal.mainDate)+': '+projected.toFixed(2)+'</strong> ('+trend+' points/day).</span></div><div class="trajectoryDisclaimer">The estimate extends a straight line from your recorded results; percentile can move unpredictably between tests. Treat it as a direction indicator, not an exam prediction.</div>';
   }
 
   function autoTagsForTest(t){
