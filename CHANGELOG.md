@@ -2,6 +2,13 @@
 
 Notable changes to JEE Test Tracker are documented here. Release Please maintains this file from Conventional Commit messages.
 
+## [2.5.0](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v2.4.2...jee-test-tracker-v2.5.0) (2026-09-28)
+
+
+### Features
+
+* add Windows XP theme and compact analysis layout ([cd24940](https://github.com/shivaayguptame-droid/jee-test-tracker/commit/cd2494083cda843372f717e4fe1832181ab68ee4))
+
 ## [2.4.2](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v2.4.1...jee-test-tracker-v2.4.2) (2026-09-28)
 
 
