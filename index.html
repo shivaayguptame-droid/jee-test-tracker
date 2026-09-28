@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>document.documentElement.classList.add("tracker-booting");</script>
 <title>JEE Test Tracker v2.4.0</title> <!-- x-release-please-version -->
 <!-- VERSION: 1.9.1 | Smart Planner + Goals 2.0 with theme-correct notification panel and viewport-safe notifications. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -16,6 +17,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
+html.tracker-booting body{visibility:hidden!important;}
   :root {
     --bg: #050805;
     --surface: #0b120c;
@@ -1293,7 +1295,7 @@ body.first-run-active .welcomeHero h2{max-width:none;color:#fff;font:700 clamp(3
 body.first-run-active .welcomeHero h2 em{color:#fff6b8;font-style:normal;text-shadow:1px 1px #234e84;}
 body.first-run-active .welcomeLead{margin:14px 0 0;color:#eff6ff;font:14px/1.6 Tahoma,Arial,sans-serif;}
 body.first-run-active .welcomeActions{display:grid;grid-template-columns:1fr;gap:8px;margin-top:22px;}
-body.first-run-active .welcomeActions button{width:100%;min-height:40px;padding:9px 12px;border:1px solid #829bb3;border-radius:4px;background:linear-gradient(#fff,#e2e6eb);box-shadow:0 1px #fff inset;color:#182331;font:700 12px Tahoma,Arial,sans-serif;text-shadow:none;}
+body.first-run-active .welcomeActions button{width:100%;min-height:40px;padding:9px 12px;border:1px solid #829bb3;border-radius:4px;background:linear-gradient(#fff,#e2e6eb);box-shadow:0 1px #fff inset;color:#000!important;font:700 12px Tahoma,Arial,sans-serif;text-shadow:none!important;}
 body.first-run-active .welcomeActions button.primary{border-color:#0a3f8b;background:linear-gradient(#fff2b5,#f1c94f 48%,#e6b536 49%,#ffdf70);color:#17212c;}
 body.first-run-active .welcomeActions button:hover{filter:brightness(1.04);border-color:#294f77;}
 body.first-run-active .welcomeActions button:focus-visible,body.first-run-active .welcomeExplore:focus-visible{outline:3px solid #ffe45c;outline-offset:2px;}
@@ -1317,7 +1319,21 @@ body.first-run-active .welcomeFeatureIcon{font:18px Tahoma,Arial,sans-serif;}
 body.first-run-active .welcomeFeature b{margin-top:7px;color:#173e6d;font:700 12px Tahoma,Arial,sans-serif;}
 body.first-run-active .welcomeFeature p{margin:5px 0 0;color:#454c55;font:11px/1.45 Tahoma,Arial,sans-serif;}
 body.first-run-active .welcomeExplore{margin:0;padding:12px 18px 14px;background:#e8e7df;color:#1d4f85;font:11px Tahoma,Arial,sans-serif;text-underline-offset:2px;}
-@media(max-width:720px){body.first-run-active .wrap{width:calc(100% - 20px)!important;padding:14px 0 38px!important;}body.first-run-active .welcomeHero{grid-template-columns:1fr!important;}body.first-run-active .welcomeHero>div:first-child{padding:22px 18px;}body.first-run-active .welcomeHero h2{font-size:34px;}body.first-run-active .welcomePreview{margin:14px;padding:14px;}body.first-run-active .welcomeFeatures{grid-template-columns:1fr;padding:10px;gap:7px;}body.first-run-active .welcomeFeature{display:grid;grid-template-columns:28px minmax(0,1fr);column-gap:9px;padding:10px;}body.first-run-active .welcomeFeatureIcon{grid-row:span 2;}body.first-run-active .welcomeFeature b{margin:0;}body.first-run-active .welcomeFeature p{margin-top:3px;}}
+/* Center the welcome window against the viewport, outside the dashboard's grid. */
+body.first-run-active #firstRunWelcome{position:fixed!important;z-index:10000!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;width:min(1080px,calc(100vw - 32px))!important;max-height:calc(100vh - 32px)!important;overflow:auto!important;margin:0!important;}
+body.first-run-active #firstRunWelcome .welcomeHero{display:grid!important;grid-template-columns:minmax(270px,.42fr) minmax(0,1fr)!important;}
+/* The sign-in dialog follows the same XP palette while first-run is active. */
+body.first-run-active #authModalBg{position:fixed!important;inset:0!important;z-index:10010!important;align-items:center!important;justify-content:center!important;padding:18px!important;background:rgba(28,62,103,.48)!important;backdrop-filter:none!important;}
+body.first-run-active #authModalBg.open{display:flex!important;}
+body.first-run-active #authModalBg .modal{box-sizing:border-box!important;width:min(520px,calc(100vw - 28px))!important;max-width:520px!important;max-height:calc(100vh - 28px)!important;overflow:auto!important;margin:0!important;padding:26px!important;border:1px solid #245b9c!important;border-radius:7px!important;background:#f2f1e9!important;color:#17212c!important;box-shadow:0 2px 0 #fff inset,0 16px 38px rgba(17,44,78,.4)!important;font-family:Tahoma,"MS Sans Serif",Arial,sans-serif!important;text-shadow:none!important;}
+body.first-run-active #authModalBg .modal:before{content:"▣  JEE Test Tracker — Account";display:block;margin:-26px -26px 20px;padding:9px 12px;color:#fff;font:700 13px Tahoma,Arial,sans-serif;text-shadow:1px 1px #16488a;background:linear-gradient(180deg,#3d92f3 0%,#1f68d0 48%,#1250b7 49%,#367de0 100%);border-bottom:1px solid #0d3f8f;box-shadow:0 1px #86c2ff inset;}
+body.first-run-active #authModalBg .modal h2{margin:0 0 5px;color:#173e6d!important;font:700 19px Tahoma,Arial,sans-serif!important;letter-spacing:0!important;text-shadow:none!important;}
+body.first-run-active #authModalBg .modal p,body.first-run-active #authModalBg .modal label{color:#35475a!important;font:13px/1.45 Tahoma,Arial,sans-serif!important;}
+body.first-run-active #authModalBg .modal input{box-sizing:border-box!important;border:1px solid #7f9db9!important;border-radius:3px!important;background:#fff!important;color:#17212c!important;box-shadow:inset 1px 1px 2px #d4d4d4!important;font:14px Tahoma,Arial,sans-serif!important;}
+body.first-run-active #authModalBg .modal button{min-height:38px!important;border:1px solid #829bb3!important;border-radius:4px!important;background:linear-gradient(#fff,#e2e6eb)!important;color:#17212c!important;box-shadow:0 1px #fff inset!important;font:700 12px Tahoma,Arial,sans-serif!important;text-shadow:none!important;}
+body.first-run-active #authModalBg .modal button.primary,body.first-run-active #authModalBg #googleSignInBtn{border-color:#0a3f8b!important;background:linear-gradient(#fff2b5,#f1c94f 48%,#e6b536 49%,#ffdf70)!important;color:#17212c!important;box-shadow:0 1px #fff inset!important;}
+body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
+@media(max-width:720px){body.first-run-active #firstRunWelcome{top:16px!important;bottom:16px!important;left:50%!important;transform:translateX(-50%)!important;width:calc(100vw - 20px)!important;max-height:none!important;}body.first-run-active #firstRunWelcome .welcomeHero{grid-template-columns:1fr!important;}body.first-run-active .welcomeHero>div:first-child{padding:22px 18px;}body.first-run-active .welcomeHero h2{font-size:34px;}body.first-run-active .welcomePreview{margin:14px;padding:14px;}body.first-run-active .welcomeFeatures{grid-template-columns:1fr;padding:10px;gap:7px;}body.first-run-active .welcomeFeature{display:grid;grid-template-columns:28px minmax(0,1fr);column-gap:9px;padding:10px;}body.first-run-active .welcomeFeatureIcon{grid-row:span 2;}body.first-run-active .welcomeFeature b{margin:0;}body.first-run-active .welcomeFeature p{margin-top:3px;}body.first-run-active #authModalBg .modal{padding:20px!important;}body.first-run-active #authModalBg .modal:before{margin:-20px -20px 18px;}}
 </style>
 </head>
 <body>
@@ -2643,6 +2659,7 @@ window.openSmartGoals190=open;
     var seen=false; try{seen=localStorage.getItem(firstRunSeenKey())==="1";}catch(e){}
     var show=!!state.ready&&tests.length===0&&!seen;
     document.body.classList.toggle("first-run-active",show);
+    document.documentElement.classList.remove("tracker-booting");
     screen.setAttribute("aria-hidden",show?"false":"true");
     var primary=document.getElementById("welcomePrimaryBtn"), sync=document.getElementById("welcomeSyncBtn"), note=document.getElementById("welcomeNote");
     if(state.user){
