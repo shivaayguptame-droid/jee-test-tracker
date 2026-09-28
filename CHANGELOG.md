@@ -2,6 +2,13 @@
 
 Notable changes to JEE Test Tracker are documented here. Release Please maintains this file from Conventional Commit messages.
 
+## [2.4.1](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v2.4.0...jee-test-tracker-v2.4.1) (2026-09-28)
+
+
+### Bug Fixes
+
+* repair retro welcome page layout ([634c517](https://github.com/shivaayguptame-droid/jee-test-tracker/commit/634c517e90d98b26f328026d5adf9c57193eecfa))
+
 ## [2.4.0](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v2.3.0...jee-test-tracker-v2.4.0) (2026-09-28)
 
 
