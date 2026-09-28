@@ -385,6 +385,9 @@ header .btnrow { gap: 7px; }
   min-width: 0;
   animation: panelIn .18s ease-out;
 }
+.tabpanel.analysisCompact.is-current{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:12px;}
+.tabpanel.analysisCompact.is-current>.card{min-width:0;margin:0;}
+@media(max-width:900px){.tabpanel.analysisCompact.is-current{grid-template-columns:minmax(0,1fr);}}
 @keyframes panelIn { from { opacity:.55; transform:translateY(3px); } to { opacity:1; transform:none; } }
 
 .card {
@@ -1025,6 +1028,43 @@ body.settings-open { overflow:hidden !important; height:100%; overscroll-behavio
 :root[data-theme="industrial"] .notificationPanel,:root[data-theme="industrial"] .settingsModal,:root[data-theme="industrial"] .modal,:root[data-theme="industrial"] .perfModal{border-radius:3px;box-shadow:0 18px 45px rgba(0,0,0,.45);}
 :root[data-theme="industrial"] .notificationPanelHead,:root[data-theme="industrial"] .settingsHead{border-top:3px solid var(--accent);}
 
+/* WINDOWS XP — Luna blue title bars with classic raised controls. */
+:root[data-theme="xp"] {
+  --font-ui:Tahoma,"MS Sans Serif",Arial,sans-serif; --font-display:Tahoma,"MS Sans Serif",Arial,sans-serif;
+  --bg:#b7d5ef; --surface:#f3f1e9; --surface-2:#e7e5dc; --surface-3:#d9e5f0; --border:#8ba9c4;
+  --text:#17283c; --text-dim:#4c6075; --accent:#0969c7; --accent-soft:#d7e9fb; --good:#287b32; --bad:#b42323; --warn:#a25a00; --radius:5px;
+  --header-bg:linear-gradient(180deg,#3c91ef 0%,#1768ce 48%,#0754bb 49%,#3b83d8 100%); --nav-bg:#e6e5dd;
+  --card-bg:linear-gradient(180deg,#fbfaf5,#eeece3); --control-bg:linear-gradient(#fff,#e5e4dc); --control-hover:#e5f0fb;
+  --control-border:#829db7; --control-text:#17283c; --input-bg:#fff; --table-bg:#fbfaf5; --table-head-bg:#dce8f3; --table-hover:#e8f2fb; --heading:#173e6d;
+  --primary-bg:linear-gradient(180deg,#fff2b5,#f1c94f 48%,#e6b536 49%,#ffdf70); --primary-text:#17283c; --primary-shadow:0 1px #fff inset;
+  --active-bg:linear-gradient(180deg,#3d92f3,#1768ce 50%,#0754bb 51%,#367de0);
+}
+:root[data-theme="xp"] body{min-height:100vh;background:linear-gradient(180deg,#8bc1ee 0%,#d9ebf9 58%,#b7d5ef 100%) fixed;color:var(--text);}
+:root[data-theme="xp"] .wrap{width:min(1520px,calc(100% - 36px));grid-template-columns:230px minmax(0,1fr);gap:14px 18px;}
+:root[data-theme="xp"] header{border:1px solid #15549b;border-radius:7px 7px 3px 3px;background:var(--header-bg);color:#fff;box-shadow:0 1px #a7d3ff inset,0 3px 7px rgba(21,63,104,.22);}
+:root[data-theme="xp"] header .sub,:root[data-theme="xp"] header .hint{color:#e4f1ff;}
+:root[data-theme="xp"] #mainTabNav{padding:6px;border:1px solid #9bb4ca;border-radius:5px;background:linear-gradient(#f8f7f1,#dddcd3);box-shadow:0 1px #fff inset,0 2px 5px rgba(29,66,101,.14);}
+:root[data-theme="xp"] #mainTabNav .tabbtn{border:1px solid transparent;border-radius:4px;color:#263c53;}
+:root[data-theme="xp"] #mainTabNav .tabbtn:hover{border-color:#9bbada;background:#e5f1fc;color:#173e6d;}
+:root[data-theme="xp"] #mainTabNav .tabbtn.active{border-color:#0754bb;background:var(--active-bg);color:#fff;box-shadow:0 1px #86c2ff inset;}
+:root[data-theme="xp"] .card,:root[data-theme="xp"] #kpis .kpi{border:1px solid #9bb4ca;border-radius:5px;background:var(--card-bg);box-shadow:0 1px #fff inset,0 2px 6px rgba(29,66,101,.13);}
+:root[data-theme="xp"] .sectionTitle,:root[data-theme="xp"] .settingsHead h2{color:#173e6d;font-family:Tahoma,"MS Sans Serif",Arial,sans-serif;font-weight:700;letter-spacing:0;}
+:root[data-theme="xp"] .kpi .value{color:#0754a5;font-family:Tahoma,Arial,sans-serif;font-weight:700;}
+:root[data-theme="xp"] button{border:1px solid var(--control-border);border-radius:4px;background:var(--control-bg);color:var(--control-text);box-shadow:0 1px #fff inset;font-family:Tahoma,"MS Sans Serif",Arial,sans-serif;text-shadow:none;}
+:root[data-theme="xp"] button:hover{border-color:#4e83b5;background:#e8f2fc;color:#173e6d;}
+:root[data-theme="xp"] button.primary{border-color:#0a4f9b;background:linear-gradient(180deg,#4b9cf1,#1768ce 50%,#0754bb 51%,#367de0);color:#fff;box-shadow:0 1px #9bd0ff inset;}
+:root[data-theme="xp"] input,:root[data-theme="xp"] select,:root[data-theme="xp"] textarea{border:1px solid #829db7;border-radius:3px;background:#fff;color:#17283c;box-shadow:inset 1px 1px 2px rgba(0,0,0,.12);}
+:root[data-theme="xp"] input:focus,:root[data-theme="xp"] select:focus,:root[data-theme="xp"] textarea:focus{outline:2px solid #4a91d9;outline-offset:1px;}
+:root[data-theme="xp"] .tablewrap{border-color:#9bb4ca;border-radius:4px;background:#fbfaf5;}
+:root[data-theme="xp"] th{background:#dce8f3;color:#173e6d;}
+:root[data-theme="xp"] .notificationPanel,:root[data-theme="xp"] .settingsModal,:root[data-theme="xp"] .modal,:root[data-theme="xp"] .perfModal{border:1px solid #245b9c;border-radius:7px;background:#f3f1e9;box-shadow:0 2px 0 #fff inset,0 16px 38px rgba(17,44,78,.3);}
+:root[data-theme="xp"] .settingsHead,:root[data-theme="xp"] .notificationPanelHead{background:var(--header-bg);color:#fff;border-bottom:1px solid #0d3f8f;}
+:root[data-theme="xp"] .settingsHead h2,:root[data-theme="xp"] .notificationPanelTitle{color:#fff;}
+:root[data-theme="xp"] .themeChoice{border-radius:5px;background:#fbfaf5;}
+:root[data-theme="xp"] .themeChoice[data-theme-choice="xp"] .themePreview{background:linear-gradient(180deg,#65a9e9 0 48%,#d9efff 49% 72%,#78b947 73%);border-color:#15549b;}
+:root[data-theme="xp"] .themeChoice[data-theme-choice="xp"] .themePreview::after{background:linear-gradient(#3c91ef,#0754bb);box-shadow:0 10px 0 #f3f1e9,0 20px 0 #f3f1e9;}
+@media(max-width:900px){:root[data-theme="xp"] .wrap{width:calc(100% - 20px);grid-template-columns:1fr;grid-template-areas:"header" "kpis" "nav" "main";}:root[data-theme="xp"] #mainTabNav{position:static;flex-direction:row;overflow-x:auto;}:root[data-theme="xp"] #mainTabNav::before{display:none;}:root[data-theme="xp"] #mainTabNav .tabbtn{width:auto;min-width:max-content;justify-content:center;}}
+
 /* Theme-specific previews */
 .themeChoice[data-theme-choice="glass"] .themePreview{background:linear-gradient(135deg,#15283b,#536d80);backdrop-filter:blur(8px);border-color:#8de1ff;}
 .themeChoice[data-theme-choice="glass"] .themePreview::after{background:#8de1ff;box-shadow:0 10px 0 rgba(141,225,255,.45),0 20px 0 rgba(255,255,255,.20);}
@@ -1497,7 +1537,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
     </div>
   </div>
 
-  <div class="tabpanel" data-panel="analysis" style="display:none;">
+  <div class="tabpanel analysisCompact" data-panel="analysis" style="display:none;">
     <div class="card">
       <div class="sectionTitle">Tier comparison</div>
       <div class="hint" style="color:var(--text-dim);font-size:12px;margin-bottom:8px;">Average percentile and accuracy per difficulty tier, so you can see which level you're actually strongest at.</div>
@@ -1693,6 +1733,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
             <button class="themeChoice" data-theme-choice="solarized"><div class="themePreview" style="--preview-bg:#002b36;--preview-accent:#b58900"></div><div class="themeChoiceName">Solarized</div><div class="themeChoiceDesc">Classic research desk</div></button>
             <button class="themeChoice" data-theme-choice="paper"><div class="themePreview" style="--preview-bg:#fbfaf4;--preview-accent:#b45309"></div><div class="themeChoiceName">Paper</div><div class="themeChoiceDesc">Notebook study desk</div></button>
             <button class="themeChoice" data-theme-choice="industrial"><div class="themePreview" style="--preview-bg:#242424;--preview-accent:#ffb347"></div><div class="themeChoiceName">Industrial</div><div class="themeChoiceDesc">Engineering control desk</div></button>
+            <button class="themeChoice" data-theme-choice="xp"><div class="themePreview" style="--preview-bg:#d9ebf9;--preview-accent:#1768ce"></div><div class="themeChoiceName">Windows XP</div><div class="themeChoiceDesc">Classic Luna desktop</div></button>
           </div>
         </div>
         <div class="settingsSection">
@@ -4802,7 +4843,9 @@ window.openSmartGoals190=open;
       btn.classList.add("active");
       var target = btn.getAttribute("data-tab");
       document.querySelectorAll(".tabpanel").forEach(function(p){
-        p.style.display = (p.getAttribute("data-panel") === target) ? "" : "none";
+        var isCurrent = p.getAttribute("data-panel") === target;
+        p.style.display = isCurrent ? "" : "none";
+        p.classList.toggle("is-current", isCurrent);
       });
       if (state.ready) {
         renderPanel(target, sortedTests());
@@ -4990,7 +5033,7 @@ window.openSmartGoals190=open;
     advanced:{title:"Advanced",sub:"System controls, diagnostics and future developer options."}
   };
   function applyTrackerTheme(theme){
-    var allowed={terminal:1,midnight:1,light:1,oled:1,cyber:1,glass:1,aurora:1,solarized:1,paper:1,industrial:1};
+    var allowed={terminal:1,midnight:1,light:1,oled:1,cyber:1,glass:1,aurora:1,solarized:1,paper:1,industrial:1,xp:1};
     if (!allowed[theme]) theme="terminal";
     document.documentElement.setAttribute("data-theme", theme);
     try { localStorage.setItem(SETTINGS_THEME_KEY, theme); } catch(e){}
