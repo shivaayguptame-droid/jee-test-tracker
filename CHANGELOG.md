@@ -2,13 +2,6 @@
 
 Notable changes to JEE Test Tracker are documented here. Release Please maintains this file from Conventional Commit messages.
 
-## [2.6.0](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v2.5.0...jee-test-tracker-v2.6.0) (2026-09-28)
-
-
-### Features
-
-* - Add cross-test subject, timing, and chapter trends - Generate calendar-aware adaptive study plans - Track fixed and recurring mistakes - Use inferred tags in analytics and study plans ([643cad1](https://github.com/shivaayguptame-droid/jee-test-tracker/commit/643cad17b4c1b0138171b3f0095e3b0fe24ab285))
-
 ## [2.5.0](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v2.4.2...jee-test-tracker-v2.5.0) (2026-09-28)
 
 
