@@ -2,6 +2,13 @@
 
 Notable changes to JEE Test Tracker are documented here. Release Please maintains this file from Conventional Commit messages.
 
+## [2.3.0](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v2.2.0...jee-test-tracker-v2.3.0) (2026-09-28)
+
+
+### Features
+
+* add percentile trajectory chart ([4ea7c29](https://github.com/shivaayguptame-droid/jee-test-tracker/commit/4ea7c29aef3b72f67ff1c6827c5491d78dd269b2))
+
 ## [2.2.0](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v2.1.0...jee-test-tracker-v2.2.0) (2026-09-27)
 
 
