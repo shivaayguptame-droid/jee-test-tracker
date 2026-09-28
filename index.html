@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>JEE Test Tracker v2.1.0</title> <!-- x-release-please-version -->
+<title>JEE Test Tracker v2.4.0</title> <!-- x-release-please-version -->
 <!-- VERSION: 1.9.1 | Smart Planner + Goals 2.0 with theme-correct notification panel and viewport-safe notifications. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1277,11 +1277,53 @@ body.settings-open { overflow:hidden !important; height:100%; overscroll-behavio
 }
 
 </style>
+<style id="first-run-retro-theme">
+/* Windows XP-inspired welcome wizard. Scoped to first run; tracker themes stay untouched. */
+body.first-run-active{min-height:100vh;background:radial-gradient(ellipse 65% 26% at 12% 105%,#3f8c31 0 48%,transparent 50%),radial-gradient(ellipse 72% 31% at 84% 112%,#79b83d 0 49%,transparent 51%),linear-gradient(180deg,#65a9e9 0%,#d9efff 72%,#9acb63 100%) fixed!important;color:#17212c!important;font-family:Tahoma,"MS Sans Serif",Arial,sans-serif!important;text-shadow:none!important;}
+body.first-run-active::before,body.first-run-active::after{content:none!important;display:none!important;}
+body.first-run-active .wrap{display:block!important;width:min(1080px,calc(100% - 32px))!important;max-width:1080px!important;min-width:0!important;margin:0 auto!important;padding:clamp(18px,5vh,52px) 0 56px!important;grid-template-columns:1fr!important;grid-template-areas:none!important;gap:0!important;}
+body.first-run-active .wrap>header,body.first-run-active .wrap>#kpis,body.first-run-active .wrap>#mainTabNav,body.first-run-active .wrap>.tabpanel{display:none!important;}
+body.first-run-active #firstRunWelcome{display:block!important;width:100%!important;max-width:none!important;min-width:0!important;margin:0!important;padding:0!important;overflow:hidden!important;border:1px solid #154b9c!important;border-radius:8px 8px 4px 4px!important;background:#f2f1e9!important;color:#17212c!important;box-shadow:0 2px 0 #fff inset,0 16px 38px rgba(17,44,78,.34)!important;font-family:Tahoma,"MS Sans Serif",Arial,sans-serif!important;}
+body.first-run-active #firstRunWelcome:before{content:"▣  JEE Test Tracker — Welcome";display:block;padding:9px 12px;color:#fff;font:700 13px Tahoma,Arial,sans-serif;letter-spacing:0;text-shadow:1px 1px #16488a;background:linear-gradient(180deg,#3d92f3 0%,#1f68d0 48%,#1250b7 49%,#367de0 100%);border-bottom:1px solid #0d3f8f;box-shadow:0 1px #86c2ff inset;}
+body.first-run-active .welcomeEyebrow{display:inline-flex;margin:18px 20px 12px;padding:5px 9px;border:1px solid #9ab6ce;border-radius:3px;background:#e4eff9;color:#28527c;font:700 10px Tahoma,Arial,sans-serif;letter-spacing:.06em;box-shadow:0 1px #fff inset;}
+body.first-run-active .welcomeEyebrow i{width:8px;height:8px;background:#4d9a36;box-shadow:none;border:1px solid #32722c;}
+body.first-run-active .welcomeHero{grid-template-columns:minmax(270px,.42fr) minmax(0,1fr)!important;align-items:stretch!important;gap:0!important;padding:0!important;background:#f2f1e9;}
+body.first-run-active .welcomeHero>div:first-child{min-width:0;padding:28px 25px 22px;background:linear-gradient(180deg,#4289df,#1d58b7);color:#fff;}
+body.first-run-active .welcomeHero h2{max-width:none;color:#fff;font:700 clamp(30px,4vw,43px)/1.1 Tahoma,"MS Sans Serif",Arial,sans-serif;letter-spacing:-.025em;}
+body.first-run-active .welcomeHero h2 em{color:#fff6b8;font-style:normal;text-shadow:1px 1px #234e84;}
+body.first-run-active .welcomeLead{margin:14px 0 0;color:#eff6ff;font:14px/1.6 Tahoma,Arial,sans-serif;}
+body.first-run-active .welcomeActions{display:grid;grid-template-columns:1fr;gap:8px;margin-top:22px;}
+body.first-run-active .welcomeActions button{width:100%;min-height:40px;padding:9px 12px;border:1px solid #829bb3;border-radius:4px;background:linear-gradient(#fff,#e2e6eb);box-shadow:0 1px #fff inset;color:#182331;font:700 12px Tahoma,Arial,sans-serif;text-shadow:none;}
+body.first-run-active .welcomeActions button.primary{border-color:#0a3f8b;background:linear-gradient(#fff2b5,#f1c94f 48%,#e6b536 49%,#ffdf70);color:#17212c;}
+body.first-run-active .welcomeActions button:hover{filter:brightness(1.04);border-color:#294f77;}
+body.first-run-active .welcomeActions button:focus-visible,body.first-run-active .welcomeExplore:focus-visible{outline:3px solid #ffe45c;outline-offset:2px;}
+body.first-run-active .welcomeNote{margin:10px 0 0;color:#e4efff;font:11px/1.5 Tahoma,Arial,sans-serif;}
+body.first-run-active .welcomeTrust{margin-top:16px;color:#eaf3ff;font:10px/1.45 Tahoma,Arial,sans-serif;}
+body.first-run-active .welcomeTrust svg{color:#fff4a8;}
+body.first-run-active .welcomePreview{min-width:0;min-height:0;margin:24px;padding:22px;border:1px solid #aaa99f;border-radius:3px;background:#fff;box-shadow:0 1px #fff inset;}
+body.first-run-active .welcomePreview:before{display:none!important;}
+body.first-run-active .welcomePreviewHead{padding-bottom:12px;border-bottom:1px solid #c9c7bd;}
+body.first-run-active .welcomePreviewHead b{color:#173e6d;font:700 15px Tahoma,Arial,sans-serif;}
+body.first-run-active .welcomePreviewHead span{color:#5c6470;font:11px Tahoma,Arial,sans-serif;}
+body.first-run-active .welcomePreviewRows{gap:9px;margin-top:13px;}
+body.first-run-active .welcomePreviewRow{grid-template-columns:38px minmax(0,1fr) auto;gap:10px;padding:12px;border:1px solid #d0d0ca;border-radius:3px;background:#f8f8f5;}
+body.first-run-active .welcomePreviewIcon{width:36px;height:36px;border:1px solid #b8c8d8;border-radius:3px;background:#e6eff8;color:#164f91;font:700 16px Tahoma,Arial,sans-serif;}
+body.first-run-active .welcomePreviewRow b{color:#17212c;font:700 12px Tahoma,Arial,sans-serif;}
+body.first-run-active .welcomePreviewRow small{color:#596574;font:11px/1.35 Tahoma,Arial,sans-serif;}
+body.first-run-active .welcomePreviewValue{color:#68727d;font:700 12px Tahoma,Arial,sans-serif;}
+body.first-run-active .welcomeFeatures{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0;padding:16px 20px;background:#e8e7df;border-top:1px solid #c2c1b8;}
+body.first-run-active .welcomeFeature{min-width:0;padding:12px;border:1px solid #b7b8b4;border-radius:3px;background:#f8f8f5;box-shadow:0 1px #fff inset;}
+body.first-run-active .welcomeFeatureIcon{font:18px Tahoma,Arial,sans-serif;}
+body.first-run-active .welcomeFeature b{margin-top:7px;color:#173e6d;font:700 12px Tahoma,Arial,sans-serif;}
+body.first-run-active .welcomeFeature p{margin:5px 0 0;color:#454c55;font:11px/1.45 Tahoma,Arial,sans-serif;}
+body.first-run-active .welcomeExplore{margin:0;padding:12px 18px 14px;background:#e8e7df;color:#1d4f85;font:11px Tahoma,Arial,sans-serif;text-underline-offset:2px;}
+@media(max-width:720px){body.first-run-active .wrap{width:calc(100% - 20px)!important;padding:14px 0 38px!important;}body.first-run-active .welcomeHero{grid-template-columns:1fr!important;}body.first-run-active .welcomeHero>div:first-child{padding:22px 18px;}body.first-run-active .welcomeHero h2{font-size:34px;}body.first-run-active .welcomePreview{margin:14px;padding:14px;}body.first-run-active .welcomeFeatures{grid-template-columns:1fr;padding:10px;gap:7px;}body.first-run-active .welcomeFeature{display:grid;grid-template-columns:28px minmax(0,1fr);column-gap:9px;padding:10px;}body.first-run-active .welcomeFeatureIcon{grid-row:span 2;}body.first-run-active .welcomeFeature b{margin:0;}body.first-run-active .welcomeFeature p{margin-top:3px;}}
+</style>
 </head>
 <body>
 <div class="wrap">
   <section class="firstRunWelcome" id="firstRunWelcome" aria-labelledby="welcomeTitle" aria-hidden="true">
-    <div class="welcomeEyebrow"><i aria-hidden="true"></i> JEE PREP, MADE CLEARER</div>
+    <div class="welcomeEyebrow"><i aria-hidden="true"></i> WELCOME TO JEE TEST TRACKER</div>
     <div class="welcomeHero">
       <div>
         <h2 id="welcomeTitle">Make every test a <em>clear next step.</em></h2>
@@ -1311,7 +1353,7 @@ body.settings-open { overflow:hidden !important; height:100%; overscroll-behavio
   </section>
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v2.1.0</span></h1> <!-- x-release-please-version -->
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v2.4.0</span></h1> <!-- x-release-please-version -->
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow headerActions">
@@ -2053,7 +2095,7 @@ window.openSmartGoals190=open;
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "2.1.0"; // x-release-please-version
+  var APP_VERSION = "2.4.0"; // x-release-please-version
   var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   window.state = state;
   var LS_KEY = "jee_test_tracker_v1";
@@ -5041,7 +5083,8 @@ window.openSmartGoals190=open;
 })();
 
 </script>
-<script>document.addEventListener('DOMContentLoaded',function(){var b=document.getElementById('smartGoals190Open');if(b)b.addEventListener('click',function(){if(window.openSmartGoals190)window.openSmartGoals190()});var c=document.getElementById('smartGoals190Bg');if(c)c.addEventListener('click',function(e){if(e.target===c)c.classList.remove('open')});});</script>\n<script id="aiCoach20JS">
+<script>document.addEventListener('DOMContentLoaded',function(){var b=document.getElementById('smartGoals190Open');if(b)b.addEventListener('click',function(){if(window.openSmartGoals190)window.openSmartGoals190()});var c=document.getElementById('smartGoals190Bg');if(c)c.addEventListener('click',function(e){if(e.target===c)c.classList.remove('open')});});</script>
+<script id="aiCoach20JS">
 (function(){
 function q(id){return document.getElementById(id)}
 function esc(v){return String(v==null?'':v).replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]})}
@@ -5053,5 +5096,6 @@ function render(){var d=coachData(), stats=q('coachStats');if(!stats)return;stat
 function open(){var b=q('aiCoachBg');if(b){b.classList.add('open');b.setAttribute('aria-hidden','false');render()}}function close(){var b=q('aiCoachBg');if(b){b.classList.remove('open');b.setAttribute('aria-hidden','true')}}
 document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('#openAICoach'))open();if(e.target.closest&&e.target.closest('#aiCoachClose'))close();if(e.target.closest&&e.target.closest('#coachRefresh'))render();if(e.target.closest&&e.target.closest('#coachOpenPerformance')){close();var b=q('performanceOSBg');if(b)b.classList.add('open')}if(e.target.closest&&e.target.closest('#coachOpenPlanner')){close();var b=q('performanceOSBg');if(b){b.classList.add('open');var t=document.querySelector('.perfTab[data-perf-tab="planner"]');if(t)t.click()}}});
 })();
-</script>\n</body>
+</script>
+</body>
 </html>
