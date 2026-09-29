@@ -1771,8 +1771,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
         <div class="settingsSection settingsFuture"><span class="futureBadge">FUTURE</span><div class="settingsSectionTitle">Notification preferences</div><div class="settingsSectionDesc">Per-category controls such as AI alerts, deployment updates and reminder preferences can live here later.</div></div>
       </div>
       <div class="settingsPage" data-settings-content="data">
-        <div class="settingsSection"><div class="settingsSectionTitle">Data &amp; sync</div><div class="settingsSectionDesc">Cloud data belongs to the signed-in account. Old browser-local data can be imported explicitly when needed.</div><div class="settingsActionRow"><button class="primary" id="settingsImportBtn">Import old local data</button></div></div>
-        <div class="settingsSection settingsFuture"><span class="futureBadge">FUTURE</span><div class="settingsSectionTitle">Backup &amp; export</div><div class="settingsSectionDesc">CSV/JSON export, backup history, restore points and storage diagnostics can be added here later.</div></div>
+        <div class="settingsSection"><div class="settingsSectionTitle">Data &amp; sync</div><div class="settingsSectionDesc">Your tests sync to the signed-in account. Export a JSON copy of your test records and Performance OS data, or import older browser-local data. Mistake image files stay in your private cloud storage.</div><div class="settingsActionRow"><button class="primary" id="settingsExportBtn">Export test data (JSON)</button><button class="ghost" id="settingsImportBtn">Import old local data</button></div></div>
       </div>
       <div class="settingsPage" data-settings-content="ai">
         <div class="settingsSection"><div class="settingsSectionTitle">AI analysis</div><div class="settingsSectionDesc">AI analysis status is controlled by the tracker and, for operational switches, the remote Control Center.</div><div id="settingsAIStatus" style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">Status will appear here.</div><div class="settingsActionRow"><button class="primary" id="settingsAIOpenBtn">Open AI analysis</button></div></div>
@@ -5240,6 +5239,7 @@ window.openSmartGoals190=open;
   })();
   document.getElementById("settingsAccountBtn").addEventListener("click", function(){ closeSettings(); if(typeof openAuth === "function") openAuth(state.user ? "signin" : "signin"); });
   document.getElementById("settingsNotificationsBtn").addEventListener("click", function(){ closeSettings(); var b=document.getElementById("notificationBell"); if(b) b.click(); });
+  document.getElementById("settingsExportBtn").addEventListener("click", function(){ closeSettings(); var b=document.getElementById("perfExport"); if(b) b.click(); else toast("Data export is unavailable in this build."); });
   document.getElementById("settingsImportBtn").addEventListener("click", function(){ closeSettings(); var b=document.getElementById("importLocalBtn"); if(b) b.click(); });
   document.getElementById("settingsAIOpenBtn").addEventListener("click", function(){ closeSettings(); var b=document.querySelector('#mainTabNav .tabbtn[data-tab="analysis"]'); if(b) b.click(); });
   document.getElementById("settingsCalendarBtn").addEventListener("click", function(){ closeSettings(); var b=document.querySelector('#mainTabNav .tabbtn[data-tab="schedule"]'); if(b) b.click(); });
