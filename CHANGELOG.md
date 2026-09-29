@@ -4,6 +4,13 @@ Notable changes to JEE Test Tracker are documented here. Release Please maintain
 
 <<<<<<< HEAD
 =======
+## [3.3.0](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v3.2.1...jee-test-tracker-v3.3.0) (2026-09-29)
+
+
+### Features
+
+* added version editor ([8ff7d95](https://github.com/shivaayguptame-droid/jee-test-tracker/commit/8ff7d957036680b5cc92965b3c23a21f0fdbf328))
+
 ## [3.2.1](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v3.2.0...jee-test-tracker-v3.2.1) (2026-09-29)
 
 
