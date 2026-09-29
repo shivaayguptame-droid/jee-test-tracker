@@ -5198,7 +5198,13 @@ window.openSmartGoals190=open;
     } else { openAuth("signin"); }
   });
   document.getElementById("welcomePrimaryBtn").addEventListener("click", function(){
-    if(state.user) openModal(null); else openAuth("signup");
+    if(state.user){
+      markFirstRunSeen();
+      var welcome=document.getElementById("firstRunWelcome");
+      if(welcome)welcome.setAttribute("aria-hidden","true");
+      document.body.classList.remove("first-run-active");
+      openModal(null);
+    } else openAuth("signup");
   });
   document.getElementById("welcomeSyncBtn").addEventListener("click", function(){ openAuth("signin"); });
   document.getElementById("welcomeExploreBtn").addEventListener("click", function(){ markFirstRunSeen(); render(); });
