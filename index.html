@@ -1417,7 +1417,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
   </section>
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v3.0.0</span></h1> <!-- x-release-please-version -->
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v3.3.0</span></h1> <!-- x-release-please-version -->
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow headerActions">
@@ -1647,7 +1647,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
         </div>
         <div class="adminField">
           <label>Tracker version</label>
-          <input id="adminAppVersion" type="text" inputmode="decimal" autocomplete="off" placeholder="3.3.0" pattern="[0-9]+\\.[0-9]+\\.[0-9]+">
+          <input id="adminAppVersion" type="text" inputmode="decimal" autocomplete="off" placeholder="3.3.0" pattern="[0-9]+\.[0-9]+\.[0-9]+">
           <div class="hint" style="font-size:11px;margin-top:5px;">This is the public version shown to every user, including Incognito visitors.</div>
         </div>
         <div class="adminField">
@@ -2690,7 +2690,7 @@ window.openSmartGoals190=open;
   async function saveRemoteConfig(){
     if (!state.isAdmin || !sb || !state.user) throw new Error("Admin access required");
     var appVersion = String(document.getElementById("adminAppVersion").value || "").trim();
-    if(!/^\\d+\\.\\d+\\.\\d+$/.test(appVersion)) throw new Error("Version must use the format X.Y.Z, for example 3.3.0");
+    if(!/^\d+\.\d+\.\d+$/.test(appVersion)) throw new Error("Version must use the format X.Y.Z, for example 3.3.0");
     var next = {
       id:1,
       app_version:appVersion,
