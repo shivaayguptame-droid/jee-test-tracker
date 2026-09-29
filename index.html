@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>document.documentElement.classList.add("tracker-booting");</script>
-<title>JEE Test Tracker v3.2.0</title> <!-- x-release-please-version -->
+<title>JEE Test Tracker v3.0.1</title> <!-- x-release-please-version -->
 <!-- VERSION: 1.9.1 | Smart Planner + Goals 2.0 with theme-correct notification panel and viewport-safe notifications. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1417,7 +1417,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
   </section>
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v3.2.0</span></h1> <!-- x-release-please-version -->
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v3.0.0</span></h1> <!-- x-release-please-version -->
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow headerActions">
@@ -1644,6 +1644,11 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
         <div class="adminField" style="grid-column:1/-1;">
           <label>Announcement text</label>
           <textarea id="adminAnnouncementText" placeholder="Example: AI analysis is temporarily unavailable while Gemini is being fixed."></textarea>
+        </div>
+        <div class="adminField">
+          <label>Tracker version</label>
+          <input id="adminAppVersion" type="text" inputmode="decimal" autocomplete="off" placeholder="3.3.0" pattern="[0-9]+\\.[0-9]+\\.[0-9]+">
+          <div class="hint" style="font-size:11px;margin-top:5px;">This is the public version shown to every user, including Incognito visitors.</div>
         </div>
         <div class="adminField">
           <label>AI system</label>
@@ -2221,7 +2226,7 @@ window.openSmartGoals190=open;
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "3.2.0"; // x-release-please-version
+  var APP_VERSION = "3.2.1"; // x-release-please-version
   var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, provider: "pw", examTrack: "jee", examPreview:false, previewOriginalTests:null, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   var EXAM_TRACK_KEY = "exam_track";
   var PROVIDER_KEY = "training_provider";
@@ -2348,29 +2353,76 @@ window.openSmartGoals190=open;
 
   async function ensureExamTrack(user){
     var saved=user&&user.user_metadata&&user.user_metadata[EXAM_TRACK_KEY];
+
+    // The exam/cohort choice is also made once per account.
+    // If Supabase already has a saved choice, restore it and do not reopen
+    // the popup on later tracker opens or auth-state refreshes.
     if(isVmc()){
       state.examTrack="jee";
       updateExamTrackUI();
       var vmcBtn=document.getElementById("chooseNeetTrack");
       if(vmcBtn) vmcBtn.style.display="none";
+
+      if(saved==="jee") return;
+      if(saved==="neet"){
+        try{
+          if(sb && user){
+            var vmcFix=await sb.auth.updateUser({data:{[EXAM_TRACK_KEY]:"jee"}});
+            if(!vmcFix.error) state.user=vmcFix.data.user||user;
+          }
+        }catch(e){}
+        return;
+      }
     } else if(saved==="jee"||saved==="neet"){
       state.examTrack=saved;
       updateExamTrackUI();
+      return;
+    } else {
+      try{
+        var localExam=localStorage.getItem("jee_tracker_exam_v1");
+        if(localExam==="jee"||localExam==="neet"){
+          state.examTrack=localExam;
+          updateExamTrackUI();
+          if(!user) return;
+        }
+      }catch(e){}
     }
+
     var bg=document.getElementById("examTrackModalBg"),status=document.getElementById("examTrackStatus");
     if(!bg) return;
     bg.classList.add("open");
+    bg.setAttribute("aria-hidden","false");
+
     await new Promise(function(resolve){
       var busy=false;
       async function choose(track){
-        if(busy)return;busy=true;status.textContent="Saving your choice to your account…";
-        document.getElementById("chooseJeeTrack").disabled=true;document.getElementById("chooseNeetTrack").disabled=true;
+        if(busy)return;
+        busy=true;
+        status.textContent="Saving your choice to your account…";
+        document.getElementById("chooseJeeTrack").disabled=true;
+        document.getElementById("chooseNeetTrack").disabled=true;
         try{
-          var result=await sb.auth.updateUser({data:{[EXAM_TRACK_KEY]:track}});
-          if(result.error)throw result.error;
-          state.user=result.data.user||user;state.examTrack=track;updateExamTrackUI();bg.classList.remove("open");resolve();
-        }catch(e){busy=false;status.textContent="Could not save your choice: "+(e.message||"please try again.");document.getElementById("chooseJeeTrack").disabled=false;document.getElementById("chooseNeetTrack").disabled=false;}
+          state.examTrack=track;
+          try{ localStorage.setItem("jee_tracker_exam_v1",track); }catch(e){}
+
+          if(sb && user){
+            var result=await sb.auth.updateUser({data:{[EXAM_TRACK_KEY]:track}});
+            if(result.error)throw result.error;
+            state.user=result.data.user||user;
+          }
+
+          updateExamTrackUI();
+          bg.classList.remove("open");
+          bg.setAttribute("aria-hidden","true");
+          resolve();
+        }catch(e){
+          busy=false;
+          status.textContent="Could not save your choice: "+(e.message||"please try again.");
+          document.getElementById("chooseJeeTrack").disabled=false;
+          document.getElementById("chooseNeetTrack").disabled=false;
+        }
       }
+
       var neetButton=document.getElementById("chooseNeetTrack");
       if(neetButton) neetButton.style.display=isVmc()?"none":"";
       document.getElementById("chooseJeeTrack").onclick=function(){choose("jee");};
@@ -2406,7 +2458,7 @@ window.openSmartGoals190=open;
 
   function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
 
-  var DEFAULT_APP_CONFIG = { id:1, announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
+  var DEFAULT_APP_CONFIG = { id:1, app_version:"3.2.1", announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
 
   function notificationStorageKey(){
     var uid = state.user && state.user.id ? state.user.id : "public";
@@ -2536,7 +2588,9 @@ window.openSmartGoals190=open;
   }
 
   function ensureVersionNotification(){
-    addNotification("info", "Tracker updated", "JEE Test Tracker is now running v" + APP_VERSION + ".", "app-version-" + APP_VERSION);
+    var cfg = state.appConfig || DEFAULT_APP_CONFIG;
+    var version = String(cfg.app_version || APP_VERSION);
+    addNotification("info", "Tracker updated", "JEE Test Tracker is now running v" + version + ".", "app-version-" + version);
   }
 
   async function loadRemoteConfig(){
@@ -2547,7 +2601,7 @@ window.openSmartGoals190=open;
       return state.appConfig;
     }
     try {
-      var res = await sb.from("tracker_app_config").select("id,announcement_enabled,announcement_type,announcement_text,ai_enabled,ai_disabled_message,updated_at").eq("id",1).maybeSingle();
+      var res = await sb.from("tracker_app_config").select("id,app_version,announcement_enabled,announcement_type,announcement_text,ai_enabled,ai_disabled_message,updated_at").eq("id",1).maybeSingle();
       if (res.error) throw res.error;
       state.appConfig = Object.assign({}, DEFAULT_APP_CONFIG, res.data || {});
       processRemoteConfigNotification(previous, state.appConfig);
@@ -2589,8 +2643,20 @@ window.openSmartGoals190=open;
     return state.isAdmin;
   }
 
+  function applyPublicAppVersion(){
+    var cfg = state.appConfig || DEFAULT_APP_CONFIG;
+    var remoteVersion = String(cfg.app_version || "").trim();
+    if (!/^\\d+\\.\\d+\\.\\d+$/.test(remoteVersion)) remoteVersion = APP_VERSION;
+    document.title = (isVmc()?"VMC ":"") + (isNeet()?"NEET":"JEE") + " Test Tracker v" + remoteVersion;
+    var versionEl = document.getElementById("appVersion");
+    if (versionEl) versionEl.textContent = "v" + remoteVersion;
+    var systemVersionEl = document.getElementById("systemAppVersion");
+    if (systemVersionEl) systemVersionEl.textContent = "v" + remoteVersion;
+  }
+
   function applyRemoteConfig(){
     var cfg = state.appConfig || DEFAULT_APP_CONFIG;
+    applyPublicAppVersion();
     var banner = document.getElementById("remoteAnnouncement");
     var text = document.getElementById("remoteAnnouncementText");
     if (banner && text) {
@@ -2612,7 +2678,8 @@ window.openSmartGoals190=open;
 
   function fillAdminForm(){
     var cfg = state.appConfig || DEFAULT_APP_CONFIG;
-    var a=document.getElementById("adminAnnouncementEnabled"), t=document.getElementById("adminAnnouncementText"), ty=document.getElementById("adminAnnouncementType"), ai=document.getElementById("adminAIEnabled"), msg=document.getElementById("adminAIDisabledMessage");
+    var v=document.getElementById("adminAppVersion"), a=document.getElementById("adminAnnouncementEnabled"), t=document.getElementById("adminAnnouncementText"), ty=document.getElementById("adminAnnouncementType"), ai=document.getElementById("adminAIEnabled"), msg=document.getElementById("adminAIDisabledMessage");
+    if(v) v.value=cfg.app_version || APP_VERSION;
     if(a) a.checked=!!cfg.announcement_enabled;
     if(t) t.value=cfg.announcement_text || "";
     if(ty) ty.value=cfg.announcement_type || "info";
@@ -2622,8 +2689,11 @@ window.openSmartGoals190=open;
 
   async function saveRemoteConfig(){
     if (!state.isAdmin || !sb || !state.user) throw new Error("Admin access required");
+    var appVersion = String(document.getElementById("adminAppVersion").value || "").trim();
+    if(!/^\\d+\\.\\d+\\.\\d+$/.test(appVersion)) throw new Error("Version must use the format X.Y.Z, for example 3.3.0");
     var next = {
       id:1,
+      app_version:appVersion,
       announcement_enabled:!!document.getElementById("adminAnnouncementEnabled").checked,
       announcement_type:document.getElementById("adminAnnouncementType").value || "info",
       announcement_text:document.getElementById("adminAnnouncementText").value.trim(),
@@ -2637,6 +2707,7 @@ window.openSmartGoals190=open;
     var previous = state.appConfig ? Object.assign({}, state.appConfig) : null;
     state.appConfig=Object.assign({},DEFAULT_APP_CONFIG,next);
     processRemoteConfigNotification(previous, state.appConfig);
+    applyPublicAppVersion();
     applyRemoteConfig();
     toast("Remote settings saved");
   }
@@ -5392,12 +5463,9 @@ window.openSmartGoals190=open;
   // Keep AI retry status visible without requiring Supabase to be opened.
   setInterval(function(){ if (state.user && state.ready) refreshAIInsights(); }, 30000);
 
-  // Single source of truth for the displayed application version.
-  document.title = (isVmc()?"VMC ":"") + (isNeet()?"NEET":"JEE") + " Test Tracker v" + APP_VERSION;
-  var versionEl = document.getElementById("appVersion");
-  if (versionEl) versionEl.textContent = "v" + APP_VERSION;
-  var systemVersionEl = document.getElementById("systemAppVersion");
-  if (systemVersionEl) systemVersionEl.textContent = "v" + APP_VERSION;
+  // The public version is loaded from Supabase remote config, with APP_VERSION
+  // as the local fallback until the shared config is available.
+  applyPublicAppVersion();
   loadNotifications();
   ensureVersionNotification();
 
