@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>document.documentElement.classList.add("tracker-booting");</script>
-<title>JEE Test Tracker v2.8.1</title> <!-- x-release-please-version -->
+<title>JEE Test Tracker v3.0.0</title> <!-- x-release-please-version -->
 <!-- VERSION: 1.9.1 | Smart Planner + Goals 2.0 with theme-correct notification panel and viewport-safe notifications. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,6 +18,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
 html.tracker-booting body{visibility:hidden!important;}
+html.tracker-booting #examTrackModalBg.open{visibility:visible!important;z-index:10000!important;}
   :root {
     --bg: #050805;
     --surface: #0b120c;
@@ -1416,7 +1417,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
   </section>
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v2.8.1</span></h1> <!-- x-release-please-version -->
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v3.0.0</span></h1> <!-- x-release-please-version -->
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow headerActions">
@@ -1800,7 +1801,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
           <div class="settingsSectionTitle">System information</div>
           <div class="settingsSectionDesc">Current tracker version and how future updates will be numbered.</div>
           <div class="systemInfoGrid">
-            <div class="systemInfoItem"><span>Current version</span><b id="systemAppVersion">v2.7.0</b></div>
+            <div class="systemInfoItem"><span>Current version</span><b id="systemAppVersion">v3.0.0</b></div>
             <div class="systemInfoItem"><span>Version standard</span><b>Semantic Versioning · MAJOR.MINOR.PATCH</b></div>
             <div class="systemInfoItem"><span>Release automation</span><b>GitHub Actions + Release Please</b></div>
             <div class="systemInfoItem"><span>Release steps</span><b>Commit update → review release PR → merge</b></div>
@@ -1898,6 +1899,26 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
           <div class="field"><label>Percentile</label><input id="m_percentile" type="number" step="0.01"></div>
         </div>
       </div>
+      <div class="sectionBlock" style="display:none">
+        <h4>Botany</h4>
+        <div class="formgrid thirds">
+          <div class="field"><label>Correct</label><input id="b_correct" type="number" step="0.01"></div>
+          <div class="field"><label>Incorrect</label><input id="b_incorrect" type="number" step="0.01"></div>
+          <div class="field"><label>Unattempted</label><input id="b_unattempted" type="number" step="0.01"></div>
+          <div class="field"><label>Time spent (min)</label><input id="b_time" type="number" step="0.01"></div>
+          <div class="field"><label>Percentile</label><input id="b_percentile" type="number" step="0.01"></div>
+        </div>
+      </div>
+      <div class="sectionBlock" style="display:none">
+        <h4>Zoology</h4>
+        <div class="formgrid thirds">
+          <div class="field"><label>Correct</label><input id="z_correct" type="number" step="0.01"></div>
+          <div class="field"><label>Incorrect</label><input id="z_incorrect" type="number" step="0.01"></div>
+          <div class="field"><label>Unattempted</label><input id="z_unattempted" type="number" step="0.01"></div>
+          <div class="field"><label>Time spent (min)</label><input id="z_time" type="number" step="0.01"></div>
+          <div class="field"><label>Percentile</label><input id="z_percentile" type="number" step="0.01"></div>
+        </div>
+      </div>
 
       <div class="formgrid" style="margin-top:10px">
         <div class="field full">
@@ -1920,7 +1941,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
           <input id="f_analyzeMistakesNow" type="checkbox" checked style="width:auto;margin:0;">
           <span>Analyze images with AI now after saving</span>
         </label>
-        <div style="font-size:11.5px;color:var(--text-dim);margin-top:3px;">Use filenames like q12_physics.jpg or q27_maths.png when possible. Leave analysis unchecked to store the images and analyze them later from the test details.</div>
+        <div id="mistakeImageHelp" style="font-size:11.5px;color:var(--text-dim);margin-top:3px;">Use filenames like q12_physics.jpg or q27_maths.png when possible. Leave analysis unchecked to store the images and analyze them later from the test details.</div>
       </div>
 
       <div class="modalFoot">
@@ -2162,14 +2183,98 @@ $('smartGoals190Close')?.addEventListener('click',close); $('g190Save')?.addEven
 window.openSmartGoals190=open;
 })();
 </script>
+<div class="modalBg" id="examTrackModalBg" role="dialog" aria-modal="true" aria-labelledby="examTrackTitle">
+  <div class="modal" style="max-width:560px;">
+    <h2 id="examTrackTitle">Which exam are you preparing for?</h2>
+    <p class="hint">This choice is saved to your signed-in tracker account and sets up the right subjects and test series.</p>
+    <div class="settingsActionRow" style="margin-top:18px;">
+      <button class="primary" id="chooseJeeTrack">JEE</button>
+      <button class="primary" id="chooseNeetTrack">NEET</button>
+    </div>
+    <div id="examTrackStatus" class="hint" role="status" style="margin-top:12px;"></div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "2.8.1"; // x-release-please-version
-  var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
+  var APP_VERSION = "3.0.0"; // x-release-please-version
+  var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, examTrack: "jee", authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
+  var EXAM_TRACK_KEY = "exam_track";
+  var JEE_SUBJECTS = ["physics","chemistry","maths"];
+  var NEET_SUBJECTS = ["physics","chemistry","botany","zoology"];
+  var SUBJECT_LABELS = { physics:"Physics", chemistry:"Chemistry", maths:"Maths", botany:"Botany", zoology:"Zoology" };
+  var NEET_SERIES = ["Practice Test (PW Batch)","AITS NEET","NRTS-11 (NEET Real Test Series)","Rank Booster Series"];
+  function isNeet(){ return state.examTrack === "neet"; }
+  function activeSubjects(){ return isNeet() ? NEET_SUBJECTS : JEE_SUBJECTS; }
+  function activeSubjectLabels(){ return activeSubjects().map(function(key){ return SUBJECT_LABELS[key]; }); }
+  function updateExamTrackUI(){
+    var exam = isNeet() ? "NEET" : "JEE";
+    document.title = exam + " Test Tracker v" + APP_VERSION;
+    var title = document.querySelector("header h1");
+    if(title) title.firstChild.textContent = exam + " Command Center ";
+    var eyebrow=document.querySelector(".welcomeEyebrow"); if(eyebrow) eyebrow.lastChild.textContent=" WELCOME TO "+exam+" TEST TRACKER";
+    var lead=document.querySelector(".welcomeLead"); if(lead) lead.textContent="Bring your "+exam+" results, weak areas, and study plan into one calm workspace. Start with one test; useful insights build as you go.";
+    var preview=document.querySelector(".welcomePreviewHead b"); if(preview) preview.textContent="Your "+exam+" overview";
+    var settingsBrand=document.querySelector(".settingsBrandSub"); if(settingsBrand) settingsBrand.textContent=exam+" Command Center";
+    var subjects=document.getElementById("subjectSubNav"); if(subjects){ subjects.innerHTML=activeSubjects().map(function(key,i){return '<button class="subjectbtn'+(i===0?' active':'')+'" data-subject="'+key+'">'+SUBJECT_LABELS[key]+'</button>';}).join(""); state.subjectTab=activeSubjects()[0]; }
+    var mastery=document.getElementById("pmSubject"); if(mastery) mastery.innerHTML=activeSubjectLabels().map(function(x){return '<option>'+x+'</option>';}).join("");
+    ["plSubject","p190Subject"].forEach(function(id){var s=document.getElementById(id); if(s){var extras=id==="plSubject"?['Revision','Test']:['Mixed']; s.innerHTML=activeSubjectLabels().concat(extras).map(function(x){return '<option>'+x+'</option>';}).join("");}});
+    var type=document.getElementById("f_type");
+    if(type){
+      if(isNeet()){
+        if(type.tagName!=="SELECT"){var select=document.createElement("select"); select.id="f_type"; select.required=true; type.replaceWith(select); type=select;}
+        var selected=type.value; type.innerHTML='<option value="">Choose NEET test series</option>'+NEET_SERIES.map(function(x){return '<option>'+x+'</option>';}).join(""); if(NEET_SERIES.indexOf(selected)>=0)type.value=selected;
+      } else if(type.tagName!=="INPUT") {var input=document.createElement("input"); input.id="f_type"; input.placeholder="PW Batch Mains / JRTS Advanced / AITS"; type.replaceWith(input);}
+    }
+    var diff=document.getElementById("f_difficulty"); if(diff){var wrap=diff.closest('.field'); if(wrap)wrap.style.display=isNeet()?"none":"";}
+    var marking=document.getElementById("f_markingScheme"); if(marking) marking.placeholder=isNeet()?"e.g. NEET marking scheme (+4/-1)":"e.g. MCQ +4/-1, Integer +4/0, Numerical +3/-1";
+    var subjectBlocks=document.querySelectorAll("#testForm .sectionBlock");
+    if(subjectBlocks.length>=3){
+      subjectBlocks[2].style.display=isNeet()?"none":"";
+      if(subjectBlocks[3])subjectBlocks[3].style.display=isNeet()?"":"none";
+      if(subjectBlocks[4])subjectBlocks[4].style.display=isNeet()?"":"none";
+      if(subjectBlocks[3])subjectBlocks[3].querySelector("h4").textContent="Biology · Botany";
+      if(subjectBlocks[4])subjectBlocks[4].querySelector("h4").textContent="Biology · Zoology";
+    }
+    var testName=document.getElementById("f_name"); if(testName && !testName.value) testName.placeholder=isNeet()?"e.g. AITS NEET 04":"Full Syllabus Test 5";
+    var tierCanvas=document.getElementById("tierChart"),tierEmpty=document.getElementById("tierEmpty"); if(tierCanvas){tierCanvas.style.display=isNeet()?"none":"";var tierCard=tierCanvas.closest(".card");if(tierCard)tierCard.style.display=isNeet()?"none":"";} if(tierEmpty)tierEmpty.style.display=isNeet()?"none":"";
+    var trajectoryContent=document.getElementById("trajectoryContent"),trajectoryTitle=trajectoryContent&&trajectoryContent.parentElement.querySelector(".sectionTitle"),trajectoryHint=trajectoryContent&&trajectoryContent.parentElement.querySelector(".hint"); if(trajectoryTitle)trajectoryTitle.textContent=exam+" percentile trajectory";
+    if(trajectoryHint)trajectoryHint.textContent=isNeet()?"Track your recorded NEET percentiles over time. This trend is descriptive, not a prediction of an exam result.":"A simple historical trend projection toward your JEE Main target date. It is a trend estimate, not a prediction of an exam result.";
+    var goalHint=document.querySelector("#goalsModalBg .hint"); if(goalHint)goalHint.textContent=isNeet()?"Set a percentile target for NEET. There is one NEET exam track.":"JEE runs on percentile, not raw marks — these targets show up on the dashboard and as a dashed line on the trend chart.";
+    ["g_mainDate","g_advDate"].forEach(function(id){var el=document.getElementById(id); if(el&&el.closest(".field"))el.closest(".field").style.display=isNeet()?"none":"";});
+    var goalLabels=document.querySelectorAll("#goalsModalBg .field label"); goalLabels.forEach(function(el){if(/JEE Main date/i.test(el.textContent))el.textContent=isNeet()?"NEET target date":"JEE Main date";if(/JEE Advanced date/i.test(el.textContent))el.closest(".field").style.display=isNeet()?"none":"";});
+    var mistakes=document.getElementById("f_mistakes"); if(mistakes)mistakes.placeholder=isNeet()?"Physics: sign error in mechanics question\nBotany: mixed up plant families\nZoology: forgot a physiology concept":"Physics: sign error in NLM question\nMaths: forgot identity for sin3x\nChemistry: mixed up SN1/SN2 conditions";
+    var imageHelp=document.getElementById("mistakeImageHelp"); if(imageHelp)imageHelp.textContent=isNeet()?"Use filenames like q12_physics.jpg, q27_botany.png, or q34_zoology.jpg when possible. You can store images and analyze them later from test details.":"Use filenames like q12_physics.jpg or q27_maths.png when possible. Leave analysis unchecked to store images and analyze them later from test details.";
+    var planTitle=document.querySelector('[data-panel="schedule"] .sectionTitle span'); if(planTitle)planTitle.textContent="Saved "+exam+" study plan";
+    var paste=document.getElementById("pasteArea"); if(paste)paste.placeholder=isNeet()?[
+      "Test: NEET Full Syllabus Test 5","Date: 2026-09-21","Type: AITS NEET","Marking Scheme: +4/-1","Total Marks: 720","Marks Obtained: 587","Total Questions: 180","Correct: 151","Incorrect: 29","Unattempted: 0","India Rank: 3421","Total Candidates: 45000","Total Time: 175","Total Time Allotted: 180","Physics Correct: 38","Physics Incorrect: 7","Chemistry Correct: 37","Chemistry Incorrect: 8","Botany Correct: 39","Botany Incorrect: 6","Zoology Correct: 37","Zoology Incorrect: 8","Mistakes: Botany: mixed up plant families"
+    ].join("\n"):paste.placeholder;
+    var stageText=document.querySelector('[data-settings-content="advanced"] .stageRoadmap'); if(stageText){stageText.querySelectorAll("small, b").forEach(function(el){el.textContent=el.textContent.replace(/\b(JEE|NEET)\b/g,exam);});}
+    state.renderSignature=null; state.renderedPanels={};
+  }
+  async function ensureExamTrack(user){
+    var saved=user&&user.user_metadata&&user.user_metadata[EXAM_TRACK_KEY];
+    if(saved==="jee"||saved==="neet"){state.examTrack=saved;updateExamTrackUI();return;}
+    var bg=document.getElementById("examTrackModalBg"),status=document.getElementById("examTrackStatus");
+    bg.classList.add("open");
+    await new Promise(function(resolve){
+      var busy=false;
+      async function choose(track){
+        if(busy)return;busy=true;status.textContent="Saving your choice to your account…";
+        document.getElementById("chooseJeeTrack").disabled=true;document.getElementById("chooseNeetTrack").disabled=true;
+        try{
+          var result=await sb.auth.updateUser({data:{[EXAM_TRACK_KEY]:track}});
+          if(result.error)throw result.error;
+          state.user=result.data.user||user;state.examTrack=track;updateExamTrackUI();bg.classList.remove("open");resolve();
+        }catch(e){busy=false;status.textContent="Could not save your choice: "+(e.message||"please try again.");document.getElementById("chooseJeeTrack").disabled=false;document.getElementById("chooseNeetTrack").disabled=false;}
+      }
+      document.getElementById("chooseJeeTrack").onclick=function(){choose("jee");};
+      document.getElementById("chooseNeetTrack").onclick=function(){choose("neet");};
+    });
+  }
   window.state = state;
   var LS_KEY = "jee_test_tracker_v1";
   var NOTIFICATIONS_KEY_BASE = "jee_tracker_notifications_v2_";
@@ -2478,7 +2583,7 @@ window.openSmartGoals190=open;
 
   function isLikelyTestEvent(ev){
     var text=((ev && ev.summary)||"").toLowerCase();
-    return /\b(test|mock|aits|jrts|jee|mains|advanced|major|minor|exam|paper|dpp|full\s*syllabus)\b/i.test(text);
+    return /\b(test|mock|aits|jrts|jee|neet|mains|advanced|major|minor|exam|paper|dpp|practice|rank\s*booster|full\s*syllabus)\b/i.test(text);
   }
 
   function renderPreTestBriefing(tests){
@@ -2499,7 +2604,7 @@ window.openSmartGoals190=open;
     var nextTest=futureEvents[0];
     // Brief against the next scheduled test, including any other test events on that day.
     if(!nextTest){
-      content.innerHTML='<div style="font-size:12px;color:var(--text-dim);">Add your next JEE test to a connected Google Calendar. The briefing will use it with your recent test results and saved mistakes.</div>';
+      content.innerHTML='<div style="font-size:12px;color:var(--text-dim);">Add your next '+(isNeet()?"NEET":"JEE")+' test to a connected Google Calendar. The briefing will use it with your recent test results and saved mistakes.</div>';
       meta.textContent="Waiting for next test";
       card.style.display="block";
       return;
@@ -2508,8 +2613,8 @@ window.openSmartGoals190=open;
     var testEvents=futureEvents.filter(function(ev){return isoLocalDate(eventDateForDay(ev))===nextTestDay;});
 
     var recent=tests.slice(-5);
-    var subjects=["physics","chemistry","maths"];
-    var labels={physics:"Physics",chemistry:"Chemistry",maths:"Maths"};
+    var subjects=activeSubjects();
+    var labels=SUBJECT_LABELS;
     var metrics={};
     subjects.forEach(function(sub){
       var acc=[], skip=[];
@@ -2549,7 +2654,7 @@ window.openSmartGoals190=open;
     var multiPaper=testEvents.length>=2;
 
     // Suggested section budget is derived from the user's recent section-time shares.
-    var timeSums={physics:0,chemistry:0,maths:0}, timeN={physics:0,chemistry:0,maths:0};
+    var timeSums={}, timeN={}; subjects.forEach(function(s){timeSums[s]=0;timeN[s]=0;});
     recent.forEach(function(t){
       subjects.forEach(function(sub){
         var v=t.sections && t.sections[sub] ? num(t.sections[sub].time) : 0;
@@ -2567,7 +2672,7 @@ window.openSmartGoals190=open;
     var budgetBase=latestWithBudget ? num(latestWithBudget.totalTimeAllotted) : 0;
 
     var nextDateLabel=new Date(nextTestDay+"T00:00:00").toLocaleDateString([], {weekday:"long",month:"short",day:"numeric"});
-    var html='<div style="margin-bottom:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--accent-soft);"><span style="font-size:11px;color:var(--text-dim);">NEXT TEST · '+escapeHtml(nextDateLabel)+'</span><div style="font-weight:700;margin-top:3px;">'+escapeHtml(nextTest.summary||"JEE test")+'</div></div>';
+    var html='<div style="margin-bottom:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--accent-soft);"><span style="font-size:11px;color:var(--text-dim);">NEXT TEST · '+escapeHtml(nextDateLabel)+'</span><div style="font-weight:700;margin-top:3px;">'+escapeHtml(nextTest.summary||((isNeet()?"NEET":"JEE")+" test"))+'</div></div>';
     html+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;">';
     if(weak){
       html+='<div style="padding:11px;border:1px solid var(--border);border-radius:10px;background:var(--accent-soft);"><div style="font-size:11px;color:var(--text-dim);">Watch closely</div><b>'+labels[weak]+'</b><div style="font-size:12px;margin-top:4px;">Recent accuracy average: '+metrics[weak].accuracy.toFixed(1)+'%</div></div>';
@@ -2594,14 +2699,20 @@ window.openSmartGoals190=open;
     var focusedSubjects=[];
     if(/\bphysics\b/.test(eventText)) focusedSubjects.push("physics");
     if(/\bchem(?:istry)?\b/.test(eventText)) focusedSubjects.push("chemistry");
-    if(/\bmaths?\b/.test(eventText)) focusedSubjects.push("maths");
+    if(/\bmaths?\b/.test(eventText)&&!isNeet()) focusedSubjects.push("maths");
+    if(/\bbotany\b/.test(eventText)&&isNeet()) focusedSubjects.push("botany");
+    if(/\bzoology\b/.test(eventText)&&isNeet()) focusedSubjects.push("zoology");
+    if(/\bbiology\b/.test(eventText)&&isNeet()) focusedSubjects.push("botany","zoology");
     var previousMistakes=mistakeTextRows(recent).filter(function(row){
       if(!focusedSubjects.length) return true;
       var text=(String(row.raw||"")+" "+String(row.text||"")).toLowerCase();
       var tagged=[];
       if(/\bphysics\b/.test(text)) tagged.push("physics");
       if(/\bchem(?:istry)?\b/.test(text)) tagged.push("chemistry");
-      if(/\bmaths?\b/.test(text)) tagged.push("maths");
+      if(/\bmaths?\b/.test(text)&&!isNeet()) tagged.push("maths");
+      if(/\bbotany\b/.test(text)&&isNeet()) tagged.push("botany");
+      if(/\bzoology\b/.test(text)&&isNeet()) tagged.push("zoology");
+      if(/\bbiology\b/.test(text)&&isNeet()) tagged.push("botany","zoology");
       return !tagged.length || tagged.some(function(s){return focusedSubjects.indexOf(s)>=0;});
     }).sort(function(a,b){return String(b.date||"").localeCompare(String(a.date||""));}).slice(0,6);
     html+='<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">Relevant previous mistakes</div>';
@@ -2635,7 +2746,7 @@ window.openSmartGoals190=open;
         '<span class="pill '+pillClass+'">'+gapText+'</span>' +
         '</div>';
     }
-    el.innerHTML = row("JEE Main", goals.mainDate) + row("JEE Advanced", goals.advDate) +
+    el.innerHTML = (isNeet()?'<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:6px;"><div><b>NEET</b><div style="font-size:12px;color:var(--text-dim)">Target '+goals.targetPercentile+' percentile</div></div><span class="pill">'+(best===null?"No percentile logged yet":(best>=goals.targetPercentile?"Target met":"Best "+best.toFixed(2)))+'</span></div>':row("JEE Main", goals.mainDate) + row("JEE Advanced", goals.advDate)) +
       '<div style="font-size:12px;color:var(--text-dim);margin-top:8px;">Best percentile logged: '+(best!==null?best.toFixed(2):"—")+' &nbsp;·&nbsp; Most recent: '+(recent!==null?recent.toFixed(2):"—")+'</div>';
   }
   var SERIES_COLORS = ["#b45309","#16794f","#2563eb","#7c5cbf","#be185d","#0d9488","#a3690a","#475569"];
@@ -2860,7 +2971,7 @@ window.openSmartGoals190=open;
 
   async function signOut(){
     if (sb) await sb.auth.signOut();
-    state.user = null; state.cloud = false; loadNotifications(); state.tests = loadLocal().map(normalizeTest);
+    state.user = null; state.cloud = false; state.examTrack="jee"; updateExamTrackUI(); loadNotifications(); state.tests = loadLocal().map(normalizeTest);
     if (state.realtime) { try { await sb.removeChannel(state.realtime); } catch(e){} state.realtime = null; }
     setAccountButton(); render(); toast("Signed out");
   }
@@ -2897,6 +3008,8 @@ window.openSmartGoals190=open;
 
   async function onSignedIn(user){
     state.user = user; state.cloud = true; state.renderedPanels.schedule = false; loadNotifications(); ensureVersionNotification(); setAccountButton();
+    var savedTrack=user&&user.user_metadata&&user.user_metadata[EXAM_TRACK_KEY];
+    if(savedTrack==="jee"||savedTrack==="neet"){state.examTrack=savedTrack;updateExamTrackUI();}
     try {
       // Do not automatically upload browser-local tests when a user signs in.
       // localStorage is shared by accounts on the same browser/origin, so an
@@ -2911,6 +3024,7 @@ window.openSmartGoals190=open;
       applyRemoteConfig();
       if (state.isAdmin) fillAdminForm();
       subscribeRealtime();
+      await ensureExamTrack(state.user);
       state.ready = true; render(); refreshAIInsights();
       startRemoteConfigRefresh();
       // Calendar restoration is deliberately detached from the initial app boot.
@@ -2941,7 +3055,7 @@ window.openSmartGoals190=open;
       sb.auth.onAuthStateChange(function(event, session){
         setTimeout(async function(){
           if (session && session.user) await onSignedIn(session.user);
-          else { state.user = null; state.cloud = false; state.renderedPanels.schedule = false; loadNotifications(); setAccountButton(); state.tests = loadLocal().map(normalizeTest); render(); }
+          else { state.user = null; state.cloud = false; state.examTrack="jee"; updateExamTrackUI(); state.renderedPanels.schedule = false; loadNotifications(); setAccountButton(); state.tests = loadLocal().map(normalizeTest); render(); }
         }, 0);
       });
     } catch(e) { state.ready = true; setAccountButton(); render(); }
@@ -2954,7 +3068,7 @@ window.openSmartGoals190=open;
     t.incorrect = num(t.incorrect);
     t.unattempted = num(t.unattempted);
     t.sections = t.sections && t.sections.physics ? t.sections : emptySections();
-    ["physics","chemistry","maths"].forEach(function(s){
+    ["physics","chemistry","maths","botany","zoology"].forEach(function(s){
       var sec = t.sections[s] || {};
       t.sections[s] = { correct:num(sec.correct), incorrect:num(sec.incorrect), unattempted:num(sec.unattempted), time:num(sec.time), percentile: (typeof sec.percentile === "number" ? sec.percentile : (sec.percentile ? num(sec.percentile) : null)) };
     });
@@ -2989,7 +3103,7 @@ window.openSmartGoals190=open;
   // ---------- rendering ----------
   var scoreChartInst = null, accChartInst = null, detailSectionChartInst = null, detailTimeChartInst = null;
   var subjectTrendChartInst = null, subjectAttemptChartInst = null, subjectTimeChartInst = null;
-  var SUBJECT_LABELS = { physics: "Physics", chemistry: "Chemistry", maths: "Maths" };
+  SUBJECT_LABELS.maths = "Mathematics";
 
   function sortedTests(){
     return state.tests.slice().sort(function(a,b){ return new Date(a.date) - new Date(b.date); });
@@ -3597,7 +3711,7 @@ window.openSmartGoals190=open;
   }
 
   function sectionAverages(tests){
-    var secs = ["physics","chemistry","maths"];
+    var secs = activeSubjects();
     var out = {};
     secs.forEach(function(s){
       var withData = tests.filter(function(t){ return t.sections && t.sections[s] && ((t.sections[s].correct||0)+(t.sections[s].incorrect||0) > 0); });
@@ -3621,8 +3735,8 @@ window.openSmartGoals190=open;
   function renderAccChart(tests){
     var ctx = document.getElementById("accChart").getContext("2d");
     var avgs = sectionAverages(tests);
-    var labels = ["Physics","Chemistry","Maths"];
-    var keys = ["physics","chemistry","maths"];
+    var labels = activeSubjectLabels();
+    var keys = activeSubjects();
     var data = keys.map(function(k){ return avgs[k] ? +avgs[k].accuracy.toFixed(2) : 0; });
     if (accChartInst) accChartInst.destroy();
     if (!tests.length){ return; }
@@ -3746,6 +3860,7 @@ window.openSmartGoals190=open;
 
   var tierChartInst = null;
   function renderTierChart(tests){
+    if(isNeet()){var hiddenCanvas=document.getElementById("tierChart"),hiddenEmpty=document.getElementById("tierEmpty");if(hiddenCanvas)hiddenCanvas.style.display="none";if(hiddenEmpty)hiddenEmpty.style.display="none";return;}
     var tiered = tests.filter(function(t){ return t.difficulty; });
     var canvas = document.getElementById("tierChart"), empty = document.getElementById("tierEmpty");
     if (tiered.length < 1){
@@ -3839,12 +3954,12 @@ window.openSmartGoals190=open;
   }
 
   function renderTimeTable(tests){
-    var withTime = tests.filter(function(t){ return t.sections && (t.sections.physics.time||t.sections.chemistry.time||t.sections.maths.time); });
+    var withTime = tests.filter(function(t){ return t.sections && activeSubjects().some(function(s){return t.sections[s]&&t.sections[s].time;}); });
     var tbl = document.getElementById("timeTable"), empty = document.getElementById("timeEmpty");
     if (!withTime.length){ tbl.innerHTML = ""; empty.style.display = "block"; return; }
     empty.style.display = "none";
     var avgs = sectionAverages(withTime);
-    var secs = [["physics","Physics"],["chemistry","Chemistry"],["maths","Maths"]];
+    var secs = activeSubjects().map(function(s){return [s,SUBJECT_LABELS[s]];});
     var rows = secs.map(function(pair){
       var a = avgs[pair[0]];
       if (!a) return "";
@@ -3875,7 +3990,7 @@ window.openSmartGoals190=open;
     var out=[];
     tests.forEach(function(t){
       (t.mistakes||[]).forEach(function(m){
-        var text=String(m||'').replace(/^\s*(physics|chemistry|maths|math)\s*:\s*/i,'').trim();
+        var text=String(m||'').replace(/^\s*(physics|chemistry|maths|math|botany|zoology|biology)\s*:\s*/i,'').trim();
         if(text) out.push({test:t,date:t.date,text:text,raw:String(m||''),source:'manual'});
       });
       aiMistakeRowsForTest(t).forEach(function(text){
@@ -3888,14 +4003,21 @@ window.openSmartGoals190=open;
     return text.toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\b(the|a|an|in|on|of|to|and|for|with|this|that|question|q)\b/g,' ').replace(/\s+/g,' ').trim();
   }
   function inferMistakeSubject(raw){
-    var m=String(raw||'').match(/^\s*(physics|phy|chemistry|chem|maths|math)\s*[:—-]/i);
+    var m=String(raw||'').match(/^\s*(physics|phy|chemistry|chem|maths|math|botany|zoology|biology)\s*[:—-]/i);
     if(!m) return null;
-    return /^phy/i.test(m[1])?'physics':(/^chem/i.test(m[1])?'chemistry':'maths');
+    if(/^phy/i.test(m[1]))return 'physics';
+    if(/^chem/i.test(m[1]))return 'chemistry';
+    if(/^bot/i.test(m[1]))return 'botany';
+    if(/^zoo/i.test(m[1]))return 'zoology';
+    if(/^bio/i.test(m[1]))return /human|animal|physiology|digestion|breathing|circulation|excretion|neural|endocrine|reproduction|immunity|disease/i.test(raw)?'zoology':'botany';
+    return 'maths';
   }
   function inferredChapterTags(test){
     var rules=[
       ['physics','Kinematics',/kinematic|projectile|relative motion|motion graph/],['physics','Laws of Motion',/newton|\bnlm\b|friction|free body/],['physics','Work, Energy & Power',/work energy|potential energy|kinetic energy|power/],['physics','Electrostatics',/electrostatic|coulomb|electric field|potential difference/],['physics','Current Electricity',/current electricity|kirchhoff|resistance|electric circuit/],['physics','Optics',/ray optic|lens|mirror|interference|diffraction/],['physics','Modern Physics',/photoelectric|radioactiv|nuclear|bohr|de broglie/],
       ['chemistry','Mole Concept',/mole concept|molarity|stoichiometr|limiting reagent/],['chemistry','Chemical Bonding',/chemical bond|hybridization|vsepr|molecular orbital/],['chemistry','Equilibrium',/equilibrium|le chatelier|buffer|ionic product/],['chemistry','Thermodynamics',/thermodynamic|enthalpy|entropy|gibbs/],['chemistry','Organic Reactions',/sn1|sn2|e1|e2|substitution|elimination|oxidation|reduction/],['chemistry','Coordination Compounds',/coordination compound|ligand|crystal field|isomerism/],
+      ['botany','Plant Diversity',/plant|botany|algae|bryophyte|pteridophyte|gymnosperm|angiosperm/],['botany','Plant Physiology',/photosynthesis|respiration in plants|plant hormone|transpiration|mineral nutrition/],['botany','Ecology',/ecosystem|biodiversity|environment|ecology|population/],['botany','Genetics & Evolution',/genetics|inheritance|mendel|evolution|dna|rna/],['botany','Cell Biology',/cell|organelle|mitosis|meiosis/],
+      ['zoology','Human Physiology',/human physiolog|digestion|breathing|circulation|excretion|neural|endocrine/],['zoology','Animal Kingdom',/animal kingdom|porifera|cnidaria|annelida|arthropoda|chordata/],['zoology','Reproduction',/reproduction|gametogenesis|menstrual|fertilization/],['zoology','Genetics & Evolution',/genetics|inheritance|mendel|evolution|dna|rna/],['zoology','Health & Disease',/immunity|disease|pathogen|health/],
       ['maths','Calculus',/calculus|integrat|differentiat|limit|continuity|derivative/],['maths','Coordinate Geometry',/coordinate geometry|straight line|circle|parabola|ellipse|hyperbola/],['maths','Vectors & 3D',/vector|three dimensional|\b3d\b|direction cosine/],['maths','Matrices & Determinants',/matrix|matri|determinant/],['maths','Probability & Statistics',/probability|permutation|combination|statistics/]
     ];
     var found={};
@@ -3905,7 +4027,7 @@ window.openSmartGoals190=open;
   }
   function renderBroaderPatterns(tests){
     var el=document.getElementById('subjectPatternContent');if(!el)return;
-    var sorted=tests.slice().sort(function(a,b){return new Date(a.date)-new Date(b.date);}),keys=['physics','chemistry','maths'];
+    var sorted=tests.slice().sort(function(a,b){return new Date(a.date)-new Date(b.date);}),keys=activeSubjects();
     var rows=keys.map(function(key){
       var usable=sorted.filter(function(t){var s=t.sections&&t.sections[key];return s&&((s.correct||0)+(s.incorrect||0)>0);});
       if(!usable.length)return '';
@@ -3972,7 +4094,8 @@ window.openSmartGoals190=open;
     var trend=slope>=0?'+'+slope.toFixed(3):slope.toFixed(3);
     var comparison=priorAvg===null?'Add more tests to compare your latest three-test average with earlier results.':(recentAvg>=priorAvg?'Your recent three-test average is up ':'Your recent three-test average is down ')+Math.abs(recentAvg-priorAvg).toFixed(2)+' percentile points versus the previous group.';
     var svg='<div class="trajectoryChartWrap"><svg class="trajectoryChart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Percentile history across '+pts.length+' tests">'+grid+'<path d="'+path+'" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'+dots+'<text x="'+L+'" y="'+(H-7)+'">'+escapeHtml(pts[0].date)+'</text><text x="'+(W-R)+'" y="'+(H-7)+'" text-anchor="end">'+escapeHtml(pts[pts.length-1].date)+'</text></svg></div>';
-    el.innerHTML=metrics+svg+'<div class="trajectorySummary"><span>↗</span><span>'+escapeHtml(comparison)+' <strong>Trend estimate for '+escapeHtml(goal.mainDate)+': '+projected.toFixed(2)+'</strong> ('+trend+' points/day).</span></div><div class="trajectoryDisclaimer">The estimate extends a straight line from your recorded results; percentile can move unpredictably between tests. Treat it as a direction indicator, not an exam prediction.</div>';
+    var trajectoryNote=isNeet()?'<div class="trajectorySummary"><span>↗</span><span>'+escapeHtml(comparison)+'</span></div><div class="trajectoryDisclaimer">Percentile history summarizes past tests; it does not predict a NEET result.</div>':'<div class="trajectorySummary"><span>↗</span><span>'+escapeHtml(comparison)+' <strong>Trend estimate for '+escapeHtml(goal.mainDate)+': '+projected.toFixed(2)+'</strong> ('+trend+' points/day).</span></div><div class="trajectoryDisclaimer">The estimate extends a straight line from your recorded results; percentile can move unpredictably between tests. Treat it as a direction indicator, not an exam prediction.</div>';
+    el.innerHTML=metrics+svg+trajectoryNote;
   }
 
   function autoTagsForTest(t){
@@ -4076,9 +4199,9 @@ window.openSmartGoals190=open;
     setAdaptiveScheduleStatus(state.gcalAccessToken?'Checking available Calendar times and building your plan…':'Building a tracker plan. Connect Google Calendar to avoid busy times automatically.');
     var dates=[];for(var day=new Date(start);day<end&&dates.length<7;day.setDate(day.getDate()+1))dates.push(new Date(day));
     if(!dates.length)throw new Error('Your next calendar test is too close for a useful new plan. Review the existing plan and refresh after the test.');
-    var latest=tests[tests.length-1],items=[];dates.forEach(function(day,index){var block=blocks[index%blocks.length],time=state.gcalAccessToken?adaptiveCalendarSlot(day,block.minutes,busyEvents):'18:00';if(!time)return;items.push({scheduled_date:isoLocalDate(day),start_time:time,duration_minutes:block.minutes,subject:block.subject,topic:block.topic,activity:'Review '+block.topic+' and solve a focused set of timed JEE questions. Recheck mistakes before ending the session.',source_test_id:latest?latest.id:null});});
+    var examLabel=isNeet()?'NEET':'JEE',latest=tests[tests.length-1],items=[];dates.forEach(function(day,index){var block=blocks[index%blocks.length],time=state.gcalAccessToken?adaptiveCalendarSlot(day,block.minutes,busyEvents):'18:00';if(!time)return;items.push({scheduled_date:isoLocalDate(day),start_time:time,duration_minutes:block.minutes,subject:block.subject,topic:block.topic,activity:'Review '+block.topic+' and solve focused '+examLabel+' questions. Recheck mistakes before ending the session.',source_test_id:latest?latest.id:null});});
     if(!items.length)throw new Error('Your calendar is full during the suggested evening study window for the next 7 days. Clear time or disconnect Calendar to create a general tracker plan.');
-    var todayLabel=isoLocalDate(today),pSchedule={title:'Adaptive JEE plan · '+todayLabel,start_date:items[0].scheduled_date,target_date:items[items.length-1].scheduled_date,constraints:{source:'tracker_auto_adaptive_v1',trigger:trigger==='automatic'?'automatic':'manual',generated_from_test_id:latest?latest.id:null,horizon_days:items.length,upcoming_test_date:upcoming?isoLocalDate(upcoming.date):null,calendar_busy_times_checked:!!state.gcalAccessToken},rationale:'Generated from recent subject accuracy, section time use, repeated mistake notes, inferred chapter tags, available calendar times, and the next linked calendar test date.'};
+    var todayLabel=isoLocalDate(today),pSchedule={title:'Adaptive '+examLabel+' plan · '+todayLabel,start_date:items[0].scheduled_date,target_date:items[items.length-1].scheduled_date,constraints:{source:'tracker_auto_adaptive_v1',trigger:trigger==='automatic'?'automatic':'manual',generated_from_test_id:latest?latest.id:null,horizon_days:items.length,upcoming_test_date:upcoming?isoLocalDate(upcoming.date):null,calendar_busy_times_checked:!!state.gcalAccessToken},rationale:'Generated from recent subject accuracy, section time use, repeated mistake notes, inferred chapter tags, available calendar times, and the next linked calendar test date.'};
     setAdaptiveScheduleStatus(trigger==='automatic'?'Updating your private adaptive plan…':'Building your private adaptive plan…');
     var saved=await sb.rpc('create_tracker_schedule',{p_schedule:pSchedule,p_items:items});
     if(saved.error)throw saved.error;
@@ -4096,7 +4219,7 @@ window.openSmartGoals190=open;
     var base=new Date(); base.setHours(18,0,0,0); var made=0;
     for(var i=0;i<blocks.length;i++){
       var start=new Date(base); start.setDate(start.getDate()+i+1); start.setHours(18,0,0,0); var end=new Date(start); end.setMinutes(end.getMinutes()+blocks[i].minutes);
-      var body={summary:'JEE revision · '+blocks[i].subject,description:'Focus: '+blocks[i].topic+'. Auto-generated by JEE Test Tracker from recent test performance.',start:{dateTime:start.toISOString()},end:{dateTime:end.toISOString()}};
+      var body={summary:(isNeet()?'NEET':'JEE')+' revision · '+blocks[i].subject,description:'Focus: '+blocks[i].topic+'. Auto-generated by the tracker from recent test performance.',start:{dateTime:start.toISOString()},end:{dateTime:end.toISOString()}};
       await gcalFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',false,{method:'POST',body:JSON.stringify(body),headers:{'Content-Type':'application/json'}}); made++;
     }
     return made;
@@ -4113,7 +4236,7 @@ window.openSmartGoals190=open;
     var el = document.getElementById("planText");
     if (tests.length < 1){ el.innerHTML = '<span style="color:var(--text-dim)">Log at least one test to get a plan.</span>'; return; }
     var avgs = sectionAverages(tests);
-    var secs = [["physics","Physics"],["chemistry","Chemistry"],["maths","Maths"]];
+    var secs = activeSubjects().map(function(s){return [s,SUBJECT_LABELS[s]];});
     var withData = secs.filter(function(p){ return avgs[p[0]]; });
     if (!withData.length){
       el.innerHTML = "Log section-wise correct/incorrect and time for a couple of tests, and I'll suggest a time budget and focus areas here.";
@@ -4187,7 +4310,7 @@ window.openSmartGoals190=open;
 
       var base = safeName.toLowerCase();
       var q = (base.match(/(?:q|question)[-_ ]?(\d+)/i) || [])[1] || String(i+1);
-      var subject = /physics|phy/i.test(base) ? "Physics" : (/chem/i.test(base) ? "Chemistry" : (/math/i.test(base) ? "Maths" : ""));
+      var subject = /physics|phy/i.test(base) ? "Physics" : (/chem/i.test(base) ? "Chemistry" : (/botany/i.test(base) ? "Botany" : (/zoology/i.test(base) ? "Zoology" : (/math/i.test(base) ? "Mathematics" : ""))));
       var row = { id:mistakeId, user_id:state.user.id, test_id:testId, question_number:q, subject:subject, image_path:path };
       var ins = await withTimeout(
         sb.from("tracker_mistakes").insert(row),
@@ -4209,7 +4332,7 @@ window.openSmartGoals190=open;
     var res = await fetch(SUPABASE_URL + "/functions/v1/analyze-test", {
       method:"POST",
       headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+token, "apikey":SUPABASE_PUBLISHABLE_KEY },
-      body:JSON.stringify({test_id:testId})
+      body:JSON.stringify({test_id:testId,exam_track:state.examTrack})
     });
     var data = await res.json().catch(function(){return {};});
     if (!res.ok) throw new Error(data.error || "AI analysis failed");
@@ -4278,7 +4401,7 @@ window.openSmartGoals190=open;
   function renderMistakes(tests){
     var list = document.getElementById("mistakeList"), empty = document.getElementById("mistakeEmpty");
     var groups = [], byTest = {};
-    var secCounts = { Physics:0, Chemistry:0, Maths:0, Other:0 };
+    var secCounts = { Physics:0, Chemistry:0, Mathematics:0, Botany:0, Zoology:0, Other:0 };
     function addRow(t,text,source){
       var clean=String(text||'').trim(); if(!clean) return;
       var key=String(t.id||((t.date||'')+'::'+(t.name||'Test')));
@@ -4287,7 +4410,9 @@ window.openSmartGoals190=open;
       var lower=clean.toLowerCase();
       if (lower.indexOf("physics") === 0) secCounts.Physics++;
       else if (lower.indexOf("chemistry") === 0) secCounts.Chemistry++;
-      else if (lower.indexOf("maths") === 0 || lower.indexOf("math") === 0) secCounts.Maths++;
+      else if (lower.indexOf("maths") === 0 || lower.indexOf("math") === 0) secCounts.Mathematics++;
+      else if (lower.indexOf("botany") === 0) secCounts.Botany++;
+      else if (lower.indexOf("zoology") === 0) secCounts.Zoology++;
       else secCounts.Other++;
     }
     tests.slice().reverse().forEach(function(t){
@@ -4297,7 +4422,7 @@ window.openSmartGoals190=open;
     if (!groups.length){ list.innerHTML = ""; empty.style.display = "block"; return; }
     empty.style.display = "none";
     var total=groups.reduce(function(n,g){return n+g.rows.length;},0);
-    var breakdown = '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">'+total+' mistakes across '+groups.length+' tests · By section: Physics '+secCounts.Physics+' · Chemistry '+secCounts.Chemistry+' · Maths '+secCounts.Maths+(secCounts.Other?(' · Other '+secCounts.Other):'')+' · Open a test to view its mistakes.</div>';
+    var breakdown = '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">'+total+' mistakes across '+groups.length+' tests · By section: '+activeSubjectLabels().map(function(label){return label+' '+secCounts[label];}).join(' · ')+(secCounts.Other?(' · Other '+secCounts.Other):'')+' · Open a test to view its mistakes.</div>';
     list.innerHTML = breakdown + groups.map(function(g){
       var aiCount=g.rows.filter(function(r){return r.source==='ai';}).length;
       var label=g.rows.length+' mistake'+(g.rows.length===1?'':'s')+(aiCount?' · '+aiCount+' AI':'');
@@ -4368,7 +4493,7 @@ window.openSmartGoals190=open;
     var rows = historyOrderedTests().map(function(t, idx, arr){
       var typeLabel = (t.type||"").trim();
       var pill = typeLabel ? '<span class="pill" style="background:'+colorForSeries(typeLabel)+'22;color:'+colorForSeries(typeLabel)+'" title="'+(t.markingScheme?("Marking: "+t.markingScheme):"")+'">'+typeLabel+"</span>" : "—";
-      var tierBadge = t.difficulty ? ' <span class="pill" style="background:var(--accent-soft);color:var(--accent)">T'+t.difficulty+'</span>' : "";
+      var tierBadge = !isNeet()&&t.difficulty ? ' <span class="pill" style="background:var(--accent-soft);color:var(--accent)">T'+t.difficulty+'</span>' : "";
       var tagPills = (t.tags||[]).map(function(tag){ return '<span class="pill" style="background:#7c5cbf22;color:#7c5cbf;margin-right:3px;">'+tag+'</span>'; }).join("");
       var flags = divergenceFlag(t) + (tagPills ? " " + tagPills : "");
       var up = idx > 0 ? '<button class="small ghost" title="Move up" onclick="TT.up(\''+t.id+'\')">↑</button>' : '';
@@ -4392,7 +4517,7 @@ window.openSmartGoals190=open;
 
   // ---------- form handling ----------
   function emptySections(){
-    return { physics:{correct:0,incorrect:0,unattempted:0,time:0}, chemistry:{correct:0,incorrect:0,unattempted:0,time:0}, maths:{correct:0,incorrect:0,unattempted:0,time:0} };
+    return { physics:{correct:0,incorrect:0,unattempted:0,time:0}, chemistry:{correct:0,incorrect:0,unattempted:0,time:0}, maths:{correct:0,incorrect:0,unattempted:0,time:0}, botany:{correct:0,incorrect:0,unattempted:0,time:0}, zoology:{correct:0,incorrect:0,unattempted:0,time:0} };
   }
 
   function openModal(test){
@@ -4420,8 +4545,9 @@ window.openSmartGoals190=open;
     f("f_totalTime").value = test ? (test.totalTime||"") : "";
     f("f_totalTimeAllotted").value = test ? (test.totalTimeAllotted||"") : "";
     var secs = test && test.sections ? test.sections : emptySections();
-    ["physics","chemistry","maths"].forEach(function(s, i){
-      var prefix = ["p","c","m"][i];
+    [["physics","p"],["chemistry","c"],["maths","m"],["botany","b"],["zoology","z"]].forEach(function(item){
+      var s=item[0], prefix=item[1];
+      if(!f(prefix+"_correct")) return;
       f(prefix+"_correct").value = secs[s].correct || "";
       f(prefix+"_incorrect").value = secs[s].incorrect || "";
       f(prefix+"_unattempted").value = secs[s].unattempted || "";
@@ -4505,8 +4631,9 @@ window.openSmartGoals190=open;
       ["Accuracy", fmt(a.accuracy,"%"), fmt(b.accuracy,"%"), deltaCell(a.accuracy,b.accuracy)],
       ["India rank", a.rank?"#"+a.rank:"—", b.rank?"#"+b.rank:"—", deltaCell(a.rank,b.rank,true)]
     ];
-    ["physics","chemistry","maths"].forEach(function(s){
+    activeSubjects().forEach(function(s){
       var label = s.charAt(0).toUpperCase()+s.slice(1);
+      label=SUBJECT_LABELS[s];
       var aAcc = (a.sections[s].correct+a.sections[s].incorrect) ? pct(a.sections[s].correct, a.sections[s].correct+a.sections[s].incorrect) : null;
       var bAcc = (b.sections[s].correct+b.sections[s].incorrect) ? pct(b.sections[s].correct, b.sections[s].correct+b.sections[s].incorrect) : null;
       rows.push([label+" accuracy", fmt(aAcc,"%"), fmt(bAcc,"%"), deltaCell(aAcc,bAcc)]);
@@ -4523,6 +4650,11 @@ window.openSmartGoals190=open;
     document.getElementById("f_manualAccuracy").disabled = !this.checked;
   });
   document.getElementById("f_type").addEventListener("input", function(){
+    var guess = guessDifficulty(this.value);
+    if (guess !== null) document.getElementById("f_difficulty").value = String(guess);
+  });
+  document.getElementById("f_type").addEventListener("change", function(){
+    if(isNeet()) return;
     var guess = guessDifficulty(this.value);
     if (guess !== null) document.getElementById("f_difficulty").value = String(guess);
   });
@@ -4560,7 +4692,9 @@ window.openSmartGoals190=open;
       sections: {
         physics: { correct:num(f("p_correct")), incorrect:num(f("p_incorrect")), unattempted:num(f("p_unattempted")), time:num(f("p_time")), percentile: f("p_percentile") ? num(f("p_percentile")) : null },
         chemistry: { correct:num(f("c_correct")), incorrect:num(f("c_incorrect")), unattempted:num(f("c_unattempted")), time:num(f("c_time")), percentile: f("c_percentile") ? num(f("c_percentile")) : null },
-        maths: { correct:num(f("m_correct")), incorrect:num(f("m_incorrect")), unattempted:num(f("m_unattempted")), time:num(f("m_time")), percentile: f("m_percentile") ? num(f("m_percentile")) : null }
+        maths: { correct:num(f("m_correct")), incorrect:num(f("m_incorrect")), unattempted:num(f("m_unattempted")), time:num(f("m_time")), percentile: f("m_percentile") ? num(f("m_percentile")) : null },
+        botany: { correct:num(f("b_correct")), incorrect:num(f("b_incorrect")), unattempted:num(f("b_unattempted")), time:num(f("b_time")), percentile: f("b_percentile") ? num(f("b_percentile")) : null },
+        zoology: { correct:num(f("z_correct")), incorrect:num(f("z_incorrect")), unattempted:num(f("z_unattempted")), time:num(f("z_time")), percentile: f("z_percentile") ? num(f("z_percentile")) : null }
       },
       mistakes: f("f_mistakes").split("\n").map(function(x){return x.trim();}).filter(Boolean),
       tags: f("f_tags").split(",").map(function(x){return x.trim();}).filter(Boolean),
@@ -4768,8 +4902,8 @@ window.openSmartGoals190=open;
       { label:"India rank", value: t.rank ? "#"+t.rank : "—" }
     ].map(function(c){ return '<div class="kpi"><div class="label">'+c.label+'</div><div class="value" style="font-size:17px;">'+c.value+'</div></div>'; }).join("");
 
-    var secs = ["physics","chemistry","maths"];
-    var secLabels = ["Physics","Chemistry","Maths"];
+    var secs = activeSubjects();
+    var secLabels = activeSubjectLabels();
     var sc = document.getElementById("detailSectionChart").getContext("2d");
     if (detailSectionChartInst) detailSectionChartInst.destroy();
     detailSectionChartInst = new Chart(sc, {
@@ -4859,6 +4993,8 @@ window.openSmartGoals190=open;
     set("p_correct", data.physicsCorrect); set("p_incorrect", data.physicsIncorrect); set("p_unattempted", data.physicsUnattempted); set("p_time", data.physicsTime); set("p_percentile", data.physicsPercentile);
     set("c_correct", data.chemistryCorrect); set("c_incorrect", data.chemistryIncorrect); set("c_unattempted", data.chemistryUnattempted); set("c_time", data.chemistryTime); set("c_percentile", data.chemistryPercentile);
     set("m_correct", data.mathsCorrect); set("m_incorrect", data.mathsIncorrect); set("m_unattempted", data.mathsUnattempted); set("m_time", data.mathsTime); set("m_percentile", data.mathsPercentile);
+    set("b_correct", data.botanyCorrect); set("b_incorrect", data.botanyIncorrect); set("b_unattempted", data.botanyUnattempted); set("b_time", data.botanyTime); set("b_percentile", data.botanyPercentile);
+    set("z_correct", data.zoologyCorrect); set("z_incorrect", data.zoologyIncorrect); set("z_unattempted", data.zoologyUnattempted); set("z_time", data.zoologyTime); set("z_percentile", data.zoologyPercentile);
     if (Array.isArray(data.tags) && data.tags.length) f("f_tags").value = data.tags.join(", ");
     if (data.sessionGroup !== undefined && data.sessionGroup !== null && data.sessionGroup !== "") f("f_sessionGroup").value = data.sessionGroup;
     if (data.sessionOrder !== undefined && data.sessionOrder !== null && data.sessionOrder !== "") f("f_sessionOrder").value = data.sessionOrder;
@@ -4902,7 +5038,7 @@ window.openSmartGoals190=open;
       var res = await withTimeout(fetch(SUPABASE_URL + "/functions/v1/extract-test-result", {
         method:"POST",
         headers:{"Content-Type":"application/json","Authorization":"Bearer "+token,"apikey":SUPABASE_PUBLISHABLE_KEY},
-        body:JSON.stringify({image:dataUrl})
+        body:JSON.stringify({image:dataUrl,exam_track:state.examTrack})
       }), 60000, "Screenshot analysis timed out. Try the screenshot again.");
       var payload = await res.json().catch(function(){return {};});
       if (!res.ok) throw new Error(payload.error || "Screenshot extraction failed");
@@ -4964,6 +5100,8 @@ window.openSmartGoals190=open;
     set("p_correct","physics correct"); set("p_incorrect","physics incorrect"); set("p_unattempted","physics unattempted"); set("p_time","physics time"); set("p_percentile","physics percentile");
     set("c_correct","chemistry correct"); set("c_incorrect","chemistry incorrect"); set("c_unattempted","chemistry unattempted"); set("c_time","chemistry time"); set("c_percentile","chemistry percentile");
     set("m_correct","maths correct"); set("m_incorrect","maths incorrect"); set("m_unattempted","maths unattempted"); set("m_time","maths time"); set("m_percentile","maths percentile");
+    set("b_correct","botany correct"); set("b_incorrect","botany incorrect"); set("b_unattempted","botany unattempted"); set("b_time","botany time"); set("b_percentile","botany percentile");
+    set("z_correct","zoology correct"); set("z_incorrect","zoology incorrect"); set("z_unattempted","zoology unattempted"); set("z_time","zoology time"); set("z_percentile","zoology percentile");
     if (map["mistakes"]) document.getElementById("f_mistakes").value = map["mistakes"].replace(/;\s*/g, "\n");
     document.getElementById("pasteModalBg").classList.remove("open");
     toast("Parsed — check the fields, then save");
@@ -5071,13 +5209,11 @@ window.openSmartGoals190=open;
   document.getElementById("authCancelBtn").addEventListener("click", closeAuth);
   document.getElementById("authModalBg").addEventListener("click", function(e){ if (e.target === this) closeAuth(); });
 
-  document.querySelectorAll("#subjectSubNav .subjectbtn").forEach(function(btn){
-    btn.addEventListener("click", function(){
-      document.querySelectorAll("#subjectSubNav .subjectbtn").forEach(function(b){ b.classList.remove("active"); });
-      btn.classList.add("active");
-      state.subjectTab = btn.getAttribute("data-subject");
-      if (state.ready) renderSubjects(sortedTests());
-    });
+  document.getElementById("subjectSubNav").addEventListener("click", function(event){
+    var btn=event.target.closest(".subjectbtn"); if(!btn)return;
+    this.querySelectorAll(".subjectbtn").forEach(function(b){b.classList.toggle("active",b===btn);});
+    state.subjectTab=btn.getAttribute("data-subject");
+    if(state.ready)renderSubjects(sortedTests());
   });
 
   // Calendar restoration is triggered from onSignedIn(), after the Supabase
@@ -5087,7 +5223,7 @@ window.openSmartGoals190=open;
   setInterval(function(){ if (state.user && state.ready) refreshAIInsights(); }, 30000);
 
   // Single source of truth for the displayed application version.
-  document.title = "JEE Test Tracker v" + APP_VERSION;
+  document.title = (isNeet()?"NEET":"JEE") + " Test Tracker v" + APP_VERSION;
   var versionEl = document.getElementById("appVersion");
   if (versionEl) versionEl.textContent = "v" + APP_VERSION;
   var systemVersionEl = document.getElementById("systemAppVersion");
