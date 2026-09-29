@@ -25,6 +25,24 @@ A browser-based workspace for logging JEE mock tests, reviewing mistakes, spotti
 
 This is a static app. Open `index.html` in a browser to preview the interface. For sign-in, Google OAuth, and other integrations, use the hosted HTTPS URL or serve the files from an HTTPS origin configured in the corresponding provider dashboards. Opening the page as a `file://` URL will not satisfy most OAuth redirect settings.
 
+## Back up and restore your data
+
+### Create a backup
+
+1. Sign in to the tracker account that contains your tests.
+2. Open **Performance → Data Center → Export JSON Backup**.
+3. Keep the downloaded JSON somewhere safe outside this browser, such as a second drive or a private cloud folder.
+
+The JSON contains test records and the Performance OS data included by the export. It does **not** contain uploaded mistake-image files or a full backup of the Supabase project. Keep the Supabase project and its private Storage bucket intact to preserve cloud data and image attachments.
+
+### Restore from a JSON backup
+
+- To load cloud test history on a new device, sign in to the same tracker account.
+- To import test records from a JSON file, open **Settings → Data & Sync → Import old local data**. Select the file, review the test count, and import it into the signed-in account.
+- To restore the exported Performance OS data, open **Performance → Data Center → Import JSON Backup**.
+
+Choose the correct signed-in account before importing. Test records with matching IDs are updated during import. JSON imports do not restore uploaded image files; those remain in the account's Supabase Storage.
+
 ## Deploy with GitHub Pages
 
 The repository is set up to publish the site from the `main` branch. In GitHub, open **Settings → Pages** and confirm the publishing source is `main` and the repository root (`/`). After changes are committed and pushed to `main`, wait for the Pages deployment to finish, then refresh the site. A hard refresh may be needed to clear an older cached page.
