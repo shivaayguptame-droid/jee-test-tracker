@@ -4,6 +4,13 @@ Notable changes to JEE Test Tracker are documented here. Release Please maintain
 
 <<<<<<< HEAD
 =======
+## [3.1.0](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v3.0.1...jee-test-tracker-v3.1.0) (2026-09-29)
+
+
+### Features
+
+* add admin-only read-only NEET preview ([084f34b](https://github.com/shivaayguptame-droid/jee-test-tracker/commit/084f34b5ae0700ba5d0c5f55d1dc248a6c9cbd38))
+
 ## [3.0.1](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v3.0.0...jee-test-tracker-v3.0.1) (2026-09-29)
 
 
