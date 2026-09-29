@@ -1465,6 +1465,10 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
     </div>
   </header>
 
+  <div id="neetPreviewBanner" role="status" style="display:none;margin:0 0 12px;padding:10px 14px;border:1px solid var(--accent);border-radius:var(--radius);background:var(--accent-soft);color:var(--text);align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+    <span id="neetPreviewBannerText"><b>NEET preview</b> · Sample results only. Your saved exam choice and data are unchanged.</span>
+    <button class="ghost small" id="exitNeetPreviewBtn" type="button">Return to my JEE tracker</button>
+  </div>
   <div id="remoteAnnouncement" role="status" aria-hidden="true" style="display:none !important;"><span class="remoteIcon">!</span><span id="remoteAnnouncementText"></span></div>
 
   <div class="kpis" id="kpis"></div>
@@ -1663,6 +1667,11 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
         <div><b>Code changes</b> — changing the actual website code still requires a deployment; these controls are for operational changes that should happen immediately.</div>
       </div>
     </div>
+    <div class="card">
+      <div class="sectionTitle">Exam profile preview</div>
+      <div class="hint" style="color:var(--text-dim);font-size:12px;margin-bottom:12px;">Preview the NEET layout with sample results. This does not change your saved JEE account or write sample results to your data.</div>
+      <button class="primary" id="adminNeetPreviewBtn" type="button">Preview NEET with sample data</button>
+    </div>
   </div>
 
   <div class="tabpanel" data-panel="tests" style="display:none;">
@@ -1833,6 +1842,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
   <div class="modal">
     <h2 id="modalTitle">Add a test</h2>
     <div class="hint">Percentage and accuracy are calculated automatically.</div>
+    <div id="neetPreviewReadOnlyNote" class="hint" style="display:none;padding:8px 10px;margin:8px 0;border:1px solid var(--border);border-radius:8px;background:var(--accent-soft);">Read-only preview: you can inspect this form, but saving test data and uploading images are disabled.</div>
     <form id="testForm">
       <input type="hidden" id="f_id">
       <div class="formgrid">
@@ -2179,7 +2189,7 @@ function renderPlan(){let ps=read(PKEY,[]).sort((a,b)=>(a.date+a.time).localeCom
 function renderWeek(ps){let d=new Date(),start=new Date(d);start.setDate(d.getDate()-((d.getDay()+6)%7));let g=$('w190Grid');if(!g)return;g.innerHTML=Array.from({length:7},(_,i)=>{let x=new Date(start);x.setDate(start.getDate()+i);let ds=x.toISOString().slice(0,10),n=ps.filter(p=>p.date===ds).length;return '<div class="day190"><strong>'+x.toLocaleDateString(undefined,{weekday:'short'})+'</strong><b>'+x.getDate()+'</b><div class="perfSmall">'+n+' task'+(n===1?'':'s')+'</div></div>'}).join('')}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))} function fmt(v){return Math.round((+v||0)*10)/10}
 function open(){let b=$('smartGoals190Bg');if(b){b.classList.add('open');b.setAttribute('aria-hidden','false');renderAll()}} function close(){let b=$('smartGoals190Bg');if(b){b.classList.remove('open');b.setAttribute('aria-hidden','true')}} function renderAll(){renderGoals();renderPlan()}
-$('smartGoals190Close')?.addEventListener('click',close); $('g190Save')?.addEventListener('click',()=>{let gs=read(GKEY,[]),target=+$('g190Target').value;if(!target)return alert('Enter a target.');gs.push({type:$('g190Type').value,target,label:$('g190Label').value||$('g190Type').value,id:Date.now()});write(GKEY,gs);$('g190Target').value='';$('g190Label').value='';renderGoals()}); $('p190Save')?.addEventListener('click',()=>{let ps=read(PKEY,[]),task=$('p190Task').value.trim();if(!task)return alert('Enter a task.');ps.push({date:$('p190Date').value||today(),time:$('p190Time').value,type:$('p190Type').value,subject:$('p190Subject').value,task,minutes:+$('p190Minutes').value||0,done:false,id:Date.now()});write(PKEY,ps);$('p190Task').value='';renderPlan()}); document.addEventListener('click',e=>{let d=e.target.closest('[data-g190del]');if(d){let a=read(GKEY,[]);a.splice(+d.dataset.g190del,1);write(GKEY,a);renderGoals()}let p=e.target.closest('[data-p190del]');if(p){let a=read(PKEY,[]);a.splice(+p.dataset.p190del,1);write(PKEY,a);renderPlan()}let c=e.target.closest('[data-p190done]');if(c){let a=read(PKEY,[]);a[+c.dataset.p190done].done=c.checked;write(PKEY,a);renderPlan()}let t=e.target.closest('[data-sg190]');if(t){document.querySelectorAll('[data-sg190]').forEach(x=>x.classList.toggle('active',x===t));document.querySelectorAll('[data-sg190page]').forEach(x=>x.classList.toggle('active',x.dataset.sg190page===t.dataset.sg190));}});
+$('smartGoals190Close')?.addEventListener('click',close); $('g190Save')?.addEventListener('click',()=>{if(window.state&&window.state.examPreview)return alert('NEET preview is read-only.');let gs=read(GKEY,[]),target=+$('g190Target').value;if(!target)return alert('Enter a target.');gs.push({type:$('g190Type').value,target,label:$('g190Label').value||$('g190Type').value,id:Date.now()});write(GKEY,gs);$('g190Target').value='';$('g190Label').value='';renderGoals()}); $('p190Save')?.addEventListener('click',()=>{if(window.state&&window.state.examPreview)return alert('NEET preview is read-only.');let ps=read(PKEY,[]),task=$('p190Task').value.trim();if(!task)return alert('Enter a task.');ps.push({date:$('p190Date').value||today(),time:$('p190Time').value,type:$('p190Type').value,subject:$('p190Subject').value,task,minutes:+$('p190Minutes').value||0,done:false,id:Date.now()});write(PKEY,ps);$('p190Task').value='';renderPlan()}); document.addEventListener('click',e=>{if(window.state&&window.state.examPreview&&e.target.closest('[data-g190del],[data-p190del],[data-p190done]'))return;let d=e.target.closest('[data-g190del]');if(d){let a=read(GKEY,[]);a.splice(+d.dataset.g190del,1);write(GKEY,a);renderGoals()}let p=e.target.closest('[data-p190del]');if(p){let a=read(PKEY,[]);a.splice(+p.dataset.p190del,1);write(PKEY,a);renderPlan()}let c=e.target.closest('[data-p190done]');if(c){let a=read(PKEY,[]);a[+c.dataset.p190done].done=c.checked;write(PKEY,a);renderPlan()}let t=e.target.closest('[data-sg190]');if(t){document.querySelectorAll('[data-sg190]').forEach(x=>x.classList.toggle('active',x===t));document.querySelectorAll('[data-sg190page]').forEach(x=>x.classList.toggle('active',x.dataset.sg190page===t.dataset.sg190));}});
 window.openSmartGoals190=open;
 })();
 </script>
@@ -2201,13 +2211,13 @@ window.openSmartGoals190=open;
 (function(){
   "use strict";
   var APP_VERSION = "3.0.0"; // x-release-please-version
-  var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, examTrack: "jee", authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
+  var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, examTrack: "jee", examPreview:false, previewOriginalTests:null, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   var EXAM_TRACK_KEY = "exam_track";
   var JEE_SUBJECTS = ["physics","chemistry","maths"];
   var NEET_SUBJECTS = ["physics","chemistry","botany","zoology"];
   var SUBJECT_LABELS = { physics:"Physics", chemistry:"Chemistry", maths:"Maths", botany:"Botany", zoology:"Zoology" };
   var NEET_SERIES = ["Practice Test (PW Batch)","AITS NEET","NRTS-11 (NEET Real Test Series)","Rank Booster Series"];
-  function isNeet(){ return state.examTrack === "neet"; }
+  function isNeet(){ return state.examPreview || state.examTrack === "neet"; }
   function activeSubjects(){ return isNeet() ? NEET_SUBJECTS : JEE_SUBJECTS; }
   function activeSubjectLabels(){ return activeSubjects().map(function(key){ return SUBJECT_LABELS[key]; }); }
   function updateExamTrackUI(){
@@ -2247,6 +2257,10 @@ window.openSmartGoals190=open;
     ["g_mainDate","g_advDate"].forEach(function(id){var el=document.getElementById(id); if(el&&el.closest(".field"))el.closest(".field").style.display=isNeet()?"none":"";});
     var goalLabels=document.querySelectorAll("#goalsModalBg .field label"); goalLabels.forEach(function(el){if(/JEE Main date/i.test(el.textContent))el.textContent=isNeet()?"NEET target date":"JEE Main date";if(/JEE Advanced date/i.test(el.textContent))el.closest(".field").style.display=isNeet()?"none":"";});
     var mistakes=document.getElementById("f_mistakes"); if(mistakes)mistakes.placeholder=isNeet()?"Physics: sign error in mechanics question\nBotany: mixed up plant families\nZoology: forgot a physiology concept":"Physics: sign error in NLM question\nMaths: forgot identity for sin3x\nChemistry: mixed up SN1/SN2 conditions";
+    var previewNote=document.getElementById("neetPreviewReadOnlyNote"); if(previewNote)previewNote.style.display=state.examPreview?"block":"none";
+    var testSave=document.querySelector('#testForm button[type="submit"]'); if(testSave){testSave.disabled=!!state.examPreview;testSave.textContent=state.examPreview?"Read-only preview":"Save test";}
+    var imageInput=document.getElementById("f_mistakeImages");if(imageInput)imageInput.disabled=!!state.examPreview;
+    var analyzeCheckbox=document.getElementById("f_analyzeMistakesNow");if(analyzeCheckbox)analyzeCheckbox.disabled=!!state.examPreview;
     var imageHelp=document.getElementById("mistakeImageHelp"); if(imageHelp)imageHelp.textContent=isNeet()?"Use filenames like q12_physics.jpg, q27_botany.png, or q34_zoology.jpg when possible. You can store images and analyze them later from test details.":"Use filenames like q12_physics.jpg or q27_maths.png when possible. Leave analysis unchecked to store images and analyze them later from test details.";
     var planTitle=document.querySelector('[data-panel="schedule"] .sectionTitle span'); if(planTitle)planTitle.textContent="Saved "+exam+" study plan";
     var paste=document.getElementById("pasteArea"); if(paste)paste.placeholder=isNeet()?[
@@ -2564,6 +2578,7 @@ window.openSmartGoals190=open;
     return g;
   }
   async function persistGoalsCloud(g){
+    if(state.examPreview) throw new Error("NEET preview is read-only; your account goals were not changed.");
     saveGoals(g);
     if (!sb || !state.user) return;
     var res = await sb.from("tracker_goals").upsert({ user_id: state.user.id, data: g, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
@@ -2823,7 +2838,7 @@ window.openSmartGoals190=open;
   }
   function updateFirstRunScreen(tests){
     var screen=document.getElementById("firstRunWelcome"); if(!screen)return;
-    if(tests.length) markFirstRunSeen();
+    if(tests.length && !state.examPreview) markFirstRunSeen();
     var seen=false; try{seen=localStorage.getItem(firstRunSeenKey())==="1";}catch(e){}
     var show=!!state.ready&&tests.length===0&&!seen;
     document.body.classList.toggle("first-run-active",show);
@@ -2937,6 +2952,7 @@ window.openSmartGoals190=open;
   }
 
   async function importMigration(){
+    if(state.examPreview){document.getElementById("migrationStatus").textContent="NEET preview is read-only; import is disabled.";return;}
     if (!state.user) { document.getElementById("migrationStatus").textContent = "Please sign in first."; return; }
     if (!migrationPayload || !migrationPayload.tests.length) { document.getElementById("migrationStatus").textContent = "No tests were found in the backup."; return; }
     var btn = document.getElementById("migrationUploadBtn");
@@ -2970,6 +2986,7 @@ window.openSmartGoals190=open;
   }
 
   async function signOut(){
+    if(state.examPreview)setAdminNeetPreview(false);
     if (sb) await sb.auth.signOut();
     state.user = null; state.cloud = false; state.examTrack="jee"; updateExamTrackUI(); loadNotifications(); state.tests = loadLocal().map(normalizeTest);
     if (state.realtime) { try { await sb.removeChannel(state.realtime); } catch(e){} state.realtime = null; }
@@ -2995,6 +3012,7 @@ window.openSmartGoals190=open;
     if (state.realtime) { try { sb.removeChannel(state.realtime); } catch(e){} }
     state.realtime = sb.channel("tracker-tests-" + state.user.id)
       .on("postgres_changes", { event: "*", schema: "public", table: "tracker_tests", filter: "user_id=eq." + state.user.id }, async function(){
+        if(state.examPreview)return;
         try { state.tests = await loadCloudTests(); saveLocal(state.tests); render(); } catch(e){}
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "tracker_goals", filter: "user_id=eq." + state.user.id }, async function(){
@@ -3007,6 +3025,7 @@ window.openSmartGoals190=open;
   }
 
   async function onSignedIn(user){
+    if(state.examPreview)setAdminNeetPreview(false);
     state.user = user; state.cloud = true; state.renderedPanels.schedule = false; loadNotifications(); ensureVersionNotification(); setAccountButton();
     var savedTrack=user&&user.user_metadata&&user.user_metadata[EXAM_TRACK_KEY];
     if(savedTrack==="jee"||savedTrack==="neet"){state.examTrack=savedTrack;updateExamTrackUI();}
@@ -3055,7 +3074,7 @@ window.openSmartGoals190=open;
       sb.auth.onAuthStateChange(function(event, session){
         setTimeout(async function(){
           if (session && session.user) await onSignedIn(session.user);
-          else { state.user = null; state.cloud = false; state.examTrack="jee"; updateExamTrackUI(); state.renderedPanels.schedule = false; loadNotifications(); setAccountButton(); state.tests = loadLocal().map(normalizeTest); render(); }
+          else { if(state.examPreview)setAdminNeetPreview(false); state.user = null; state.cloud = false; state.examTrack="jee"; updateExamTrackUI(); state.renderedPanels.schedule = false; loadNotifications(); setAccountButton(); state.tests = loadLocal().map(normalizeTest); render(); }
         }, 0);
       });
     } catch(e) { state.ready = true; setAccountButton(); render(); }
@@ -3080,6 +3099,7 @@ window.openSmartGoals190=open;
   }
 
   async function persistTest(t){
+    if(state.examPreview) throw new Error("NEET preview is read-only; sample results cannot be saved.");
     if (!t.id) t.id = "t_" + Date.now() + "_" + Math.random().toString(36).slice(2,7);
     t = normalizeTest(t);
     var idx = state.tests.findIndex(function(x){ return x.id === t.id; });
@@ -3092,6 +3112,7 @@ window.openSmartGoals190=open;
   }
 
   async function deleteTest(id){
+    if(state.examPreview){toast("NEET preview is read-only; sample results cannot be deleted or changed.");return;}
     state.tests = state.tests.filter(function(x){ return x.id !== id; });
     saveLocal(state.tests);
     if (state.cloud && sb && state.user) {
@@ -3440,6 +3461,7 @@ window.openSmartGoals190=open;
   function renderSchedule(){
     var input=document.getElementById("scheduleWeekInput"), title=document.getElementById("scheduleRangeTitle"), daysEl=document.getElementById("scheduleDays"), empty=document.getElementById("scheduleEmpty");
     if(!input||!daysEl) return;
+    if(state.examPreview){title.textContent="NEET preview schedule";daysEl.innerHTML='<div class="card"><div class="sectionTitle">Calendar and saved plans are not loaded in preview</div><div class="hint">This preview shows sample test and subject analytics. Your personal Google Calendar and saved plans remain attached to your account and are unchanged.</div></div>';empty.style.display="none";var planStatus=document.getElementById("trackerPlanStatus"),planItems=document.getElementById("trackerPlanItems");if(planStatus)planStatus.textContent="Saved plans are hidden while previewing.";if(planItems)planItems.innerHTML="";return;}
     renderAdaptiveScheduleTools();
     if(!state.scheduleWeekStart) state.scheduleWeekStart=new Date();
     var day=new Date(state.scheduleWeekStart.getFullYear(),state.scheduleWeekStart.getMonth(),state.scheduleWeekStart.getDate());
@@ -3554,6 +3576,44 @@ window.openSmartGoals190=open;
     fillAdminForm();
     var status=document.getElementById("adminConfigStatus");
     if(status){ var cfg=state.appConfig||DEFAULT_APP_CONFIG; status.textContent="AI is currently "+(cfg.ai_enabled?"enabled":"disabled")+". Last remote update: "+(cfg.updated_at?new Date(cfg.updated_at).toLocaleString():"not recorded")+"."; }
+    var previewButton=document.getElementById("adminNeetPreviewBtn");
+    if(previewButton)previewButton.textContent=state.examPreview?"Return to my "+state.examTrack.toUpperCase()+" tracker":"Preview NEET with sample data";
+  }
+
+  function makeNeetPreviewTests(){
+    var series=["Practice Test (PW Batch)","AITS NEET","NRTS-11 (NEET Real Test Series)","Rank Booster Series"];
+    return [28,14,3].map(function(daysAgo,index){
+      var date=new Date();date.setDate(date.getDate()-daysAgo);
+      var test={id:"neet-preview-"+index,name:"NEET preview test "+(index+1),date:isoLocalDate(date),serialNo:index+1,type:series[index%series.length],difficulty:0,totalMarks:720,marksObtained:[512,548,579][index],totalQuestions:180,correct:[132,140,148][index],incorrect:[44,40,32][index],unattempted:[4,0,0][index],totalTime:165,totalTimeAllotted:180,percentile:[91.4,94.2,96.1][index],rank:[12840,9320,6410][index],sections:{physics:{correct:[32,35,37][index],incorrect:[14,12,10][index],unattempted:0,time:[51,49,47][index],percentile:[88.2,91.1,93.4][index]},chemistry:{correct:[34,36,38][index],incorrect:[10,9,7][index],unattempted:0,time:[43,42,40][index],percentile:[92.1,93.6,95.0][index]},botany:{correct:[35,37,39][index],incorrect:[10,9,7][index],unattempted:0,time:[37,36,35][index],percentile:[93.0,94.8,96.2][index]},zoology:{correct:[31,32,34][index],incorrect:[10,10,8][index],unattempted:[4,0,0][index],time:[34,33,32][index],percentile:[90.1,91.6,93.5][index]},maths:{correct:0,incorrect:0,unattempted:0,time:0}},mistakes:["Physics: sign error in mechanics","Botany: confused plant families","Zoology: mixed up hormone functions"],tags:["preview","NEET"]};
+      return normalizeTest(test);
+    });
+  }
+  function setAdminNeetPreview(enabled){
+    if(!state.isAdmin){toast("Admin access required");return;}
+    if(!!enabled===!!state.examPreview)return;
+    if(enabled){
+      state.previewOriginalTests=state.tests;
+      state.previewOriginalCalendar={events:state.gcalEvents,upcoming:state.gcalUpcomingTestEvents};
+      state.tests=makeNeetPreviewTests();
+      state.gcalEvents=[];state.gcalUpcomingTestEvents=[];
+      state.examPreview=true;
+    }else{
+      state.examPreview=false;
+      if(state.previewOriginalTests)state.tests=state.previewOriginalTests;
+      if(state.previewOriginalCalendar){state.gcalEvents=state.previewOriginalCalendar.events;state.gcalUpcomingTestEvents=state.previewOriginalCalendar.upcoming;}
+      state.previewOriginalTests=null;state.previewOriginalCalendar=null;
+    }
+    var banner=document.getElementById("neetPreviewBanner");
+    if(banner)banner.style.display=state.examPreview?"flex":"none";
+    var bannerText=document.getElementById("neetPreviewBannerText");
+    if(bannerText)bannerText.innerHTML="<b>NEET preview</b> · Sample results only. Your saved "+state.examTrack.toUpperCase()+" choice and data are unchanged.";
+    var aiPanel=document.getElementById("aiInsightContent");if(aiPanel&&state.examPreview)aiPanel.innerHTML='<span style="color:var(--text-dim)">AI analysis is disabled for sample preview tests.</span>';
+    updateExamTrackUI();
+    state.renderedPanels={};state.renderSignature=null;
+    render();
+    if(!state.examPreview)refreshAIInsights();
+    var button=document.getElementById("adminNeetPreviewBtn");if(button)button.textContent=state.examPreview?"Return to my "+state.examTrack.toUpperCase()+" tracker":"Preview NEET with sample data";
+    toast(state.examPreview?"NEET preview opened with sample data":"Returned to your saved "+state.examTrack.toUpperCase()+" tracker");
   }
 
   function renderPanel(panel, tests){
@@ -4188,6 +4248,7 @@ window.openSmartGoals190=open;
     else setAdaptiveScheduleStatus('Plan topics and time are recalculated from recent section results, mistake tags, and the next calendar test date.');
   }
   async function generateAdaptiveSchedule(trigger){
+    if(state.examPreview)throw new Error("NEET preview is read-only; no study plan was saved.");
     if(!state.user||!state.cloud||!sb)throw new Error('Sign in to save a private adaptive plan.');
     var tests=sortedTests(),blocks=suggestedRevisionBlocks(tests);
     if(!blocks.length)throw new Error('Add section results to at least one test before generating a plan.');
@@ -4214,6 +4275,7 @@ window.openSmartGoals190=open;
     return scheduleId;
   }
   async function createCalendarRevisionBlocks(tests){
+    if(state.examPreview)throw new Error("NEET preview is read-only; no calendar events were created.");
     if(!state.user || !state.gcalAccessToken) throw new Error('Connect Google Calendar first.');
     var blocks=suggestedRevisionBlocks(tests); if(!blocks.length) return 0;
     var base=new Date(); base.setHours(18,0,0,0); var made=0;
@@ -4290,6 +4352,7 @@ window.openSmartGoals190=open;
   }
 
   async function uploadMistakeImages(testId, files){
+    if(state.examPreview)throw new Error("NEET preview is read-only; sample images are not uploaded.");
     if (!state.user || !sb || !files || !files.length) return 0;
     var count = 0;
     for (var i=0; i<files.length; i++) {
@@ -4325,6 +4388,7 @@ window.openSmartGoals190=open;
 
   window.analyzeTestAI = analyzeTestAI;
   async function analyzeTestAI(testId){
+    if(state.examPreview)throw new Error("NEET preview is read-only; sample tests are not sent for analysis.");
     if (!state.user || !sb || !testId) return null;
     var sessionRes = await sb.auth.getSession();
     var token = sessionRes.data && sessionRes.data.session ? sessionRes.data.session.access_token : null;
@@ -4341,6 +4405,7 @@ window.openSmartGoals190=open;
 
   window.refreshAIInsights = refreshAIInsights;
   async function refreshAIInsights(){
+    if(state.examPreview)return;
     var el = document.getElementById("aiInsightContent");
     if (!el || !state.user || !sb) return;
     var res = await sb.from("tracker_ai_insights").select("test_id,status,retry_count,next_retry_at,retry_deadline_at,last_error,mistakes_analysis,plan_analysis,updated_at,completed_at").eq("user_id",state.user.id).order("updated_at",{ascending:false});
@@ -4465,6 +4530,7 @@ window.openSmartGoals190=open;
   }
 
   async function persistHistoryOrder(){
+    if(state.examPreview)return;
     saveLocal(state.tests);
     if (state.cloud && sb && state.user) {
       for (var i=0;i<state.tests.length;i++) {
@@ -4574,6 +4640,7 @@ window.openSmartGoals190=open;
   document.getElementById("goalsCancelBtn").onclick = function(){ document.getElementById("goalsModalBg").classList.remove("open"); };
   document.getElementById("goalsModalBg").addEventListener("click", function(e){ if (e.target === this) this.classList.remove("open"); });
   document.getElementById("goalsSaveBtn").onclick = function(){
+    if(state.examPreview){toast("NEET preview is read-only; goals were not changed.");return;}
     var g = {
       targetPercentile: num(document.getElementById("g_target").value) || 99.9,
       mainDate: document.getElementById("g_mainDate").value || "2028-01-31",
@@ -5190,6 +5257,8 @@ window.openSmartGoals190=open;
     try { await loadRemoteConfig(); renderAdminPanel(); toast("Remote settings reloaded"); }
     catch(e){ toast("Could not reload settings: "+(e.message||"unknown error")); }
   });
+  document.getElementById("adminNeetPreviewBtn").addEventListener("click",function(){setAdminNeetPreview(!state.examPreview);});
+  document.getElementById("exitNeetPreviewBtn").addEventListener("click",function(){setAdminNeetPreview(false);});
 
   document.getElementById("accountBtn").addEventListener("click", function(){
     if (state.user) {
@@ -5408,16 +5477,16 @@ window.openSmartGoals190=open;
   function renderAll(){renderOverview();renderMastery();renderMistakes();renderPlanner();renderRecords();renderExperiments()}
   var timer={sec:1500,id:null};function drawTimer(){var m=Math.floor(timer.sec/60),s=timer.sec%60;if(el('timerDisplay'))el('timerDisplay').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
   function bind(){var b=el('performanceOSBtn');if(b)b.addEventListener('click',open);if(el('performanceClose'))el('performanceClose').addEventListener('click',close);document.querySelectorAll('.perfTab').forEach(function(x){x.addEventListener('click',function(){tab(x.dataset.perfTab)})});if(el('performanceOSBg'))el('performanceOSBg').addEventListener('click',function(e){if(e.target===this)close()});
-    el('pmSave')&&el('pmSave').addEventListener('click',function(){var a=arr(PKEY.mastery),x={subject:el('pmSubject').value,chapter:el('pmChapter').value.trim(),mastery:+el('pmMastery').value};if(!x.chapter||isNaN(x.mastery))return;if(x.mastery<0||x.mastery>100)return;var old=a.find(function(y){return y.subject===x.subject&&y.chapter.toLowerCase()===x.chapter.toLowerCase()});if(old)old.mastery=x.mastery;else a.push(x);save(PKEY.mastery,a);el('pmChapter').value='';el('pmMastery').value='';renderMastery()});
-    el('mkSave')&&el('mkSave').addEventListener('click',function(){var a=arr(PKEY.mistakes),n=el('mkNote').value.trim();if(!n)return;a.push({category:el('mkCategory').value,note:n,ts:Date.now()});save(PKEY.mistakes,a);el('mkNote').value='';renderMistakes()});
-    el('plSave')&&el('plSave').addEventListener('click',function(){var a=arr(PKEY.planner),x={date:el('plDate').value,time:el('plTime').value,task:el('plTask').value.trim(),subject:el('plSubject').value};if(!x.date||!x.task)return;a.push(x);save(PKEY.planner,a);el('plTask').value='';renderPlanner()});
-    el('exSave')&&el('exSave').addEventListener('click',function(){var a=arr(PKEY.experiments),x={name:el('exName').value.trim(),hypothesis:el('exHypothesis').value.trim(),result:el('exResult').value.trim(),ts:Date.now()};if(!x.name)return;a.push(x);save(PKEY.experiments,a);['exName','exHypothesis','exResult'].forEach(function(id){el(id).value=''});renderExperiments()});
+    el('pmSave')&&el('pmSave').addEventListener('click',function(){if(window.state&&window.state.examPreview)return alert('NEET preview is read-only.');var a=arr(PKEY.mastery),x={subject:el('pmSubject').value,chapter:el('pmChapter').value.trim(),mastery:+el('pmMastery').value};if(!x.chapter||isNaN(x.mastery))return;if(x.mastery<0||x.mastery>100)return;var old=a.find(function(y){return y.subject===x.subject&&y.chapter.toLowerCase()===x.chapter.toLowerCase()});if(old)old.mastery=x.mastery;else a.push(x);save(PKEY.mastery,a);el('pmChapter').value='';el('pmMastery').value='';renderMastery()});
+    el('mkSave')&&el('mkSave').addEventListener('click',function(){if(window.state&&window.state.examPreview)return alert('NEET preview is read-only.');var a=arr(PKEY.mistakes),n=el('mkNote').value.trim();if(!n)return;a.push({category:el('mkCategory').value,note:n,ts:Date.now()});save(PKEY.mistakes,a);el('mkNote').value='';renderMistakes()});
+    el('plSave')&&el('plSave').addEventListener('click',function(){if(window.state&&window.state.examPreview)return alert('NEET preview is read-only.');var a=arr(PKEY.planner),x={date:el('plDate').value,time:el('plTime').value,task:el('plTask').value.trim(),subject:el('plSubject').value};if(!x.date||!x.task)return;a.push(x);save(PKEY.planner,a);el('plTask').value='';renderPlanner()});
+    el('exSave')&&el('exSave').addEventListener('click',function(){if(window.state&&window.state.examPreview)return alert('NEET preview is read-only.');var a=arr(PKEY.experiments),x={name:el('exName').value.trim(),hypothesis:el('exHypothesis').value.trim(),result:el('exResult').value.trim(),ts:Date.now()};if(!x.name)return;a.push(x);save(PKEY.experiments,a);['exName','exHypothesis','exResult'].forEach(function(id){el(id).value=''});renderExperiments()});
     el('timerPreset')&&el('timerPreset').addEventListener('change',function(){timer.sec=+this.value*60;drawTimer()});el('timerStart')&&el('timerStart').addEventListener('click',function(){if(timer.id)return;timer.id=setInterval(function(){if(timer.sec>0){timer.sec--;drawTimer()}else{clearInterval(timer.id);timer.id=null;if(window.toast)toast('Study session complete. Nice work.') }},1000)});el('timerPause')&&el('timerPause').addEventListener('click',function(){if(timer.id){clearInterval(timer.id);timer.id=null}});el('timerReset')&&el('timerReset').addEventListener('click',function(){if(timer.id)clearInterval(timer.id);timer.id=null;timer.sec=+(el('timerPreset').value||25)*60;drawTimer()});
     el('perfRefresh')&&el('perfRefresh').addEventListener('click',renderAll);
     el('perfLatestAI')&&el('perfLatestAI').addEventListener('click',async function(){var ts=tests();if(!ts.length){alert('Add a test first.');return}try{if(typeof window.analyzeTestAI==='function'){await window.analyzeTestAI(ts[ts.length-1].id);if(typeof window.refreshAIInsights==='function')await window.refreshAIInsights();alert('AI analysis requested for the latest test.')}else alert('AI analysis is not available in this build.')}catch(e){alert(e.message||'AI analysis failed')}});
-    el('perfExport')&&el('perfExport').addEventListener('click',function(){var backup={version:'1.8.0',exportedAt:new Date().toISOString(),tests:tests(),performance:{mastery:arr(PKEY.mastery),mistakes:arr(PKEY.mistakes),planner:arr(PKEY.planner),experiments:arr(PKEY.experiments)}};var blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='jee-tracker-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(function(){URL.revokeObjectURL(u)},1000)});
-    el('perfImportBtn')&&el('perfImportBtn').addEventListener('click',function(){el('perfImportFile').click()});el('perfImportFile')&&el('perfImportFile').addEventListener('change',function(){var f=this.files&&this.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var x=JSON.parse(r.result);var p=x.performance||{};Object.keys(PKEY).forEach(function(k){if(Array.isArray(p[k]))save(PKEY[k],p[k])});renderAll();el('perfDataStatus').textContent='Backup imported successfully.'}catch(e){el('perfDataStatus').textContent='Import failed: invalid JSON backup.'}};r.readAsText(f)});
-    document.addEventListener('click',function(e){var d=e.target.closest('[data-del-mastery]');if(d){var a=arr(PKEY.mastery);a.splice(+d.dataset.delMastery,1);save(PKEY.mastery,a);renderMastery()}var p=e.target.closest('[data-del-plan]');if(p){var a2=arr(PKEY.planner);a2.splice(+p.dataset.delPlan,1);save(PKEY.planner,a2);renderPlanner()}});
+    el('perfExport')&&el('perfExport').addEventListener('click',function(){if(window.state&&window.state.examPreview)return alert('Exit NEET preview before exporting your account data.');var backup={version:'1.8.0',exportedAt:new Date().toISOString(),tests:tests(),performance:{mastery:arr(PKEY.mastery),mistakes:arr(PKEY.mistakes),planner:arr(PKEY.planner),experiments:arr(PKEY.experiments)}};var blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='jee-tracker-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(function(){URL.revokeObjectURL(u)},1000)});
+    el('perfImportBtn')&&el('perfImportBtn').addEventListener('click',function(){if(window.state&&window.state.examPreview)return alert('NEET preview is read-only.');el('perfImportFile').click()});el('perfImportFile')&&el('perfImportFile').addEventListener('change',function(){if(window.state&&window.state.examPreview){this.value='';return alert('NEET preview is read-only.')}var f=this.files&&this.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var x=JSON.parse(r.result);var p=x.performance||{};Object.keys(PKEY).forEach(function(k){if(Array.isArray(p[k]))save(PKEY[k],p[k])});renderAll();el('perfDataStatus').textContent='Backup imported successfully.'}catch(e){el('perfDataStatus').textContent='Import failed: invalid JSON backup.'}};r.readAsText(f)});
+    document.addEventListener('click',function(e){if(window.state&&window.state.examPreview&&e.target.closest('[data-del-mastery],[data-del-plan]'))return;var d=e.target.closest('[data-del-mastery]');if(d){var a=arr(PKEY.mastery);a.splice(+d.dataset.delMastery,1);save(PKEY.mastery,a);renderMastery()}var p=e.target.closest('[data-del-plan]');if(p){var a2=arr(PKEY.planner);a2.splice(+p.dataset.delPlan,1);save(PKEY.planner,a2);renderPlanner()}});
     drawTimer();
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
