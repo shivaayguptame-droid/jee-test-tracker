@@ -4,6 +4,13 @@ Notable changes to JEE Test Tracker are documented here. Release Please maintain
 
 <<<<<<< HEAD
 =======
+## [2.8.0](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v2.7.0...jee-test-tracker-v2.8.0) (2026-09-29)
+
+
+### Features
+
+* users can now store images without analysing ([a94216b](https://github.com/shivaayguptame-droid/jee-test-tracker/commit/a94216bf49e09eba80c5bb7203b0903a351e0e00))
+
 ## [2.7.0](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v2.6.4...jee-test-tracker-v2.7.0) (2026-09-28)
 
 
