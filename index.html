@@ -2221,7 +2221,7 @@ window.openSmartGoals190=open;
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "3.0.2"; // x-release-please-version
+  var APP_VERSION = "3.2.1"; // x-release-please-version
   var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, provider: "pw", examTrack: "jee", examPreview:false, previewOriginalTests:null, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   var EXAM_TRACK_KEY = "exam_track";
   var PROVIDER_KEY = "training_provider";
@@ -2348,29 +2348,76 @@ window.openSmartGoals190=open;
 
   async function ensureExamTrack(user){
     var saved=user&&user.user_metadata&&user.user_metadata[EXAM_TRACK_KEY];
+
+    // The exam/cohort choice is also made once per account.
+    // If Supabase already has a saved choice, restore it and do not reopen
+    // the popup on later tracker opens or auth-state refreshes.
     if(isVmc()){
       state.examTrack="jee";
       updateExamTrackUI();
       var vmcBtn=document.getElementById("chooseNeetTrack");
       if(vmcBtn) vmcBtn.style.display="none";
+
+      if(saved==="jee") return;
+      if(saved==="neet"){
+        try{
+          if(sb && user){
+            var vmcFix=await sb.auth.updateUser({data:{[EXAM_TRACK_KEY]:"jee"}});
+            if(!vmcFix.error) state.user=vmcFix.data.user||user;
+          }
+        }catch(e){}
+        return;
+      }
     } else if(saved==="jee"||saved==="neet"){
       state.examTrack=saved;
       updateExamTrackUI();
+      return;
+    } else {
+      try{
+        var localExam=localStorage.getItem("jee_tracker_exam_v1");
+        if(localExam==="jee"||localExam==="neet"){
+          state.examTrack=localExam;
+          updateExamTrackUI();
+          if(!user) return;
+        }
+      }catch(e){}
     }
+
     var bg=document.getElementById("examTrackModalBg"),status=document.getElementById("examTrackStatus");
     if(!bg) return;
     bg.classList.add("open");
+    bg.setAttribute("aria-hidden","false");
+
     await new Promise(function(resolve){
       var busy=false;
       async function choose(track){
-        if(busy)return;busy=true;status.textContent="Saving your choice to your account…";
-        document.getElementById("chooseJeeTrack").disabled=true;document.getElementById("chooseNeetTrack").disabled=true;
+        if(busy)return;
+        busy=true;
+        status.textContent="Saving your choice to your account…";
+        document.getElementById("chooseJeeTrack").disabled=true;
+        document.getElementById("chooseNeetTrack").disabled=true;
         try{
-          var result=await sb.auth.updateUser({data:{[EXAM_TRACK_KEY]:track}});
-          if(result.error)throw result.error;
-          state.user=result.data.user||user;state.examTrack=track;updateExamTrackUI();bg.classList.remove("open");resolve();
-        }catch(e){busy=false;status.textContent="Could not save your choice: "+(e.message||"please try again.");document.getElementById("chooseJeeTrack").disabled=false;document.getElementById("chooseNeetTrack").disabled=false;}
+          state.examTrack=track;
+          try{ localStorage.setItem("jee_tracker_exam_v1",track); }catch(e){}
+
+          if(sb && user){
+            var result=await sb.auth.updateUser({data:{[EXAM_TRACK_KEY]:track}});
+            if(result.error)throw result.error;
+            state.user=result.data.user||user;
+          }
+
+          updateExamTrackUI();
+          bg.classList.remove("open");
+          bg.setAttribute("aria-hidden","true");
+          resolve();
+        }catch(e){
+          busy=false;
+          status.textContent="Could not save your choice: "+(e.message||"please try again.");
+          document.getElementById("chooseJeeTrack").disabled=false;
+          document.getElementById("chooseNeetTrack").disabled=false;
+        }
       }
+
       var neetButton=document.getElementById("chooseNeetTrack");
       if(neetButton) neetButton.style.display=isVmc()?"none":"";
       document.getElementById("chooseJeeTrack").onclick=function(){choose("jee");};
