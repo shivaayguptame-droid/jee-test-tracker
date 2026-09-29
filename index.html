@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>document.documentElement.classList.add("tracker-booting");</script>
-<title>JEE Test Tracker v3.0.0</title> <!-- x-release-please-version -->
+<title>JEE Test Tracker v3.0.1</title> <!-- x-release-please-version -->
 <!-- VERSION: 1.9.1 | Smart Planner + Goals 2.0 with theme-correct notification panel and viewport-safe notifications. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,7 +18,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
 html.tracker-booting body{visibility:hidden!important;}
-html.tracker-booting #examTrackModalBg.open{visibility:visible!important;z-index:10000!important;}
+html.tracker-booting #providerModalBg.open,html.tracker-booting #examTrackModalBg.open{visibility:visible!important;z-index:10000!important;}
   :root {
     --bg: #050805;
     --surface: #0b120c;
@@ -2193,6 +2193,17 @@ $('smartGoals190Close')?.addEventListener('click',close); $('g190Save')?.addEven
 window.openSmartGoals190=open;
 })();
 </script>
+<div class="modalBg" id="providerModalBg" role="dialog" aria-modal="true" aria-labelledby="providerTitle">
+  <div class="modal" style="max-width:560px;">
+    <h2 id="providerTitle">Which coaching platform do you use?</h2>
+    <p class="hint">Choose the test platform you use. This selection controls the available test series. You will be asked again when you open the tracker.</p>
+    <div class="settingsActionRow" style="margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <button class="primary" id="choosePwProvider">Physics Wallah (PW)</button>
+      <button class="primary" id="chooseVmcProvider">Vidyamandir Classes (VMC)</button>
+    </div>
+    <div id="providerStatus" class="hint" role="status" style="margin-top:12px;"></div>
+  </div>
+</div>
 <div class="modalBg" id="examTrackModalBg" role="dialog" aria-modal="true" aria-labelledby="examTrackTitle">
   <div class="modal" style="max-width:560px;">
     <h2 id="examTrackTitle">Which exam are you preparing for?</h2>
@@ -2210,33 +2221,39 @@ window.openSmartGoals190=open;
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "3.0.0"; // x-release-please-version
-  var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, examTrack: "jee", examPreview:false, previewOriginalTests:null, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
+  var APP_VERSION = "3.0.2"; // x-release-please-version
+  var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, provider: "pw", examTrack: "jee", examPreview:false, previewOriginalTests:null, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   var EXAM_TRACK_KEY = "exam_track";
+  var PROVIDER_KEY = "training_provider";
+  var VMC_SERIES = ["JEE Main","JEE Advanced"];
   var JEE_SUBJECTS = ["physics","chemistry","maths"];
   var NEET_SUBJECTS = ["physics","chemistry","botany","zoology"];
   var SUBJECT_LABELS = { physics:"Physics", chemistry:"Chemistry", maths:"Maths", botany:"Botany", zoology:"Zoology" };
   var NEET_SERIES = ["Practice Test (PW Batch)","AITS NEET","NRTS-11 (NEET Real Test Series)","Rank Booster Series"];
-  function isNeet(){ return state.examPreview || state.examTrack === "neet"; }
+  function isVmc(){ return state.provider === "vmc"; }
+  function isNeet(){ return !isVmc() && (state.examPreview || state.examTrack === "neet"); }
   function activeSubjects(){ return isNeet() ? NEET_SUBJECTS : JEE_SUBJECTS; }
   function activeSubjectLabels(){ return activeSubjects().map(function(key){ return SUBJECT_LABELS[key]; }); }
   function updateExamTrackUI(){
     var exam = isNeet() ? "NEET" : "JEE";
-    document.title = exam + " Test Tracker v" + APP_VERSION;
+    document.title = (isVmc()?"VMC ":"") + exam + " Test Tracker v" + APP_VERSION;
     var title = document.querySelector("header h1");
-    if(title) title.firstChild.textContent = exam + " Command Center ";
-    var eyebrow=document.querySelector(".welcomeEyebrow"); if(eyebrow) eyebrow.lastChild.textContent=" WELCOME TO "+exam+" TEST TRACKER";
+    if(title) title.firstChild.textContent = (isVmc()?"VMC ":"") + exam + " Command Center ";
+    var eyebrow=document.querySelector(".welcomeEyebrow"); if(eyebrow) eyebrow.lastChild.textContent=" WELCOME TO "+(isVmc()?"VMC ":"")+exam+" TEST TRACKER";
     var lead=document.querySelector(".welcomeLead"); if(lead) lead.textContent="Bring your "+exam+" results, weak areas, and study plan into one calm workspace. Start with one test; useful insights build as you go.";
     var preview=document.querySelector(".welcomePreviewHead b"); if(preview) preview.textContent="Your "+exam+" overview";
-    var settingsBrand=document.querySelector(".settingsBrandSub"); if(settingsBrand) settingsBrand.textContent=exam+" Command Center";
+    var settingsBrand=document.querySelector(".settingsBrandSub"); if(settingsBrand) settingsBrand.textContent=(isVmc()?"VMC ":"")+exam+" Command Center";
     var subjects=document.getElementById("subjectSubNav"); if(subjects){ subjects.innerHTML=activeSubjects().map(function(key,i){return '<button class="subjectbtn'+(i===0?' active':'')+'" data-subject="'+key+'">'+SUBJECT_LABELS[key]+'</button>';}).join(""); state.subjectTab=activeSubjects()[0]; }
     var mastery=document.getElementById("pmSubject"); if(mastery) mastery.innerHTML=activeSubjectLabels().map(function(x){return '<option>'+x+'</option>';}).join("");
     ["plSubject","p190Subject"].forEach(function(id){var s=document.getElementById(id); if(s){var extras=id==="plSubject"?['Revision','Test']:['Mixed']; s.innerHTML=activeSubjectLabels().concat(extras).map(function(x){return '<option>'+x+'</option>';}).join("");}});
     var type=document.getElementById("f_type");
     if(type){
-      if(isNeet()){
+      if(isNeet() || isVmc()){
         if(type.tagName!=="SELECT"){var select=document.createElement("select"); select.id="f_type"; select.required=true; type.replaceWith(select); type=select;}
-        var selected=type.value; type.innerHTML='<option value="">Choose NEET test series</option>'+NEET_SERIES.map(function(x){return '<option>'+x+'</option>';}).join(""); if(NEET_SERIES.indexOf(selected)>=0)type.value=selected;
+        var selected=type.value;
+        var series=isVmc()?VMC_SERIES:NEET_SERIES;
+        type.innerHTML='<option value="">Choose '+(isVmc()?"VMC":"NEET")+' test type</option>'+series.map(function(x){return '<option>'+x+'</option>';}).join("");
+        if(series.indexOf(selected)>=0)type.value=selected;
       } else if(type.tagName!=="INPUT") {var input=document.createElement("input"); input.id="f_type"; input.placeholder="PW Batch Mains / JRTS Advanced / AITS"; type.replaceWith(input);}
     }
     var diff=document.getElementById("f_difficulty"); if(diff){var wrap=diff.closest('.field'); if(wrap)wrap.style.display=isNeet()?"none":"";}
@@ -2269,10 +2286,79 @@ window.openSmartGoals190=open;
     var stageText=document.querySelector('[data-settings-content="advanced"] .stageRoadmap'); if(stageText){stageText.querySelectorAll("small, b").forEach(function(el){el.textContent=el.textContent.replace(/\b(JEE|NEET)\b/g,exam);});}
     state.renderSignature=null; state.renderedPanels={};
   }
+  async function ensureProvider(user){
+    var bg=document.getElementById("providerModalBg"), status=document.getElementById("providerStatus");
+    if(!bg) return;
+
+    // The coaching-platform/cohort choice is made once per account.
+    // Signed-in users use Supabase user_metadata so the choice follows them
+    // across browsers/devices. Logged-out users fall back to localStorage.
+    var savedProvider = user && user.user_metadata && user.user_metadata[PROVIDER_KEY];
+    if(savedProvider === "pw" || savedProvider === "vmc"){
+      state.provider = savedProvider;
+      updateExamTrackUI();
+      return;
+    }
+    if(!user){
+      try{
+        var localProvider = localStorage.getItem("jee_tracker_provider_v1");
+        if(localProvider === "pw" || localProvider === "vmc"){
+          state.provider = localProvider;
+          updateExamTrackUI();
+          return;
+        }
+      }catch(e){}
+    }
+
+    bg.classList.add("open");
+    bg.setAttribute("aria-hidden","false");
+    await new Promise(function(resolve){
+      var busy=false;
+      async function choose(provider){
+        if(busy)return;
+        busy=true;
+        status.textContent="Saving your platform choice…";
+        document.getElementById("choosePwProvider").disabled=true;
+        document.getElementById("chooseVmcProvider").disabled=true;
+        try{
+          state.provider=provider;
+          try{ localStorage.setItem("jee_tracker_provider_v1",provider); }catch(e){}
+          if(user && sb){
+            var result=await sb.auth.updateUser({data:{[PROVIDER_KEY]:provider}});
+            if(result.error) throw result.error;
+            state.user=result.data.user||user;
+          }
+          // VMC is currently JEE-only. Reset an accidental NEET state before the exam picker.
+          if(provider==="vmc") state.examTrack="jee";
+          updateExamTrackUI();
+          bg.classList.remove("open");
+          bg.setAttribute("aria-hidden","true");
+          resolve();
+        }catch(e){
+          busy=false;
+          status.textContent="Could not save your choice: "+(e.message||"please try again.");
+          document.getElementById("choosePwProvider").disabled=false;
+          document.getElementById("chooseVmcProvider").disabled=false;
+        }
+      }
+      document.getElementById("choosePwProvider").onclick=function(){choose("pw");};
+      document.getElementById("chooseVmcProvider").onclick=function(){choose("vmc");};
+    });
+  }
+
   async function ensureExamTrack(user){
     var saved=user&&user.user_metadata&&user.user_metadata[EXAM_TRACK_KEY];
-    if(saved==="jee"||saved==="neet"){state.examTrack=saved;updateExamTrackUI();return;}
+    if(isVmc()){
+      state.examTrack="jee";
+      updateExamTrackUI();
+      var vmcBtn=document.getElementById("chooseNeetTrack");
+      if(vmcBtn) vmcBtn.style.display="none";
+    } else if(saved==="jee"||saved==="neet"){
+      state.examTrack=saved;
+      updateExamTrackUI();
+    }
     var bg=document.getElementById("examTrackModalBg"),status=document.getElementById("examTrackStatus");
+    if(!bg) return;
     bg.classList.add("open");
     await new Promise(function(resolve){
       var busy=false;
@@ -2285,8 +2371,10 @@ window.openSmartGoals190=open;
           state.user=result.data.user||user;state.examTrack=track;updateExamTrackUI();bg.classList.remove("open");resolve();
         }catch(e){busy=false;status.textContent="Could not save your choice: "+(e.message||"please try again.");document.getElementById("chooseJeeTrack").disabled=false;document.getElementById("chooseNeetTrack").disabled=false;}
       }
+      var neetButton=document.getElementById("chooseNeetTrack");
+      if(neetButton) neetButton.style.display=isVmc()?"none":"";
       document.getElementById("chooseJeeTrack").onclick=function(){choose("jee");};
-      document.getElementById("chooseNeetTrack").onclick=function(){choose("neet");};
+      document.getElementById("chooseNeetTrack").onclick=function(){if(!isVmc())choose("neet");};
     });
   }
   window.state = state;
@@ -3030,6 +3118,8 @@ window.openSmartGoals190=open;
     var savedTrack=user&&user.user_metadata&&user.user_metadata[EXAM_TRACK_KEY];
     if(savedTrack==="jee"||savedTrack==="neet"){state.examTrack=savedTrack;updateExamTrackUI();}
     try {
+      await ensureProvider(state.user);
+      await ensureExamTrack(state.user);
       // Do not automatically upload browser-local tests when a user signs in.
       // localStorage is shared by accounts on the same browser/origin, so an
       // alternate account could otherwise try to upsert tests belonging to
@@ -3043,7 +3133,6 @@ window.openSmartGoals190=open;
       applyRemoteConfig();
       if (state.isAdmin) fillAdminForm();
       subscribeRealtime();
-      await ensureExamTrack(state.user);
       state.ready = true; render(); refreshAIInsights();
       startRemoteConfigRefresh();
       // Calendar restoration is deliberately detached from the initial app boot.
@@ -3063,6 +3152,8 @@ window.openSmartGoals190=open;
   async function initDb(){
     state.tests = loadLocal().map(normalizeTest);
     if (!sb) {
+      await ensureProvider(null);
+      await ensureExamTrack(null);
       state.ready = true; setAccountButton(); render();
       return;
     }
@@ -3070,7 +3161,11 @@ window.openSmartGoals190=open;
       await loadRemoteConfig();
       var sessionRes = await sb.auth.getSession();
       if (sessionRes.data && sessionRes.data.session && sessionRes.data.session.user) await onSignedIn(sessionRes.data.session.user);
-      else { state.ready = true; setAccountButton(); render(); }
+      else {
+        await ensureProvider(null);
+        await ensureExamTrack(null);
+        state.ready = true; setAccountButton(); render();
+      }
       sb.auth.onAuthStateChange(function(event, session){
         setTimeout(async function(){
           if (session && session.user) await onSignedIn(session.user);
@@ -5298,7 +5393,7 @@ window.openSmartGoals190=open;
   setInterval(function(){ if (state.user && state.ready) refreshAIInsights(); }, 30000);
 
   // Single source of truth for the displayed application version.
-  document.title = (isNeet()?"NEET":"JEE") + " Test Tracker v" + APP_VERSION;
+  document.title = (isVmc()?"VMC ":"") + (isNeet()?"NEET":"JEE") + " Test Tracker v" + APP_VERSION;
   var versionEl = document.getElementById("appVersion");
   if (versionEl) versionEl.textContent = "v" + APP_VERSION;
   var systemVersionEl = document.getElementById("systemAppVersion");
