@@ -4,6 +4,17 @@ Notable changes to JEE Test Tracker are documented here. Release Please maintain
 
 <<<<<<< HEAD
 =======
+## [3.0.0](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v2.9.0...jee-test-tracker-v3.0.0) (2026-09-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* add NEET support and require a saved exam track
+
+### Features
+
+* add NEET support and require a saved exam track ([657745e](https://github.com/shivaayguptame-droid/jee-test-tracker/commit/657745e74f7995f65d5b9df265364618acfb9653))
+
 ## [2.9.0](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v2.8.1...jee-test-tracker-v2.9.0) (2026-09-29)
 
 
