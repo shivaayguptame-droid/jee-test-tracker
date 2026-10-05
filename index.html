@@ -1694,10 +1694,11 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
       <div class="rowbtns">
         <button class="ghost small" id="scheduleTodayBtn">Today</button>
         <button class="ghost small" id="openGoogleCalendarBtn">Open Google Calendar</button>
-        <button class="primary small" id="connectGoogleCalendarBtn">Connect Google Calendar</button>
+        <button class="primary small" id="connectGoogleCalendarBtn">Connect Google Account</button>
       </div>
     </div>
     <div id="googleCalendarStatus" style="font-size:12.5px;color:var(--text-dim);margin-bottom:12px;">Not connected. Connect your Google Calendar to load your real schedule here.</div>
+    <div id="googleCalendarAccounts" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;"></div>
     <div class="gcal-nav">
       <button class="ghost" id="schedulePrevBtn">← Previous day</button>
       <div class="field" style="margin:0;"><label>Day</label><input id="scheduleWeekInput" type="date"></div>
@@ -2226,8 +2227,8 @@ window.openSmartGoals190=open;
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "3.3.1"; // x-release-please-version
-  var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, provider: "pw", examTrack: "jee", examPreview:false, previewOriginalTests:null, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
+  var APP_VERSION = "3.4.0"; // x-release-please-version
+  var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, provider: "pw", examTrack: "jee", examPreview:false, previewOriginalTests:null, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalAccessTokens: {}, gcalExpiryTimers: {}, gcalAccounts: [], gcalActiveAccountId: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   var EXAM_TRACK_KEY = "exam_track";
   var PROVIDER_KEY = "training_provider";
   var VMC_SERIES = ["JEE Main","JEE Advanced"];
@@ -2443,7 +2444,7 @@ window.openSmartGoals190=open;
   // OAuth Client ID created for the GitHub Pages origin:
   // https://shivaayguptame-droid.github.io
   var GOOGLE_CLIENT_ID = "447831086514-cb2u4apbahdplkmrcluueki2brh3tte7.apps.googleusercontent.com";
-  var GOOGLE_CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events";
+  var GOOGLE_CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events openid email profile";
   var sb = null;
   var migrationPayload = null;
   if (window.supabase && SUPABASE_URL.indexOf("PASTE_") !== 0 && SUPABASE_PUBLISHABLE_KEY.indexOf("PASTE_") !== 0) {
@@ -2458,7 +2459,7 @@ window.openSmartGoals190=open;
 
   function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
 
-  var DEFAULT_APP_CONFIG = { id:1, app_version:"3.3.1", announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
+  var DEFAULT_APP_CONFIG = { id:1, app_version:"3.4.0", announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
 
   function notificationStorageKey(){
     var uid = state.user && state.user.id ? state.user.id : "public";
@@ -3146,6 +3147,7 @@ window.openSmartGoals190=open;
 
   async function signOut(){
     if(state.examPreview)setAdminNeetPreview(false);
+    clearGoogleCalendarConnection();
     if (sb) await sb.auth.signOut();
     state.user = null; state.cloud = false; state.examTrack="jee"; updateExamTrackUI(); loadNotifications(); state.tests = loadLocal().map(normalizeTest);
     if (state.realtime) { try { await sb.removeChannel(state.realtime); } catch(e){} state.realtime = null; }
@@ -3334,7 +3336,8 @@ window.openSmartGoals190=open;
 
   function eventColor(ev){
     var cal = state.gcalCalendars[ev._calendarId || ""] || {};
-    return ev.backgroundColor || (ev.colorId && (state.gcalColorMap || {})[ev.colorId]) || cal.backgroundColor || "#4285f4";
+    var accountColor = ev.colorId && ev._gcalAccountId && (state.gcalColorMap || {})[ev._gcalAccountId + "::" + ev.colorId];
+    return ev.backgroundColor || accountColor || (ev.colorId && (state.gcalColorMap || {})[ev.colorId]) || cal.backgroundColor || "#4285f4";
   }
 
   function eventCalendarName(ev){
@@ -3351,7 +3354,7 @@ window.openSmartGoals190=open;
     return Math.round(m/1440) + " day" + (Math.round(m/1440) === 1 ? "" : "s") + " before";
   }
 
-  var GCAL_CONNECTED_KEY = "jee_test_tracker_google_calendar_connected_v2";
+  var GCAL_CONNECTED_KEY = "jee_test_tracker_google_calendar_connected_v3";
   var GCAL_TOKEN_ENDPOINT = SUPABASE_URL + "/functions/v1/google-calendar-oauth";
   var GCAL_CALLBACK_URL = SUPABASE_URL + "/functions/v1/google-calendar-oauth";
 
@@ -3361,7 +3364,7 @@ window.openSmartGoals190=open;
   }
 
   function hasGoogleCalendarConnection(){
-    try { return localStorage.getItem(GCAL_CONNECTED_KEY) === "1"; } catch(e) { return false; }
+    return !!(state.gcalAccounts && state.gcalAccounts.length);
   }
 
   function markGoogleCalendarConnected(){
@@ -3370,7 +3373,20 @@ window.openSmartGoals190=open;
 
   function clearGoogleCalendarConnection(){
     try { localStorage.removeItem(GCAL_CONNECTED_KEY); } catch(e){}
+    Object.keys(state.gcalAccessTokens || {}).forEach(function(accountId){
+      if (state.gcalExpiryTimers && state.gcalExpiryTimers[accountId]) {
+        clearTimeout(state.gcalExpiryTimers[accountId]);
+      }
+    });
     state.gcalAccessToken = null;
+    state.gcalAccessTokens = {};
+    state.gcalExpiryTimers = {};
+    state.gcalAccounts = [];
+    state.gcalActiveAccountId = null;
+    state.gcalCalendars = {};
+    state.gcalEvents = [];
+    state.gcalUpcomingTestEvents = [];
+    renderGoogleCalendarAccounts();
   }
 
   function makeRandomState(){
@@ -3392,7 +3408,6 @@ window.openSmartGoals190=open;
       var sessionRes = await sb.auth.getSession();
       var session = sessionRes && sessionRes.data && sessionRes.data.session;
       if (!session || !session.access_token) throw new Error("Your tracker session is not ready. Please sign in again.");
-
       var oauthState = makeRandomState();
       var ins = await sb.from("google_calendar_oauth_states").insert({
         state: oauthState,
@@ -3400,7 +3415,6 @@ window.openSmartGoals190=open;
         redirect_to: window.location.href.split("#")[0].split("?")[0]
       });
       if (ins.error) throw ins.error;
-
       var params = new URLSearchParams({
         client_id: GOOGLE_CLIENT_ID,
         redirect_uri: GCAL_CALLBACK_URL,
@@ -3417,130 +3431,150 @@ window.openSmartGoals190=open;
     }
   }
 
-  async function getServerCalendarAccessToken(){
-    if (!sb || !state.user) throw new Error("Tracker sign-in is required");
+  async function loadGoogleCalendarAccounts(){
+    if (!sb || !state.user) return [];
     var sessionRes = await sb.auth.getSession();
     var session = sessionRes && sessionRes.data && sessionRes.data.session;
     if (!session || !session.access_token) throw new Error("Tracker session is not available");
     var res = await fetch(GCAL_TOKEN_ENDPOINT, {
       method:"POST",
       headers:{"Authorization":"Bearer "+session.access_token,"Content-Type":"application/json"},
-      body:"{}"
+      body:JSON.stringify({action:"list_accounts"})
     });
     var data = await res.json().catch(function(){return {};});
-    if (!res.ok || !data.access_token) {
-      var msg = data.error || ("Calendar token service returned HTTP "+res.status);
-      if (res.status === 404 || res.status === 405) msg = "Persistent Calendar authentication is not deployed yet. Deploy the google-calendar-token Edge Function.";
-      throw new Error(msg);
+    if (!res.ok) throw new Error(data.error || ("Calendar account service returned HTTP "+res.status));
+    state.gcalAccounts = Array.isArray(data.accounts) ? data.accounts : [];
+    if (state.gcalActiveAccountId && state.gcalAccounts.some(function(a){return a.id===state.gcalActiveAccountId;})) {
+      /* keep current account */
+    } else {
+      state.gcalActiveAccountId = state.gcalAccounts.length ? state.gcalAccounts[0].id : null;
     }
-    state.gcalAccessToken = data.access_token;
-    markGoogleCalendarConnected();
-    var expires = data.expires_in ? Number(data.expires_in)*1000 : 3600000;
-    if (state.gcalExpiryTimer) clearTimeout(state.gcalExpiryTimer);
-    state.gcalExpiryTimer = setTimeout(function(){
-      getServerCalendarAccessToken().then(loadGoogleCalendarDay).catch(function(){
-        setGoogleCalendarStatus("Google Calendar session needs attention. Click Connect Google Calendar to reconnect.");
+    if (state.gcalAccounts.length) markGoogleCalendarConnected();
+    renderGoogleCalendarAccounts();
+    return state.gcalAccounts;
+  }
+
+  function renderGoogleCalendarAccounts(){
+    var el=document.getElementById("googleCalendarAccounts");
+    if(!el)return;
+    var accounts=state.gcalAccounts||[];
+    if(!accounts.length){el.innerHTML="";return;}
+    el.innerHTML='<div style="width:100%;font-size:11px;color:var(--text-dim);margin-bottom:2px;">Connected Google accounts</div>'+accounts.map(function(account){
+      var active=account.id===state.gcalActiveAccountId;
+      var label=account.google_account_email||"Google Account";
+      return '<button type="button" class="'+(active?"primary":"ghost")+' small" data-gcal-account="'+escapeHtml(account.id)+'" title="'+escapeHtml(label)+'">'+escapeHtml(label)+(active?" ✓":"")+'</button>';
+    }).join("")+'<span style="font-size:11px;color:var(--text-dim);align-self:center;">Select an account to make it active for Calendar actions.</span>';
+    el.querySelectorAll("[data-gcal-account]").forEach(function(button){
+      button.addEventListener("click",async function(){
+        var accountId=button.getAttribute("data-gcal-account");
+        if(!accountId)return;
+        state.gcalActiveAccountId=accountId;
+        renderGoogleCalendarAccounts();
+        var account=(state.gcalAccounts||[]).find(function(a){return a.id===accountId;})||{};
+        setGoogleCalendarStatus("Loading "+(account.google_account_email||"Google account")+" calendars…");
+        try{await loadGoogleCalendarDay();}
+        catch(e){setGoogleCalendarStatus("Could not load this Google Calendar account: "+(e.message||"unknown error"));}
       });
-    }, Math.max(60000, expires - 120000));
+    });
+  }
+
+  async function getServerCalendarAccessToken(accountId){
+    if (!sb || !state.user) throw new Error("Tracker sign-in is required");
+    accountId=accountId||state.gcalActiveAccountId;
+    if(!accountId)throw new Error("No Google Calendar account is connected");
+    var sessionRes=await sb.auth.getSession();
+    var session=sessionRes&&sessionRes.data&&sessionRes.data.session;
+    if(!session||!session.access_token)throw new Error("Tracker session is not available");
+    var res=await fetch(GCAL_TOKEN_ENDPOINT,{method:"POST",headers:{"Authorization":"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({action:"token",account_id:accountId})});
+    var data=await res.json().catch(function(){return {};});
+    if(!res.ok||!data.access_token)throw new Error(data.error||("Calendar token service returned HTTP "+res.status));
+    state.gcalAccessTokens[accountId]=data.access_token;
+    state.gcalAccessToken=data.access_token;
+    markGoogleCalendarConnected();
+    var expires=data.expires_in?Number(data.expires_in)*1000:3600000;
+    if(state.gcalExpiryTimers[accountId])clearTimeout(state.gcalExpiryTimers[accountId]);
+    state.gcalExpiryTimers[accountId]=setTimeout(function(){getServerCalendarAccessToken(accountId).catch(function(){});},Math.max(60000,expires-120000));
     return data.access_token;
   }
 
   async function restoreGoogleCalendarConnection(){
-    if (!state.user) return;
-    var params = new URLSearchParams(window.location.search);
-    if (params.get("gcal") === "connected") {
+    if(!state.user)return;
+    var params=new URLSearchParams(window.location.search);
+    if(params.get("gcal")==="connected"){
+      try{window.history.replaceState({},document.title,window.location.pathname+window.location.hash);}catch(e){}
       markGoogleCalendarConnected();
-      try { window.history.replaceState({}, document.title, window.location.pathname + window.location.hash); } catch(e){}
     }
-    if (params.get("gcal") === "error") {
-      setGoogleCalendarStatus("Google Calendar authorization failed. Click Connect Google Calendar to try again.");
-      try { window.history.replaceState({}, document.title, window.location.pathname + window.location.hash); } catch(e){}
-      return;
+    if(params.get("gcal")==="error"){
+      setGoogleCalendarStatus("Google Calendar authorization failed. Click Connect Google Account to try again.");
+      try{window.history.replaceState({},document.title,window.location.pathname+window.location.hash);}catch(e){}
     }
-    if (!hasGoogleCalendarConnection()) return;
-    setGoogleCalendarStatus("Restoring Google Calendar connection…");
-    try {
-      await getServerCalendarAccessToken();
-      setGoogleCalendarStatus("Connected. Loading all of your visible Google Calendars…");
+    try{
+      setGoogleCalendarStatus("Restoring Google Calendar accounts…");
+      await loadGoogleCalendarAccounts();
+      if(!state.gcalAccounts.length){
+        setGoogleCalendarStatus("Not connected. Connect a Google Calendar account to load your real schedule here.");
+        return;
+      }
+      setGoogleCalendarStatus("Connected. Loading your Google Calendars…");
       await loadGoogleCalendarDay();
-    } catch(e) {
-      // Keep the saved connection marker on transient token/API failures.
-      // A later app load or sign-in can retry without forcing OAuth again.
-      state.gcalAccessToken = null;
-      setGoogleCalendarStatus("Could not restore Google Calendar: " + (e.message || "temporary error") + ". Your saved connection was kept. Try again; if Google access was revoked, reconnect.");
+    }catch(e){
+      setGoogleCalendarStatus("Could not restore Google Calendar: "+(e.message||"temporary error")+". Try reconnecting.");
     }
   }
 
-  async function gcalFetch(url, retried, options){
-    if (!state.gcalAccessToken) await getServerCalendarAccessToken();
-    options = options || {};
-    options.headers = Object.assign({}, options.headers || {}, {Authorization:"Bearer "+state.gcalAccessToken});
-    var res = await fetch(url,options);
-    var data = await res.json().catch(function(){return {};});
-    if (res.status === 401 && !retried) {
-      await getServerCalendarAccessToken();
-      return gcalFetch(url, true, options);
+  async function gcalFetch(accountId,url,retried,options){
+    accountId=accountId||state.gcalActiveAccountId;
+    if(!accountId)throw new Error("No Google Calendar account selected");
+    if(!state.gcalAccessTokens[accountId])await getServerCalendarAccessToken(accountId);
+    options=options||{};
+    options.headers=Object.assign({},options.headers||{},{Authorization:"Bearer "+state.gcalAccessTokens[accountId]});
+    var res=await fetch(url,options);
+    var data=await res.json().catch(function(){return {};});
+    if(res.status===401&&!retried){
+      await getServerCalendarAccessToken(accountId);
+      return gcalFetch(accountId,url,true,options);
     }
-    if (!res.ok) throw new Error(data.error && data.error.message ? data.error.message : ("Google Calendar API error "+res.status));
+    if(!res.ok)throw new Error(data.error&&data.error.message?data.error.message:("Google Calendar API error "+res.status));
     return data;
   }
 
   async function loadGoogleCalendarDay(){
-    if (!state.gcalAccessToken) return;
-    if (!state.scheduleWeekStart) state.scheduleWeekStart = new Date();
-    var start = new Date(state.scheduleWeekStart.getFullYear(),state.scheduleWeekStart.getMonth(),state.scheduleWeekStart.getDate());
-    var end = new Date(start); end.setDate(end.getDate()+1);
-    try {
-      var list = await gcalFetch("https://www.googleapis.com/calendar/v3/users/me/calendarList?showHidden=true&minAccessRole=reader&maxResults=250");
-      state.gcalCalendars = {};
-      state.gcalColorMap = {};
-      (list.items || []).forEach(function(c){
-        state.gcalCalendars[c.id] = c;
-        if (c.colorId && c.backgroundColor) state.gcalColorMap[c.colorId] = c.backgroundColor;
-      });
-
-      var calendars = (list.items || []).filter(function(c){ return c.selected !== false && c.accessRole !== "freeBusyReader"; });
-      var all = [];
-      var upcoming = [];
-      var upcomingStart = new Date(); upcomingStart.setHours(0,0,0,0);
-      var upcomingEnd = new Date(upcomingStart); upcomingEnd.setDate(upcomingEnd.getDate()+45);
-      for (var i=0;i<calendars.length;i++){
-        var c = calendars[i];
-        var url = "https://www.googleapis.com/calendar/v3/calendars/"+encodeURIComponent(c.id)+"/events"+
-          "?singleEvents=true&orderBy=startTime&showDeleted=false"+
-          "&timeMin="+encodeURIComponent(start.toISOString())+"&timeMax="+encodeURIComponent(end.toISOString())+"&maxResults=2500";
-        try {
-          var data = await gcalFetch(url);
-          (data.items || []).forEach(function(ev){ ev._calendarId=c.id; all.push(ev); });
-        } catch(e){ console.warn("Could not load calendar",c.summary,e); }
-        try {
-          var upcomingUrl = "https://www.googleapis.com/calendar/v3/calendars/"+encodeURIComponent(c.id)+"/events"+
-            "?singleEvents=true&orderBy=startTime&showDeleted=false"+
-            "&timeMin="+encodeURIComponent(upcomingStart.toISOString())+"&timeMax="+encodeURIComponent(upcomingEnd.toISOString())+"&maxResults=2500";
-          var upcomingData = await gcalFetch(upcomingUrl);
-          (upcomingData.items || []).forEach(function(ev){ if(isLikelyTestEvent(ev)){ev._calendarId=c.id;upcoming.push(ev);} });
-        } catch(e){ console.warn("Could not load upcoming test events from calendar",c.summary,e); }
+    if(!state.gcalAccounts||!state.gcalAccounts.length){state.gcalEvents=[];state.gcalUpcomingTestEvents=[];return;}
+    if(!state.scheduleWeekStart)state.scheduleWeekStart=new Date();
+    var start=new Date(state.scheduleWeekStart.getFullYear(),state.scheduleWeekStart.getMonth(),state.scheduleWeekStart.getDate());
+    var end=new Date(start);end.setDate(end.getDate()+1);
+    try{
+      state.gcalCalendars={};state.gcalColorMap={};
+      var all=[],upcoming=[];
+      var upcomingStart=new Date();upcomingStart.setHours(0,0,0,0);
+      var upcomingEnd=new Date(upcomingStart);upcomingEnd.setDate(upcomingEnd.getDate()+45);
+      for(var accountIndex=0;accountIndex<state.gcalAccounts.length;accountIndex++){
+        var account=state.gcalAccounts[accountIndex],accountId=account.id;
+        var list=await gcalFetch(accountId,"https://www.googleapis.com/calendar/v3/users/me/calendarList?showHidden=true&minAccessRole=reader&maxResults=250");
+        var calendars=(list.items||[]).filter(function(c){return c.selected!==false&&c.accessRole!=="freeBusyReader";});
+        calendars.forEach(function(c){
+          var key=accountId+"::"+c.id;
+          state.gcalCalendars[key]=Object.assign({},c,{_accountId:accountId,_originalCalendarId:c.id,_accountEmail:account.google_account_email||""});
+          if(c.colorId&&c.backgroundColor)state.gcalColorMap[accountId+"::"+c.colorId]=c.backgroundColor;
+        });
+        for(var calendarIndex=0;calendarIndex<calendars.length;calendarIndex++){
+          var c=calendars[calendarIndex],calendarKey=accountId+"::"+c.id;
+          var url="https://www.googleapis.com/calendar/v3/calendars/"+encodeURIComponent(c.id)+"/events?singleEvents=true&orderBy=startTime&showDeleted=false&timeMin="+encodeURIComponent(start.toISOString())+"&timeMax="+encodeURIComponent(end.toISOString())+"&maxResults=2500";
+          try{var data=await gcalFetch(accountId,url);(data.items||[]).forEach(function(ev){ev._calendarId=calendarKey;ev._gcalAccountId=accountId;ev._gcalAccountEmail=account.google_account_email||"";all.push(ev);});}catch(e){console.warn("Could not load calendar",c.summary,account.google_account_email,e);}
+          try{var upcomingUrl="https://www.googleapis.com/calendar/v3/calendars/"+encodeURIComponent(c.id)+"/events?singleEvents=true&orderBy=startTime&showDeleted=false&timeMin="+encodeURIComponent(upcomingStart.toISOString())+"&timeMax="+encodeURIComponent(upcomingEnd.toISOString())+"&maxResults=2500";var upcomingData=await gcalFetch(accountId,upcomingUrl);(upcomingData.items||[]).forEach(function(ev){if(isLikelyTestEvent(ev)){ev._calendarId=calendarKey;ev._gcalAccountId=accountId;ev._gcalAccountEmail=account.google_account_email||"";upcoming.push(ev);}});}catch(e){console.warn("Could not load upcoming test events from calendar",c.summary,account.google_account_email,e);}
+        }
       }
-      all.sort(function(a,b){
-        var av=(a.start&& (a.start.dateTime||a.start.date))||"";
-        var bv=(b.start&& (b.start.dateTime||b.start.date))||"";
-        return new Date(av).getTime()-new Date(bv).getTime();
-      });
-      state.gcalEvents = all;
-      upcoming.sort(function(a,b){
-        var av=a.start&&(a.start.dateTime||a.start.date)||"", bv=b.start&&(b.start.dateTime||b.start.date)||"";
-        return new Date(av.length===10?av+"T00:00:00":av).getTime()-new Date(bv.length===10?bv+"T00:00:00":bv).getTime();
-      });
-      state.gcalUpcomingTestEvents = upcoming;
-      document.getElementById("googleCalendarStatus").textContent = "Connected to your Google Calendars. Colors, reminders and event details are shown here; Google Calendar remains the source of truth.";
-      state.renderedPanels.schedule = false;
-      state.renderedPanels.overview = false;
-      renderPanel("schedule", sortedTests());
-      if ((document.querySelector("#mainTabNav .tabbtn.active") || {}).getAttribute && document.querySelector("#mainTabNav .tabbtn.active").getAttribute("data-tab") === "overview") renderPanel("overview", sortedTests());
-    } catch(e) {
-      if (!hasGoogleCalendarConnection()) state.gcalAccessToken = null;
-      setGoogleCalendarStatus("Could not load Google Calendar: " + (e.message || "access denied") + ". If authorization was revoked, click Connect Google Calendar.");
-    }
+      all.sort(function(a,b){var av=(a.start&&(a.start.dateTime||a.start.date))||"",bv=(b.start&&(b.start.dateTime||b.start.date))||"";return new Date(av).getTime()-new Date(bv).getTime();});
+      state.gcalEvents=all;
+      upcoming.sort(function(a,b){var av=a.start&&(a.start.dateTime||a.start.date)||"",bv=b.start&&(b.start.dateTime||b.start.date)||"";return new Date(av.length===10?av+"T00:00:00":av).getTime()-new Date(bv.length===10?bv+"T00:00:00":bv).getTime();});
+      state.gcalUpcomingTestEvents=upcoming;
+      setGoogleCalendarStatus("Connected to "+state.gcalAccounts.length+" Google account"+(state.gcalAccounts.length===1?"":"s")+". Calendar events are loaded from all connected accounts.");
+      renderGoogleCalendarAccounts();
+      state.renderedPanels.schedule=false;state.renderedPanels.overview=false;
+      renderPanel("schedule",sortedTests());
+      var activeTab=document.querySelector("#mainTabNav .tabbtn.active");
+      if(activeTab&&activeTab.getAttribute("data-tab")==="overview")renderPanel("overview",sortedTests());
+    }catch(e){setGoogleCalendarStatus("Could not load Google Calendar: "+(e.message||"access denied")+". If authorization was revoked, reconnect the affected Google account.");}
   }
 
   function eventDateForDay(ev){
@@ -4385,14 +4419,23 @@ window.openSmartGoals190=open;
   function adaptiveAutoEnabled(){var key=adaptiveAutoStorageKey();try{return !!key&&localStorage.getItem(key)==='1';}catch(e){return false;}}
   function setAdaptiveScheduleStatus(message){var el=document.getElementById('adaptiveScheduleStatus');if(el)el.textContent=message;}
   async function loadAdaptiveBusyEvents(start,end){
-    if(!state.gcalAccessToken&&hasGoogleCalendarConnection())await getServerCalendarAccessToken();
-    if(!state.gcalAccessToken)return [];
-    var calendars=Object.keys(state.gcalCalendars||{}).map(function(key){return state.gcalCalendars[key];}).filter(function(c){return c&&c.selected!==false&&c.accessRole!=='freeBusyReader';});
-    if(!calendars.length){var list=await gcalFetch('https://www.googleapis.com/calendar/v3/users/me/calendarList?showHidden=true&minAccessRole=reader&maxResults=250');calendars=(list.items||[]).filter(function(c){return c.selected!==false&&c.accessRole!=='freeBusyReader';});}
+    if(!state.gcalAccounts||!state.gcalAccounts.length)return [];
     var events=[];
-    for(var i=0;i<calendars.length;i++){
-      var url='https://www.googleapis.com/calendar/v3/calendars/'+encodeURIComponent(calendars[i].id)+'/events?singleEvents=true&showDeleted=false&timeMin='+encodeURIComponent(start.toISOString())+'&timeMax='+encodeURIComponent(end.toISOString())+'&maxResults=2500';
-      var result=await gcalFetch(url);(result.items||[]).forEach(function(ev){if(ev.status!=='cancelled'&&ev.transparency!=='transparent')events.push(ev);});
+    for(var accountIndex=0;accountIndex<state.gcalAccounts.length;accountIndex++){
+      var account=state.gcalAccounts[accountIndex],accountId=account.id;
+      var calendars=Object.keys(state.gcalCalendars||{}).map(function(key){return state.gcalCalendars[key];}).filter(function(c){return c&&c._accountId===accountId&&c.selected!==false&&c.accessRole!=="freeBusyReader";});
+      if(!calendars.length){
+        try{var list=await gcalFetch(accountId,"https://www.googleapis.com/calendar/v3/users/me/calendarList?showHidden=true&minAccessRole=reader&maxResults=250");calendars=(list.items||[]).filter(function(c){return c.selected!==false&&c.accessRole!=="freeBusyReader";});}
+        catch(e){console.warn("Could not load adaptive calendars for",account.google_account_email,e);continue;}
+      }
+      for(var i=0;i<calendars.length;i++){
+        var calendar=calendars[i];
+        var url="https://www.googleapis.com/calendar/v3/calendars/"+encodeURIComponent(calendar.id)+"/events?singleEvents=true&showDeleted=false&timeMin="+encodeURIComponent(start.toISOString())+"&timeMax="+encodeURIComponent(end.toISOString())+"&maxResults=2500";
+        try{
+          var result=await gcalFetch(accountId,url);
+          (result.items||[]).forEach(function(ev){if(ev.status!=="cancelled"&&ev.transparency!=="transparent"){ev._gcalAccountId=accountId;ev._gcalAccountEmail=account.google_account_email||"";ev._calendarId=accountId+"::"+calendar.id;events.push(ev);}});
+        }catch(e){console.warn("Could not load adaptive events from",calendar.summary,account.google_account_email,e);}
+      }
     }
     return events;
   }
@@ -4423,12 +4466,12 @@ window.openSmartGoals190=open;
     var busyEvents=await loadAdaptiveBusyEvents(start,end);
     busyEvents.filter(isLikelyTestEvent).forEach(function(ev){var date=eventDateForDay(ev);if(!date)return;date.setHours(0,0,0,0);if(date>today&&date<end&&(!upcoming||date<upcoming.date))upcoming={date:date,event:ev};});
     if(upcoming)end=new Date(upcoming.date);
-    setAdaptiveScheduleStatus(state.gcalAccessToken?'Checking available Calendar times and building your plan…':'Building a tracker plan. Connect Google Calendar to avoid busy times automatically.');
+    setAdaptiveScheduleStatus(hasGoogleCalendarConnection()?'Checking available Calendar times and building your plan…':'Building a tracker plan. Connect Google Calendar to avoid busy times automatically.');
     var dates=[];for(var day=new Date(start);day<end&&dates.length<7;day.setDate(day.getDate()+1))dates.push(new Date(day));
     if(!dates.length)throw new Error('Your next calendar test is too close for a useful new plan. Review the existing plan and refresh after the test.');
-    var examLabel=isNeet()?'NEET':'JEE',latest=tests[tests.length-1],items=[];dates.forEach(function(day,index){var block=blocks[index%blocks.length],time=state.gcalAccessToken?adaptiveCalendarSlot(day,block.minutes,busyEvents):'18:00';if(!time)return;items.push({scheduled_date:isoLocalDate(day),start_time:time,duration_minutes:block.minutes,subject:block.subject,topic:block.topic,activity:'Review '+block.topic+' and solve focused '+examLabel+' questions. Recheck mistakes before ending the session.',source_test_id:latest?latest.id:null});});
+    var examLabel=isNeet()?'NEET':'JEE',latest=tests[tests.length-1],items=[];dates.forEach(function(day,index){var block=blocks[index%blocks.length],time=hasGoogleCalendarConnection()?adaptiveCalendarSlot(day,block.minutes,busyEvents):'18:00';if(!time)return;items.push({scheduled_date:isoLocalDate(day),start_time:time,duration_minutes:block.minutes,subject:block.subject,topic:block.topic,activity:'Review '+block.topic+' and solve focused '+examLabel+' questions. Recheck mistakes before ending the session.',source_test_id:latest?latest.id:null});});
     if(!items.length)throw new Error('Your calendar is full during the suggested evening study window for the next 7 days. Clear time or disconnect Calendar to create a general tracker plan.');
-    var todayLabel=isoLocalDate(today),pSchedule={title:'Adaptive '+examLabel+' plan · '+todayLabel,start_date:items[0].scheduled_date,target_date:items[items.length-1].scheduled_date,constraints:{source:'tracker_auto_adaptive_v1',trigger:trigger==='automatic'?'automatic':'manual',generated_from_test_id:latest?latest.id:null,horizon_days:items.length,upcoming_test_date:upcoming?isoLocalDate(upcoming.date):null,calendar_busy_times_checked:!!state.gcalAccessToken},rationale:'Generated from recent subject accuracy, section time use, repeated mistake notes, inferred chapter tags, available calendar times, and the next linked calendar test date.'};
+    var todayLabel=isoLocalDate(today),pSchedule={title:'Adaptive '+examLabel+' plan · '+todayLabel,start_date:items[0].scheduled_date,target_date:items[items.length-1].scheduled_date,constraints:{source:'tracker_auto_adaptive_v1',trigger:trigger==='automatic'?'automatic':'manual',generated_from_test_id:latest?latest.id:null,horizon_days:items.length,upcoming_test_date:upcoming?isoLocalDate(upcoming.date):null,calendar_busy_times_checked:hasGoogleCalendarConnection()},rationale:'Generated from recent subject accuracy, section time use, repeated mistake notes, inferred chapter tags, available calendar times, and the next linked calendar test date.'};
     setAdaptiveScheduleStatus(trigger==='automatic'?'Updating your private adaptive plan…':'Building your private adaptive plan…');
     var saved=await sb.rpc('create_tracker_schedule',{p_schedule:pSchedule,p_items:items});
     if(saved.error)throw saved.error;
@@ -4442,13 +4485,15 @@ window.openSmartGoals190=open;
   }
   async function createCalendarRevisionBlocks(tests){
     if(state.examPreview)throw new Error("NEET preview is read-only; no calendar events were created.");
-    if(!state.user || !state.gcalAccessToken) throw new Error('Connect Google Calendar first.');
-    var blocks=suggestedRevisionBlocks(tests); if(!blocks.length) return 0;
-    var base=new Date(); base.setHours(18,0,0,0); var made=0;
+    if(!state.user||!hasGoogleCalendarConnection())throw new Error("Connect Google Calendar first.");
+    var accountId=state.gcalActiveAccountId;
+    if(!accountId)throw new Error("Select a Google Calendar account first.");
+    var blocks=suggestedRevisionBlocks(tests);if(!blocks.length)return 0;
+    var base=new Date();base.setHours(18,0,0,0);var made=0;
     for(var i=0;i<blocks.length;i++){
-      var start=new Date(base); start.setDate(start.getDate()+i+1); start.setHours(18,0,0,0); var end=new Date(start); end.setMinutes(end.getMinutes()+blocks[i].minutes);
-      var body={summary:(isNeet()?'NEET':'JEE')+' revision · '+blocks[i].subject,description:'Focus: '+blocks[i].topic+'. Auto-generated by the tracker from recent test performance.',start:{dateTime:start.toISOString()},end:{dateTime:end.toISOString()}};
-      await gcalFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',false,{method:'POST',body:JSON.stringify(body),headers:{'Content-Type':'application/json'}}); made++;
+      var start=new Date(base);start.setDate(start.getDate()+i+1);start.setHours(18,0,0,0);var end=new Date(start);end.setMinutes(end.getMinutes()+blocks[i].minutes);
+      var body={summary:(isNeet()?"NEET":"JEE")+" revision · "+blocks[i].subject,description:"Focus: "+blocks[i].topic+". Auto-generated by the tracker from recent test performance.",start:{dateTime:start.toISOString()},end:{dateTime:end.toISOString()}};
+      await gcalFetch(accountId,"https://www.googleapis.com/calendar/v3/calendars/primary/events",false,{method:"POST",body:JSON.stringify(body),headers:{"Content-Type":"application/json"}});made++;
     }
     return made;
   }
@@ -4456,7 +4501,7 @@ window.openSmartGoals190=open;
     var el=document.getElementById('calendarAutomationContent'); if(!el) return;
     var blocks=suggestedRevisionBlocks(tests);
     if(!blocks.length){el.innerHTML='<span style="color:var(--text-dim)">Log section data first to generate revision blocks.</span>';return;}
-    el.innerHTML='<div style="font-size:12.5px;margin-bottom:8px">Suggested blocks: '+blocks.map(function(b){return b.subject+' · '+b.topic+' · '+b.minutes+' min';}).join(' · ')+'</div><button class="primary small" id="createRevisionBlocksBtn">Add next 3 revision blocks to Google Calendar</button><div id="calendarAutomationStatus" style="font-size:11.5px;color:var(--text-dim);margin-top:7px">Calendar write access requires one re-authorization after this update.</div>';
+    el.innerHTML='<div style="font-size:12.5px;margin-bottom:8px">Suggested blocks: '+blocks.map(function(b){return b.subject+' · '+b.topic+' · '+b.minutes+' min';}).join(' · ')+'</div><button class="primary small" id="createRevisionBlocksBtn">Add next 3 revision blocks to Google Calendar</button><div id="calendarAutomationStatus" style="font-size:11.5px;color:var(--text-dim);margin-top:7px">Calendar write access uses the currently selected Google account.</div>';
     document.getElementById('createRevisionBlocksBtn').onclick=async function(){var b=this;b.disabled=true;try{var n=await createCalendarRevisionBlocks(tests);document.getElementById('calendarAutomationStatus').textContent=n+' revision blocks added to your primary Google Calendar.';}catch(e){document.getElementById('calendarAutomationStatus').textContent=e.message||'Could not add calendar blocks.';}b.disabled=false;};
   }
 
@@ -5361,16 +5406,16 @@ window.openSmartGoals190=open;
   document.getElementById("schedulePrevBtn").addEventListener("click", async function(){
     if (!state.scheduleWeekStart) state.scheduleWeekStart = new Date();
     state.scheduleWeekStart.setDate(state.scheduleWeekStart.getDate()-1);
-    if (state.gcalAccessToken) await loadGoogleCalendarDay(); else { state.renderedPanels.schedule=false; renderPanel("schedule", sortedTests()); }
+    if (hasGoogleCalendarConnection()) await loadGoogleCalendarDay(); else { state.renderedPanels.schedule=false; renderPanel("schedule", sortedTests()); }
   });
   document.getElementById("scheduleNextBtn").addEventListener("click", async function(){
     if (!state.scheduleWeekStart) state.scheduleWeekStart = new Date();
     state.scheduleWeekStart.setDate(state.scheduleWeekStart.getDate()+1);
-    if (state.gcalAccessToken) await loadGoogleCalendarDay(); else { state.renderedPanels.schedule=false; renderPanel("schedule", sortedTests()); }
+    if (hasGoogleCalendarConnection()) await loadGoogleCalendarDay(); else { state.renderedPanels.schedule=false; renderPanel("schedule", sortedTests()); }
   });
   document.getElementById("scheduleTodayBtn").addEventListener("click", async function(){
     state.scheduleWeekStart = new Date();
-    if (state.gcalAccessToken) await loadGoogleCalendarDay(); else { state.renderedPanels.schedule=false; renderPanel("schedule", sortedTests()); }
+    if (hasGoogleCalendarConnection()) await loadGoogleCalendarDay(); else { state.renderedPanels.schedule=false; renderPanel("schedule", sortedTests()); }
   });
   document.getElementById("refreshTrackerPlanBtn").addEventListener("click", function(){ loadTrackerPlanForDay(isoLocalDate(state.scheduleWeekStart||new Date())); });
   document.getElementById("adaptiveAutoUpdateToggle").addEventListener("change",function(){
@@ -5382,7 +5427,7 @@ window.openSmartGoals190=open;
   document.getElementById("scheduleWeekInput").addEventListener("change", async function(){
     var chosen=new Date(this.value+"T00:00:00"); if(isNaN(chosen.getTime())) return;
     state.scheduleWeekStart=chosen;
-    if(state.gcalAccessToken) await loadGoogleCalendarDay(); else { state.renderedPanels.schedule=false; renderPanel("schedule", sortedTests()); }
+    if(hasGoogleCalendarConnection()) await loadGoogleCalendarDay(); else { state.renderedPanels.schedule=false; renderPanel("schedule", sortedTests()); }
   });
   document.getElementById("gcalEventModalClose").addEventListener("click", function(){ document.getElementById("gcalEventModalBg").classList.remove("show"); });
   document.getElementById("gcalEventModalBg").addEventListener("click", function(e){ if(e.target===this) this.classList.remove("show"); });
