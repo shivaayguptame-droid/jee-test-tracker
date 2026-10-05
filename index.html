@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>document.documentElement.classList.add("tracker-booting");</script>
-<title>JEE Test Tracker v3.4.1</title> <!-- x-release-please-version -->
+<title>JEE Test Tracker v3.4.2</title> <!-- x-release-please-version -->
 <!-- VERSION: 1.9.1 | Smart Planner + Goals 2.0 with theme-correct notification panel and viewport-safe notifications. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1417,7 +1417,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
   </section>
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v3.4.1</span></h1> <!-- x-release-please-version -->
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v3.4.2</span></h1> <!-- x-release-please-version -->
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow headerActions">
@@ -1647,7 +1647,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
         </div>
         <div class="adminField">
           <label>Tracker version</label>
-          <input id="adminAppVersion" type="text" inputmode="decimal" autocomplete="off" placeholder="3.4.1" pattern="[0-9]+\.[0-9]+\.[0-9]+">
+          <input id="adminAppVersion" type="text" inputmode="decimal" autocomplete="off" placeholder="3.4.2" pattern="[0-9]+\.[0-9]+\.[0-9]+">
           <div class="hint" id="adminAppVersionMode" style="font-size:11px;margin-top:5px;">Automatic: uses the APP_VERSION built into this HTML.</div>
           <button class="secondary small" type="button" id="adminUseAutomaticVersionBtn" style="margin-top:8px;">Use automatic version</button>
         </div>
@@ -2228,7 +2228,7 @@ window.openSmartGoals190=open;
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "3.4.1"; // x-release-please-version
+  var APP_VERSION = "3.4.2"; // x-release-please-version
   var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, provider: "pw", examTrack: "jee", examPreview:false, previewOriginalTests:null, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalAccessTokens: {}, gcalExpiryTimers: {}, gcalAccounts: [], gcalActiveAccountId: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   var EXAM_TRACK_KEY = "exam_track";
   var PROVIDER_KEY = "training_provider";
@@ -2700,7 +2700,7 @@ window.openSmartGoals190=open;
   async function saveRemoteConfig(){
     if (!state.isAdmin || !sb || !state.user) throw new Error("Admin access required");
     var appVersion = String(document.getElementById("adminAppVersion").value || "").trim();
-    if(!/^\d+\.\d+\.\d+$/.test(appVersion)) throw new Error("Version must use the format X.Y.Z, for example 3.4.1");
+    if(!/^\d+\.\d+\.\d+$/.test(appVersion)) throw new Error("Version must use the format X.Y.Z, for example 3.4.2");
     var currentCfg = state.appConfig || DEFAULT_APP_CONFIG;
     var currentVersion = String(currentCfg.app_version || "").trim();
     var manualChanged = !currentCfg.app_version_manual_override || appVersion !== currentVersion;
@@ -4516,7 +4516,7 @@ window.openSmartGoals190=open;
     setAdaptiveScheduleStatus(hasGoogleCalendarConnection()?'Checking available Calendar times and building your plan…':'Building a tracker plan. Connect Google Calendar to avoid busy times automatically.');
     var dates=[];for(var day=new Date(start);day<end&&dates.length<7;day.setDate(day.getDate()+1))dates.push(new Date(day));
     if(!dates.length)throw new Error('Your next calendar test is too close for a useful new plan. Review the existing plan and refresh after the test.');
-    var examLabel=isNeet()?'NEET':'JEE',latest=tests[tests.length-1],items=[];dates.forEach(function(day,index){var block=blocks[index%blocks.length],time=hasGoogleCalendarConnection()?adaptiveCalendarSlot(day,block.minutes,busyEvents):'18:00';if(!time)return;items.push({scheduled_date:isoLocalDate(day),start_time:time,duration_minutes:block.minutes,subject:block.subject,topic:block.topic,activity:'Review '+block.topic+' and solve focused '+examLabel+' questions. Recheck mistakes before ending the session.',source_test_id:latest?latest.id:null});});
+    var examLabel=isNeet()?'NEET':'JEE',latest=tests[tests.length-1],items=[];dates.forEach(function(day,index){var block=blocks[index%blocks.length],time=hasGoogleCalendarConnection()?adaptiveCalendarSlot(day,block.minutes,busyEvents):'18:00';if(!time)return;items.push({position:index+1,scheduled_date:isoLocalDate(day),start_time:time,duration_minutes:block.minutes,subject:block.subject,topic:block.topic,activity:'Review '+block.topic+' and solve focused '+examLabel+' questions. Recheck mistakes before ending the session.',source_test_id:latest?latest.id:null});});
     if(!items.length)throw new Error('Your calendar is full during the suggested evening study window for the next 7 days. Clear time or disconnect Calendar to create a general tracker plan.');
     var todayLabel=isoLocalDate(today),pSchedule={title:'Adaptive '+examLabel+' plan · '+todayLabel,start_date:items[0].scheduled_date,target_date:items[items.length-1].scheduled_date,constraints:{source:'tracker_auto_adaptive_v1',trigger:trigger==='automatic'?'automatic':'manual',generated_from_test_id:latest?latest.id:null,horizon_days:items.length,upcoming_test_date:upcoming?isoLocalDate(upcoming.date):null,calendar_busy_times_checked:hasGoogleCalendarConnection()},rationale:'Generated from recent subject accuracy, section time use, repeated mistake notes, inferred chapter tags, available calendar times, and the next linked calendar test date.'};
     setAdaptiveScheduleStatus(trigger==='automatic'?'Updating your private adaptive plan…':'Building your private adaptive plan…');
