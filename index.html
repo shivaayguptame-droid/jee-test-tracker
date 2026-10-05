@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>document.documentElement.classList.add("tracker-booting");</script>
-<title>JEE Test Tracker v3.4.0</title> <!-- x-release-please-version -->
+<title>JEE Test Tracker v3.4.1</title> <!-- x-release-please-version -->
 <!-- VERSION: 1.9.1 | Smart Planner + Goals 2.0 with theme-correct notification panel and viewport-safe notifications. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1417,7 +1417,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
   </section>
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v3.4.0</span></h1> <!-- x-release-please-version -->
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v3.4.1</span></h1> <!-- x-release-please-version -->
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow headerActions">
@@ -1647,8 +1647,9 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
         </div>
         <div class="adminField">
           <label>Tracker version</label>
-          <input id="adminAppVersion" type="text" inputmode="decimal" autocomplete="off" placeholder="3.3.0" pattern="[0-9]+\.[0-9]+\.[0-9]+">
-          <div class="hint" style="font-size:11px;margin-top:5px;">This is the public version shown to every user, including Incognito visitors.</div>
+          <input id="adminAppVersion" type="text" inputmode="decimal" autocomplete="off" placeholder="3.4.1" pattern="[0-9]+\.[0-9]+\.[0-9]+">
+          <div class="hint" id="adminAppVersionMode" style="font-size:11px;margin-top:5px;">Automatic: uses the APP_VERSION built into this HTML.</div>
+          <button class="secondary small" type="button" id="adminUseAutomaticVersionBtn" style="margin-top:8px;">Use automatic version</button>
         </div>
         <div class="adminField">
           <label>AI system</label>
@@ -2227,7 +2228,7 @@ window.openSmartGoals190=open;
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "3.4.0"; // x-release-please-version
+  var APP_VERSION = "3.4.1"; // x-release-please-version
   var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, provider: "pw", examTrack: "jee", examPreview:false, previewOriginalTests:null, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalAccessTokens: {}, gcalExpiryTimers: {}, gcalAccounts: [], gcalActiveAccountId: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   var EXAM_TRACK_KEY = "exam_track";
   var PROVIDER_KEY = "training_provider";
@@ -2459,7 +2460,7 @@ window.openSmartGoals190=open;
 
   function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
 
-  var DEFAULT_APP_CONFIG = { id:1, app_version:"3.4.0", announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
+  var DEFAULT_APP_CONFIG = { id:1, app_version:"", app_version_manual_override:false, announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
 
   function notificationStorageKey(){
     var uid = state.user && state.user.id ? state.user.id : "public";
@@ -2588,9 +2589,16 @@ window.openSmartGoals190=open;
     }
   }
 
-  function ensureVersionNotification(){
+  function getEffectiveAppVersion(){
     var cfg = state.appConfig || DEFAULT_APP_CONFIG;
-    var version = String(cfg.app_version || APP_VERSION);
+    var manual = !!cfg.app_version_manual_override;
+    var remoteVersion = String(cfg.app_version || "").trim();
+    if (manual && /^\d+\.\d+\.\d+$/.test(remoteVersion)) return remoteVersion;
+    return APP_VERSION;
+  }
+
+  function ensureVersionNotification(){
+    var version = getEffectiveAppVersion();
     addNotification("info", "Tracker updated", "JEE Test Tracker is now running v" + version + ".", "app-version-" + version);
   }
 
@@ -2602,7 +2610,7 @@ window.openSmartGoals190=open;
       return state.appConfig;
     }
     try {
-      var res = await sb.from("tracker_app_config").select("id,app_version,announcement_enabled,announcement_type,announcement_text,ai_enabled,ai_disabled_message,updated_at").eq("id",1).maybeSingle();
+      var res = await sb.from("tracker_app_config").select("id,app_version,app_version_manual_override,announcement_enabled,announcement_type,announcement_text,ai_enabled,ai_disabled_message,updated_at").eq("id",1).maybeSingle();
       if (res.error) throw res.error;
       state.appConfig = Object.assign({}, DEFAULT_APP_CONFIG, res.data || {});
       processRemoteConfigNotification(previous, state.appConfig);
@@ -2645,14 +2653,12 @@ window.openSmartGoals190=open;
   }
 
   function applyPublicAppVersion(){
-    var cfg = state.appConfig || DEFAULT_APP_CONFIG;
-    var remoteVersion = String(cfg.app_version || "").trim();
-    if (!/^\d+\.\d+\.\d+$/.test(remoteVersion)) remoteVersion = APP_VERSION;
-    document.title = (isVmc()?"VMC ":"") + (isNeet()?"NEET":"JEE") + " Test Tracker v" + remoteVersion;
+    var effectiveVersion = getEffectiveAppVersion();
+    document.title = (isVmc()?"VMC ":"") + (isNeet()?"NEET":"JEE") + " Test Tracker v" + effectiveVersion;
     var versionEl = document.getElementById("appVersion");
-    if (versionEl) versionEl.textContent = "v" + remoteVersion;
+    if (versionEl) versionEl.textContent = "v" + effectiveVersion;
     var systemVersionEl = document.getElementById("systemAppVersion");
-    if (systemVersionEl) systemVersionEl.textContent = "v" + remoteVersion;
+    if (systemVersionEl) systemVersionEl.textContent = "v" + effectiveVersion;
   }
 
   function applyRemoteConfig(){
@@ -2680,7 +2686,10 @@ window.openSmartGoals190=open;
   function fillAdminForm(){
     var cfg = state.appConfig || DEFAULT_APP_CONFIG;
     var v=document.getElementById("adminAppVersion"), a=document.getElementById("adminAnnouncementEnabled"), t=document.getElementById("adminAnnouncementText"), ty=document.getElementById("adminAnnouncementType"), ai=document.getElementById("adminAIEnabled"), msg=document.getElementById("adminAIDisabledMessage");
+    var mode=document.getElementById("adminAppVersionMode"), autoBtn=document.getElementById("adminUseAutomaticVersionBtn");
     if(v) v.value=cfg.app_version || APP_VERSION;
+    if(mode) mode.textContent = cfg.app_version_manual_override ? "Manual override: this version is shown to users." : "Automatic: uses the APP_VERSION built into this HTML (v" + APP_VERSION + ").";
+    if(autoBtn) autoBtn.style.display = cfg.app_version_manual_override ? "inline-block" : "none";
     if(a) a.checked=!!cfg.announcement_enabled;
     if(t) t.value=cfg.announcement_text || "";
     if(ty) ty.value=cfg.announcement_type || "info";
@@ -2691,10 +2700,18 @@ window.openSmartGoals190=open;
   async function saveRemoteConfig(){
     if (!state.isAdmin || !sb || !state.user) throw new Error("Admin access required");
     var appVersion = String(document.getElementById("adminAppVersion").value || "").trim();
-    if(!/^\d+\.\d+\.\d+$/.test(appVersion)) throw new Error("Version must use the format X.Y.Z, for example 3.3.0");
+    if(!/^\d+\.\d+\.\d+$/.test(appVersion)) throw new Error("Version must use the format X.Y.Z, for example 3.4.1");
+    var currentCfg = state.appConfig || DEFAULT_APP_CONFIG;
+    var currentVersion = String(currentCfg.app_version || "").trim();
+    var manualChanged = !currentCfg.app_version_manual_override || appVersion !== currentVersion;
+    if(manualChanged) {
+      var confirmed = confirm("Use v" + appVersion + " as a MANUAL public version override?\n\nThis will override the APP_VERSION built into the HTML until you choose 'Use automatic version'.");
+      if(!confirmed) return false;
+    }
     var next = {
       id:1,
       app_version:appVersion,
+      app_version_manual_override:true,
       announcement_enabled:!!document.getElementById("adminAnnouncementEnabled").checked,
       announcement_type:document.getElementById("adminAnnouncementType").value || "info",
       announcement_text:document.getElementById("adminAnnouncementText").value.trim(),
@@ -2710,7 +2727,37 @@ window.openSmartGoals190=open;
     processRemoteConfigNotification(previous, state.appConfig);
     applyPublicAppVersion();
     applyRemoteConfig();
+    fillAdminForm();
     toast("Remote settings saved");
+    return true;
+  }
+
+  async function useAutomaticAppVersion(){
+    if (!state.isAdmin || !sb || !state.user) throw new Error("Admin access required");
+    var confirmed = confirm("Switch the tracker back to AUTOMATIC versioning?\n\nUsers will see the APP_VERSION built into the deployed HTML (currently v" + APP_VERSION + ").");
+    if(!confirmed) return false;
+    var cfg = state.appConfig || DEFAULT_APP_CONFIG;
+    var next = {
+      id:1,
+      app_version:String(cfg.app_version || ""),
+      app_version_manual_override:false,
+      announcement_enabled:!!document.getElementById("adminAnnouncementEnabled").checked,
+      announcement_type:document.getElementById("adminAnnouncementType").value || "info",
+      announcement_text:document.getElementById("adminAnnouncementText").value.trim(),
+      ai_enabled:!!document.getElementById("adminAIEnabled").checked,
+      ai_disabled_message:document.getElementById("adminAIDisabledMessage").value.trim() || DEFAULT_APP_CONFIG.ai_disabled_message,
+      updated_at:new Date().toISOString(),
+      updated_by:state.user.id
+    };
+    var res=await sb.from("tracker_app_config").upsert(next,{onConflict:"id"});
+    if(res.error) throw res.error;
+    state.appConfig=Object.assign({},DEFAULT_APP_CONFIG,next);
+    applyPublicAppVersion();
+    applyRemoteConfig();
+    fillAdminForm();
+    ensureVersionNotification();
+    toast("Automatic versioning enabled");
+    return true;
   }
 
   function startRemoteConfigRefresh(){
@@ -5464,6 +5511,14 @@ window.openSmartGoals190=open;
     catch(e){ toast("Could not save remote settings: "+(e.message||"unknown error")); }
     finally { btn.disabled=false; }
   });
+  document.getElementById("adminUseAutomaticVersionBtn").addEventListener("click", async function(){
+    var btn=this;
+    if(!state.isAdmin) return;
+    btn.disabled=true;
+    try { await useAutomaticAppVersion(); renderAdminPanel(); }
+    catch(e){ toast("Could not switch version mode: "+(e.message||"unknown error")); }
+    finally { btn.disabled=false; }
+  });
   document.getElementById("adminReloadBtn").addEventListener("click", async function(){
     try { await loadRemoteConfig(); renderAdminPanel(); toast("Remote settings reloaded"); }
     catch(e){ toast("Could not reload settings: "+(e.message||"unknown error")); }
@@ -5508,8 +5563,8 @@ window.openSmartGoals190=open;
   // Keep AI retry status visible without requiring Supabase to be opened.
   setInterval(function(){ if (state.user && state.ready) refreshAIInsights(); }, 30000);
 
-  // The public version is loaded from Supabase remote config, with APP_VERSION
-  // as the local fallback until the shared config is available.
+  // The public version uses APP_VERSION by default. Supabase only overrides it
+  // when app_version_manual_override is explicitly enabled.
   applyPublicAppVersion();
   loadNotifications();
   ensureVersionNotification();
