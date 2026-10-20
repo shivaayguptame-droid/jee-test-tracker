@@ -1814,6 +1814,13 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
         <div class="settingsSection"><div class="settingsSectionTitle">AI analysis</div><div class="settingsSectionDesc">AI analysis status is controlled by the tracker and, for operational switches, the remote Control Center.</div><div id="settingsAIStatus" style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">Status will appear here.</div><div class="settingsActionRow"><button class="primary" id="settingsAIOpenBtn">Open AI analysis</button></div></div>
         <div class="settingsSection settingsFuture"><span class="futureBadge">FUTURE</span><div class="settingsSectionTitle">AI preferences</div><div class="settingsSectionDesc">Model selection, analysis limits, automatic-analysis preferences and privacy controls can be added here later.</div></div>
       </div>
+      <div class="settingsPage" data-settings-content="class-notes">
+        <div class="settingsSection"><div class="settingsSectionTitle">Class notes library</div><div class="settingsSectionDesc">Upload your PDFs or clear photos of class notes. Their content is sent to Gemini AI to read and match questions; the saved files and extracted text are private to your signed-in account. Supported: PDF, JPG, PNG or WebP, up to 10 MB each.</div>
+          <div class="fieldGrid" style="margin-bottom:10px"><label>Note title<input id="classNoteTitle" maxlength="160" placeholder="e.g. Electrostatics — lecture 4"></label><label>Subject<select id="classNoteSubject"></select></label><label>Chapter (optional)<input id="classNoteChapter" maxlength="160" placeholder="e.g. Gauss’s law"></label><label>PDF or photo<input id="classNoteFile" type="file" accept="application/pdf,image/jpeg,image/png,image/webp"></label></div>
+          <div class="settingsActionRow"><button class="primary" id="classNoteUploadBtn">Save and read note</button></div><div id="classNoteUploadStatus" role="status" style="font-size:12px;color:var(--text-dim);margin-top:8px"></div>
+        </div>
+        <div class="settingsSection"><div class="settingsSectionTitle">Your notes</div><div class="settingsSectionDesc">Ready notes can be matched against mistake-image analysis from a test. Delete a note here to remove its private file and extracted text.</div><div id="classNotesList" style="display:grid;gap:8px"><span style="color:var(--text-dim)">Sign in to load your class notes.</span></div></div>
+      </div>
       <div class="settingsPage" data-settings-content="calendar">
         <div class="settingsSection"><div class="settingsSectionTitle">Google Calendar</div><div class="settingsSectionDesc">Open the tracker schedule to connect and manage your calendar view.</div><div class="settingsActionRow"><button class="primary" id="settingsCalendarBtn">Open calendar</button></div></div>
         <div class="settingsSection settingsFuture"><span class="futureBadge">FUTURE</span><div class="settingsSectionTitle">Calendar automation</div><div class="settingsSectionDesc">Revision blocks, reminders, study-plan sync and calendar preferences can be grouped here later.</div></div>
@@ -1831,6 +1838,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
             <div><span class="stageBadge done">5</span><span><b>Percentile trajectory</b><small>History chart, recent progress, goal gap, and a clearly labeled trend estimate</small></span></div>
             <div><span class="stageBadge done">6</span><span><b>Spaced mistake resurfacing</b><small>Mark mistakes fixed or recurring; recurring items get a user-scoped follow-up date</small></span></div>
             <div><span class="stageBadge done">7</span><span><b>Automatic test tags</b><small>Infer weak subjects and likely JEE chapters, then use those tags in trends and study plans</small></span></div>
+            <div><span class="stageBadge warn">8</span><span><b>Class-note matching</b><small>Upload private PDFs or photos; compare extracted class content with mistake questions and get evidence-based practice steps</small></span></div>
           </div>
         </div>
         <div class="settingsSection">
@@ -2102,6 +2110,13 @@ Mistakes: Physics: sign error in kinematics"></textarea>
         <button type="button" class="primary small" id="detailAnalyzeAIBtn">Analyze stored images</button>
       </div>
     </div>
+    <div class="sectionBlock" style="margin-top:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <div><div class="sectionTitle" style="font-size:13px;margin:0;">Compare with class notes</div><div id="detailClassNotesStatus" role="status" style="font-size:11.5px;color:var(--text-dim);margin-top:4px;">Compare this test’s mistake analysis with your saved notes.</div></div>
+        <button type="button" class="ghost small" id="detailCompareClassNotesBtn">Compare with my notes</button>
+      </div>
+      <div id="detailClassNotesResult" style="margin-top:10px"></div>
+    </div>
     <div class="modalFoot">
       <button type="button" class="ghost" id="detailCloseBtn">Close</button>
       <button type="button" class="primary" id="detailEditBtn">Edit this test</button>
@@ -2249,7 +2264,7 @@ window.openSmartGoals190=open;
 (function(){
   "use strict";
   var APP_VERSION = "3.4.3"; // x-release-please-version
-  var state = { tests: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, provider: "pw", examTrack: "jee", examPreview:false, previewOriginalTests:null, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
+  var state = { tests: [], classNotes: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, provider: "pw", examTrack: "jee", examPreview:false, previewOriginalTests:null, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   var EXAM_TRACK_KEY = "exam_track";
   var PROVIDER_KEY = "training_provider";
   var VMC_SERIES = ["JEE Main","JEE Advanced"];
@@ -2271,6 +2286,8 @@ window.openSmartGoals190=open;
     var preview=document.querySelector(".welcomePreviewHead b"); if(preview) preview.textContent="Your "+exam+" overview";
     var settingsBrand=document.querySelector(".settingsBrandSub"); if(settingsBrand) settingsBrand.textContent=(isVmc()?"VMC ":"")+exam+" Command Center";
     var subjects=document.getElementById("subjectSubNav"); if(subjects){ subjects.innerHTML=activeSubjects().map(function(key,i){return '<button class="subjectbtn'+(i===0?' active':'')+'" data-subject="'+key+'">'+SUBJECT_LABELS[key]+'</button>';}).join(""); state.subjectTab=activeSubjects()[0]; }
+    var noteSubject=document.getElementById("classNoteSubject");if(noteSubject){var previous=noteSubject.value;noteSubject.innerHTML=activeSubjects().map(function(key){return '<option value="'+key+'">'+SUBJECT_LABELS[key]+'</option>';}).join("");if(activeSubjects().indexOf(previous)>=0)noteSubject.value=previous;}
+    renderClassNotesList();
     var mastery=document.getElementById("pmSubject"); if(mastery) mastery.innerHTML=activeSubjectLabels().map(function(x){return '<option>'+x+'</option>';}).join("");
     ["plSubject","p190Subject"].forEach(function(id){var s=document.getElementById(id); if(s){var extras=id==="plSubject"?['Revision','Test']:['Mixed']; s.innerHTML=activeSubjectLabels().concat(extras).map(function(x){return '<option>'+x+'</option>';}).join("");}});
     var type=document.getElementById("f_type");
@@ -3169,7 +3186,7 @@ window.openSmartGoals190=open;
   async function signOut(){
     if(state.examPreview)setAdminNeetPreview(false);
     if (sb) await sb.auth.signOut();
-    state.user = null; state.cloud = false; state.examTrack="jee"; updateExamTrackUI(); loadNotifications(); state.tests = loadLocal().map(normalizeTest);
+    state.user = null; state.cloud = false; state.classNotes=[]; renderClassNotesList(); state.examTrack="jee"; updateExamTrackUI(); loadNotifications(); state.tests = loadLocal().map(normalizeTest);
     if (state.realtime) { try { await sb.removeChannel(state.realtime); } catch(e){} state.realtime = null; }
     setAccountButton(); render(); toast("Signed out");
   }
@@ -3221,6 +3238,7 @@ window.openSmartGoals190=open;
       state.tests = await loadCloudTests();
       saveLocal(state.tests);
       await loadCloudGoals();
+      loadClassNotes().catch(function(e){ console.warn("Could not load class notes:",e); });
       await loadRemoteConfig();
       await loadAdminState();
       applyRemoteConfig();
@@ -3262,7 +3280,7 @@ window.openSmartGoals190=open;
       sb.auth.onAuthStateChange(function(event, session){
         setTimeout(async function(){
           if (session && session.user) await onSignedIn(session.user);
-          else { if(state.examPreview)setAdminNeetPreview(false); state.user = null; state.cloud = false; state.examTrack="jee"; updateExamTrackUI(); state.renderedPanels.schedule = false; loadNotifications(); setAccountButton(); state.tests = loadLocal().map(normalizeTest); render(); }
+          else { if(state.examPreview)setAdminNeetPreview(false); state.user = null; state.cloud = false; state.classNotes=[]; renderClassNotesList(); state.examTrack="jee"; updateExamTrackUI(); state.renderedPanels.schedule = false; loadNotifications(); setAccountButton(); state.tests = loadLocal().map(normalizeTest); render(); }
         }, 0);
       });
     } catch(e) { state.ready = true; setAccountButton(); render(); }
@@ -4540,6 +4558,7 @@ async function loadGoogleCalendarDay(){
     state.renderedPanels={};state.renderSignature=null;
     render();
     if(!state.examPreview)refreshAIInsights();
+    if(!state.examPreview)loadClassNotes().catch(function(e){console.warn("Could not reload class notes after preview:",e);});
     var button=document.getElementById("adminNeetPreviewBtn");if(button)button.textContent=state.examPreview?"Return to my "+state.examTrack.toUpperCase()+" tracker":"Preview NEET with sample data";
     toast(state.examPreview?"NEET preview opened with sample data":"Returned to your saved "+state.examTrack.toUpperCase()+" tracker");
   }
@@ -5408,7 +5427,107 @@ async function loadGoogleCalendarDay(){
     });
     var data = await res.json().catch(function(){return {};});
     if (!res.ok) throw new Error(data.error || "AI analysis failed");
+    scheduleClassNotesComparison(testId);
     return data;
+  }
+
+  function callUserFunction(name, body){
+    return sb.auth.getSession().then(async function(sessionRes){
+      var token=sessionRes.data&&sessionRes.data.session&&sessionRes.data.session.access_token;
+      if(!token)throw new Error("Sign in to use this feature.");
+      var res=await fetch(SUPABASE_URL+"/functions/v1/"+name,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token,"apikey":SUPABASE_PUBLISHABLE_KEY},body:JSON.stringify(body)});
+      var data=await res.json().catch(function(){return {};});
+      if(!res.ok)throw new Error(data.error||"Request failed");
+      return data;
+    });
+  }
+
+  async function loadClassNotes(){
+    var list=document.getElementById("classNotesList");
+    if(state.examPreview){state.classNotes=[];if(list)list.innerHTML='<span style="color:var(--text-dim)">Class notes are hidden in preview mode.</span>';return;}
+    if(!state.user||!sb){state.classNotes=[];if(list)list.innerHTML='<span style="color:var(--text-dim)">Sign in to load your private class notes.</span>';return;}
+    var res=await sb.from("tracker_class_notes").select("id,title,subject,chapter,storage_path,mime_type,file_size_bytes,extraction_status,extraction_error,created_at,updated_at").eq("user_id",state.user.id).order("updated_at",{ascending:false});
+    if(res.error)throw res.error;
+    state.classNotes=res.data||[];
+    renderClassNotesList();
+  }
+
+  function renderClassNotesList(){
+    var list=document.getElementById("classNotesList");if(!list)return;
+    if(state.examPreview){list.innerHTML='<span style="color:var(--text-dim)">Class notes are hidden in preview mode.</span>';return;}
+    if(!state.user){list.innerHTML='<span style="color:var(--text-dim)">Sign in to load your private class notes.</span>';return;}
+    if(!state.classNotes.length){list.innerHTML='<span style="color:var(--text-dim)">No notes saved yet.</span>';return;}
+    list.innerHTML=state.classNotes.map(function(n){var status=n.extraction_status==="ready"?"Ready":n.extraction_status==="processing"?"Reading…":n.extraction_status==="failed"?"Needs retry":"Waiting to read";var color=n.extraction_status==="ready"?"var(--success,#16803c)":n.extraction_status==="failed"?"var(--danger,#b42318)":"var(--text-dim)";return '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border:1px solid var(--border);border-radius:10px;padding:10px"><div style="min-width:0;flex:1"><b>'+escapeHtml(n.title)+'</b><div style="font-size:11.5px;color:var(--text-dim)">'+escapeHtml(n.subject)+(n.chapter?' · '+escapeHtml(n.chapter):'')+' · <span style="color:'+color+'">'+escapeHtml(status)+'</span>'+(n.extraction_error?' · '+escapeHtml(n.extraction_error):'')+'</div></div><div class="settingsActionRow">'+(n.extraction_status!=="ready"?'<button type="button" class="ghost small" data-note-retry="'+escapeHtml(n.id)+'">Retry</button>':'')+'<button type="button" class="ghost small" data-note-delete="'+escapeHtml(n.id)+'">Delete</button></div></div>';}).join("");
+  }
+
+  async function invokeNoteExtraction(noteId){return callUserFunction("ingest-class-note",{note_id:noteId});}
+
+  async function uploadClassNote(){
+    var status=document.getElementById("classNoteUploadStatus"),btn=document.getElementById("classNoteUploadBtn"),fileInput=document.getElementById("classNoteFile");
+    function setStatus(message,error){if(status){status.textContent=message;status.style.color=error?"var(--danger,#b42318)":"var(--text-dim)";}}
+    if(state.examPreview){setStatus("Preview is read-only.",true);return;}
+    if(!state.user||!sb){setStatus("Sign in before adding private class notes.",true);return;}
+    var file=fileInput&&fileInput.files&&fileInput.files[0],title=(document.getElementById("classNoteTitle").value||"").trim(),subject=document.getElementById("classNoteSubject").value,chapter=(document.getElementById("classNoteChapter").value||"").trim();
+    if(!file){setStatus("Choose a PDF or photo first.",true);return;}
+    if(!title){setStatus("Add a short title for this note.",true);return;}
+    if(file.size>10*1024*1024){setStatus("This file is larger than 10 MB.",true);return;}
+    if(["application/pdf","image/jpeg","image/png","image/webp"].indexOf(file.type)<0){setStatus("Choose a PDF, JPG, PNG or WebP image.",true);return;}
+    btn.disabled=true;setStatus("Saving your private note…");
+    var noteId=crypto.randomUUID(),safeName=file.name.normalize("NFKD").replace(/[^a-zA-Z0-9._-]+/g,"-").slice(-100)||"class-note",path=state.user.id+"/"+noteId+"/"+safeName;
+    try{
+      var insert=await sb.from("tracker_class_notes").insert({id:noteId,user_id:state.user.id,title:title,subject:subject,chapter:chapter,storage_path:path,mime_type:file.type,file_size_bytes:file.size,extraction_status:"pending"});
+      if(insert.error)throw insert.error;
+      var upload=await sb.storage.from("class-notes").upload(path,file,{contentType:file.type,upsert:false});
+      if(upload.error){await sb.from("tracker_class_notes").delete().eq("id",noteId).eq("user_id",state.user.id);throw upload.error;}
+      setStatus("File saved privately. Reading its content…");
+      await loadClassNotes();
+      await invokeNoteExtraction(noteId);
+      document.getElementById("classNoteTitle").value="";document.getElementById("classNoteChapter").value="";fileInput.value="";
+      setStatus("Note is ready to use for mistake matching.");
+      await loadClassNotes();
+    }catch(e){setStatus("Could not finish saving this note: "+(e.message||"unknown error"),true);try{await loadClassNotes();}catch(_){}}
+    finally{btn.disabled=false;}
+  }
+
+  async function deleteClassNote(noteId){
+    if(state.examPreview||!state.user||!sb)return;
+    var note=state.classNotes.find(function(n){return n.id===noteId;});if(!note)return;
+    if(!window.confirm('Delete “'+note.title+'” and its private file?'))return;
+    var removed=await sb.storage.from("class-notes").remove([note.storage_path]);if(removed.error)throw removed.error;
+    var deleted=await sb.from("tracker_class_notes").delete().eq("id",noteId).eq("user_id",state.user.id);if(deleted.error)throw deleted.error;
+    await loadClassNotes();toast("Class note deleted");
+  }
+
+  function renderClassNotesAnalysis(analysis){
+    var out=document.getElementById("detailClassNotesResult");if(!out)return;
+    if(!analysis){out.innerHTML="";return;}
+    var matches=Array.isArray(analysis.matches)?analysis.matches:[];
+    out.innerHTML='<div style="border:1px solid var(--border);border-radius:10px;padding:12px"><p style="margin:0 0 10px">'+escapeHtml(analysis.summary||"Comparison complete")+'</p>'+(matches.length?matches.map(function(m){var label={directly_covered:"Covered in notes",similar:"Similar example found",not_found:"Not found in these notes",uncertain:"Needs a closer look"}[m.coverage]||"Comparison";return '<div style="padding:9px 0;border-top:1px solid var(--border)"><b>'+escapeHtml(label)+': '+escapeHtml(m.question||"Question")+'</b><div style="font-size:11.5px;color:var(--text-dim);margin-top:4px">'+escapeHtml([m.note_title,m.chapter].filter(Boolean).join(" · ")+(m.evidence?' — '+m.evidence:""))+'</div>'+(m.recommendation?'<div style="font-size:12px;margin-top:5px"><b>Try:</b> '+escapeHtml(m.recommendation)+'</div>':'')+'</div>';}).join(""):'<p>No question-by-question matches were returned.</p>')+(Array.isArray(analysis.study_recommendations)&&analysis.study_recommendations.length?'<div style="border-top:1px solid var(--border);padding-top:8px"><b>Study next</b><ul>'+analysis.study_recommendations.map(function(x){return '<li>'+escapeHtml(x)+'</li>';}).join("")+'</ul></div>':'')+(analysis.limitations?'<div style="font-size:11px;color:var(--text-dim);margin-top:8px">'+escapeHtml(analysis.limitations)+'</div>':'')+'</div>';
+  }
+
+  async function compareTestWithClassNotes(testId){
+    if(state.examPreview)throw new Error("Preview is read-only.");
+    if(!state.user||!sb)throw new Error("Sign in to compare with your private notes.");
+    if(!state.classNotes.some(function(n){return n.extraction_status==="ready";}))throw new Error("Add at least one ready class note in Settings → Class Notes first.");
+    var result=await callUserFunction("compare-class-notes",{test_id:testId,exam_track:state.examTrack});
+    var test=state.tests.find(function(t){return t.id===testId;});if(test)test.class_notes_analysis=result.analysis;
+    saveLocal(state.tests);renderClassNotesAnalysis(result.analysis);
+    var status=document.getElementById("detailClassNotesStatus");if(status)status.textContent="Compared with "+result.analysis.notes_used+" of your notes · "+new Date(result.analysis.generated_at).toLocaleString();
+    return result.analysis;
+  }
+
+  function scheduleClassNotesComparison(testId){
+    if(state.examPreview||!state.user||!state.classNotes.some(function(n){return n.extraction_status==="ready";}))return;
+    var attempts=0;
+    function poll(){
+      if(!state.user||state.examPreview||attempts++>=12)return;
+      sb.from("tracker_ai_insights").select("status,mistakes_analysis").eq("user_id",state.user.id).eq("test_id",testId).order("updated_at",{ascending:false}).limit(1).maybeSingle().then(function(res){
+        var row=res.data;
+        if(row&&row.status==="completed"&&Array.isArray(row.mistakes_analysis)&&row.mistakes_analysis.length){compareTestWithClassNotes(testId).catch(function(e){console.info("Class-note comparison will need a retry:",e.message);});return;}
+        if(!row||row.status==="processing"||row.status==="retry_waiting")setTimeout(poll,5000);
+      }).catch(function(){if(attempts<12)setTimeout(poll,5000);});
+    }
+    setTimeout(poll,5000);
   }
 
   window.refreshAIInsights = refreshAIInsights;
@@ -6021,6 +6140,10 @@ async function loadGoogleCalendarDay(){
       openModal(t);
     };
     document.getElementById("detailModalBg").classList.add("open");
+    renderClassNotesAnalysis(t.class_notes_analysis);
+    var notesStatus=document.getElementById("detailClassNotesStatus"),notesBtn=document.getElementById("detailCompareClassNotesBtn");
+    if(notesStatus)notesStatus.textContent=state.examPreview?"Notes are unavailable in read-only preview.":!state.user?"Sign in to compare against your private notes.":!state.classNotes.some(function(n){return n.extraction_status==="ready";})?"Add a PDF or photo in Settings → Class Notes to enable matching.":t.class_notes_analysis&&t.class_notes_analysis.generated_at?"Last compared "+new Date(t.class_notes_analysis.generated_at).toLocaleString():"Your ready notes are available for matching.";
+    if(notesBtn){notesBtn.disabled=state.examPreview||!state.user;notesBtn.onclick=async function(){notesBtn.disabled=true;notesBtn.textContent="Comparing…";if(notesStatus)notesStatus.textContent="Checking mistake questions against your extracted notes…";try{await compareTestWithClassNotes(t.id);}catch(e){if(notesStatus)notesStatus.textContent=e.message||"Comparison failed.";}finally{notesBtn.disabled=state.examPreview||!state.user;notesBtn.textContent="Compare with my notes";}};}
     loadDetailMistakeImages(t.id);
     prepareDetailAI(t.id);
   }
@@ -6383,6 +6506,7 @@ async function loadGoogleCalendarDay(){
     notifications:{title:"Notifications",sub:"Control how tracker updates are surfaced."},
     data:{title:"Data & Sync",sub:"Manage local data, cloud sync and future backups."},
     ai:{title:"AI",sub:"AI analysis status and future AI preferences."},
+    "class-notes":{title:"Class Notes",sub:"Save private PDFs and photos to match against mistakes."},
     calendar:{title:"Calendar",sub:"Google Calendar connection and future automation."},
     advanced:{title:"Advanced",sub:"System controls, diagnostics and future developer options."}
   };
@@ -6416,6 +6540,7 @@ async function loadGoogleCalendarDay(){
       var st=document.getElementById("settingsAIStatus");
       if(st) st.textContent = state.appConfig && state.appConfig.ai_enabled === false ? "AI analysis is currently disabled by remote settings." : "AI analysis is currently enabled.";
     }
+    if(page === "class-notes")loadClassNotes().catch(function(e){var list=document.getElementById("classNotesList");if(list)list.innerHTML='<span style="color:var(--danger,#b42318)">Could not load class notes. Apply the class-notes database setup first if this is a new install.</span>';console.warn("Class notes unavailable:",e);});
   }
   loadTrackerTheme();
   document.getElementById("settingsBtn").addEventListener("click", function(){ openSettings("appearance"); });
@@ -6458,6 +6583,8 @@ async function loadGoogleCalendarDay(){
   document.getElementById("settingsExportBtn").addEventListener("click", function(){ closeSettings(); var b=document.getElementById("perfExport"); if(b) b.click(); else toast("Data export is unavailable in this build."); });
   document.getElementById("settingsImportBtn").addEventListener("click", function(){ closeSettings(); var b=document.getElementById("importLocalBtn"); if(b) b.click(); });
   document.getElementById("settingsAIOpenBtn").addEventListener("click", function(){ closeSettings(); var b=document.querySelector('#mainTabNav .tabbtn[data-tab="analysis"]'); if(b) b.click(); });
+  document.getElementById("classNoteUploadBtn").addEventListener("click",function(){uploadClassNote();});
+  document.getElementById("classNotesList").addEventListener("click",function(e){var retry=e.target.closest("[data-note-retry]"),del=e.target.closest("[data-note-delete]");if(retry){retry.disabled=true;var id=retry.getAttribute("data-note-retry");invokeNoteExtraction(id).then(loadClassNotes).catch(function(err){toast("Note retry failed: "+(err.message||"unknown error"));loadClassNotes().catch(function(){});}).finally(function(){retry.disabled=false;});}if(del)deleteClassNote(del.getAttribute("data-note-delete")).catch(function(err){toast("Could not delete note: "+(err.message||"unknown error"));});});
   document.getElementById("settingsCalendarBtn").addEventListener("click", function(){ closeSettings(); var b=document.querySelector('#mainTabNav .tabbtn[data-tab="schedule"]'); if(b) b.click(); });
   document.getElementById("settingsAdvancedAdminBtn").addEventListener("click", function(){ closeSettings(); var b=document.getElementById("adminTabBtn"); if(b && b.style.display !== "none") b.click(); else toast("Control Center is available to the admin account only"); });
 
