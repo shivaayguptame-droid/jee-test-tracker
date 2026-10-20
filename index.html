@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>document.documentElement.classList.add("tracker-booting");</script>
-<title>JEE Test Tracker v3.6.2</title> <!-- x-release-please-version -->
+<title>JEE Test Tracker v3.7.0</title> <!-- x-release-please-version -->
 <!-- VERSION: 1.9.1 | Smart Planner + Goals 2.0 with theme-correct notification panel and viewport-safe notifications. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1418,7 +1418,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
   </section>
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v3.6.2</span></h1> <!-- x-release-please-version -->
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v3.7.0</span></h1> <!-- x-release-please-version -->
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow headerActions">
@@ -1846,7 +1846,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
           <div class="settingsSectionTitle">System information</div>
           <div class="settingsSectionDesc">Current tracker version and how future updates will be numbered.</div>
           <div class="systemInfoGrid">
-            <div class="systemInfoItem"><span>Current version</span><b id="systemAppVersion">v3.6.2</b></div>
+            <div class="systemInfoItem"><span>Current version</span><b id="systemAppVersion">v3.7.0</b></div>
             <div class="systemInfoItem"><span>Version standard</span><b>Semantic Versioning · MAJOR.MINOR.PATCH</b></div>
             <div class="systemInfoItem"><span>Release automation</span><b>GitHub Actions + Release Please</b></div>
             <div class="systemInfoItem"><span>Release steps</span><b>Commit update → review release PR → merge</b></div>
@@ -1984,10 +1984,10 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
         <label>Mistake question images (optional — select multiple)</label>
         <input id="f_mistakeImages" type="file" accept="image/*" multiple>
         <label for="f_analyzeMistakesNow" style="display:flex;align-items:center;gap:8px;margin-top:8px;cursor:pointer;">
-          <input id="f_analyzeMistakesNow" type="checkbox" checked style="width:auto;margin:0;">
-          <span>Analyze images with AI now after saving</span>
+          <input id="f_analyzeMistakesNow" type="checkbox" style="width:auto;margin:0;">
+          <span>Queue these images for Claude after saving</span>
         </label>
-        <div id="mistakeImageHelp" style="font-size:11.5px;color:var(--text-dim);margin-top:3px;">Use filenames like q12_physics.jpg or q27_maths.png when possible. Leave analysis unchecked to store the images and analyze them later from the test details.</div>
+        <div id="mistakeImageHelp" style="font-size:11.5px;color:var(--text-dim);margin-top:3px;">Images are stored privately. Check the box to queue them for your connected Claude; then ask Claude to analyze the queued images through the tracker MCP connector. Leave it unchecked to store only.</div>
       </div>
 
       <div class="modalFoot">
@@ -2108,7 +2108,7 @@ Mistakes: Physics: sign error in kinematics"></textarea>
           <div class="sectionTitle" style="font-size:13px;margin:0;">AI mistake analysis</div>
           <div id="detailAIStatus" style="font-size:11.5px;color:var(--text-dim);margin-top:4px;">Checking stored mistake images…</div>
         </div>
-        <button type="button" class="primary small" id="detailAnalyzeAIBtn">Analyze stored images</button>
+        <button type="button" class="primary small" id="detailAnalyzeAIBtn">Queue images for Claude (MCP)</button>
       </div>
     </div>
     <div class="sectionBlock" style="margin-top:12px;">
@@ -2264,7 +2264,7 @@ window.openSmartGoals190=open;
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "3.6.2"; // x-release-please-version
+  var APP_VERSION = "3.7.0"; // x-release-please-version
   var state = { tests: [], classNotes: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, provider: "pw", examTrack: "jee", examPreview:false, previewOriginalTests:null, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   var EXAM_TRACK_KEY = "exam_track";
   var PROVIDER_KEY = "training_provider";
@@ -2323,7 +2323,7 @@ window.openSmartGoals190=open;
     var testSave=document.querySelector('#testForm button[type="submit"]'); if(testSave){testSave.disabled=!!state.examPreview;testSave.textContent=state.examPreview?"Read-only preview":"Save test";}
     var imageInput=document.getElementById("f_mistakeImages");if(imageInput)imageInput.disabled=!!state.examPreview;
     var analyzeCheckbox=document.getElementById("f_analyzeMistakesNow");if(analyzeCheckbox)analyzeCheckbox.disabled=!!state.examPreview;
-    var imageHelp=document.getElementById("mistakeImageHelp"); if(imageHelp)imageHelp.textContent=isNeet()?"Use filenames like q12_physics.jpg, q27_botany.png, or q34_zoology.jpg when possible. You can store images and analyze them later from test details.":"Use filenames like q12_physics.jpg or q27_maths.png when possible. Leave analysis unchecked to store images and analyze them later from test details.";
+    var imageHelp=document.getElementById("mistakeImageHelp"); if(imageHelp)imageHelp.textContent=isNeet()?"Use filenames like q12_physics.jpg, q27_botany.png, or q34_zoology.jpg when possible. Images stay private in your account. Check the box to queue them for Claude through MCP; then ask Claude to analyze them.":"Use filenames like q12_physics.jpg or q27_maths.png when possible. Images stay private in your account. Check the box to queue them for Claude through MCP; then ask Claude to analyze them.";
     var planTitle=document.querySelector('[data-panel="schedule"] .sectionTitle span'); if(planTitle)planTitle.textContent="Saved "+exam+" study plan";
     var paste=document.getElementById("pasteArea"); if(paste)paste.placeholder=isNeet()?[
       "Test: NEET Full Syllabus Test 5","Date: 2026-09-21","Type: AITS NEET","Marking Scheme: +4/-1","Total Marks: 720","Marks Obtained: 587","Total Questions: 180","Correct: 151","Incorrect: 29","Unattempted: 0","India Rank: 3421","Total Candidates: 45000","Total Time: 175","Total Time Allotted: 180","Physics Correct: 38","Physics Incorrect: 7","Chemistry Correct: 37","Chemistry Incorrect: 8","Botany Correct: 39","Botany Incorrect: 6","Zoology Correct: 37","Zoology Incorrect: 8","Mistakes: Botany: mixed up plant families"
@@ -2498,7 +2498,7 @@ window.openSmartGoals190=open;
 
   function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
 
-  var DEFAULT_APP_CONFIG = { id:1, app_version:"3.6.2", announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
+  var DEFAULT_APP_CONFIG = { id:1, app_version:"3.7.0", announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
 
   function notificationStorageKey(){
     var uid = state.user && state.user.id ? state.user.id : "public";
@@ -5384,8 +5384,8 @@ async function loadGoogleCalendarDay(){
 
   async function uploadMistakeImages(testId, files){
     if(state.examPreview)throw new Error("NEET preview is read-only; sample images are not uploaded.");
-    if (!state.user || !sb || !files || !files.length) return 0;
-    var count = 0;
+    if (!state.user || !sb || !files || !files.length) return [];
+    var uploadedIds = [];
     for (var i=0; i<files.length; i++) {
       var file = files[i];
       if (!file.type || file.type.indexOf("image/") !== 0) continue;
@@ -5412,27 +5412,43 @@ async function loadGoogleCalendarDay(){
         "Saving the mistake record timed out."
       );
       if (ins.error) throw ins.error;
-      count++;
+      uploadedIds.push(mistakeId);
     }
-    return count;
+    return uploadedIds;
   }
 
   window.analyzeTestAI = analyzeTestAI;
-  async function analyzeTestAI(testId){
-    if(state.examPreview)throw new Error("NEET preview is read-only; sample tests are not sent for analysis.");
-    if (!state.user || !sb || !testId) return null;
-    var sessionRes = await sb.auth.getSession();
-    var token = sessionRes.data && sessionRes.data.session ? sessionRes.data.session.access_token : null;
-    if (!token) throw new Error("No active session");
-    var res = await fetch(SUPABASE_URL + "/functions/v1/analyze-test", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+token, "apikey":SUPABASE_PUBLISHABLE_KEY },
-      body:JSON.stringify({test_id:testId,exam_track:state.examTrack})
-    });
-    var data = await res.json().catch(function(){return {};});
-    if (!res.ok) throw new Error(data.error || "AI analysis failed");
-    scheduleClassNotesComparison(testId);
-    return data;
+  async function analyzeTestAI(testId, mistakeIds){
+    if(state.examPreview)throw new Error("NEET preview is read-only; sample images are not queued.");
+    if (!state.user || !sb || !testId) throw new Error("Sign in to queue mistake images for Claude.");
+    var query=sb.from("tracker_mistakes").select("id").eq("user_id",state.user.id).eq("test_id",testId).not("image_path","is",null);
+    if(Array.isArray(mistakeIds)&&mistakeIds.length)query=query.in("id",mistakeIds);
+    var imageRes=await query;
+    if(imageRes.error)throw imageRes.error;
+    var ids=(imageRes.data||[]).map(function(row){return row.id;});
+    if(!ids.length)throw new Error("No stored mistake images are available to queue.");
+    var previousRes=await sb.from("tracker_ai_insights").select("status,mistakes_analysis,plan_analysis").eq("user_id",state.user.id).eq("test_id",testId).maybeSingle();
+    if(previousRes.error)throw previousRes.error;
+    var previous=previousRes.data||{};
+    var previousPlan=previous.plan_analysis||{};
+    var oldQueue=previousPlan.mcp_queue||{};
+    var previousMistakes=Array.isArray(previous.mistakes_analysis)?previous.mistakes_analysis.slice():[];
+    if(previous.status==="mcp_pending"){
+      if(Array.isArray(oldQueue.mistake_ids))ids=Array.from(new Set(oldQueue.mistake_ids.concat(ids)));
+      if(Array.isArray(oldQueue.previous_mistakes_analysis))previousMistakes=oldQueue.previous_mistakes_analysis.concat(previousMistakes);
+    }
+    previousMistakes=previousMistakes.filter(function(item){return !item||!item.mistake_id||ids.indexOf(item.mistake_id)<0;});
+    var now=new Date().toISOString();
+    var insightId="ai_"+state.user.id+"_"+testId;
+    var queued=await sb.from("tracker_ai_insights").upsert({
+      id:insightId,user_id:state.user.id,test_id:testId,
+      mistakes_analysis:null,
+      plan_analysis:{patterns:Array.isArray(previousPlan.patterns)?previousPlan.patterns:[],plan:Array.isArray(previousPlan.plan)?previousPlan.plan:[],mcp_queue:{mistake_ids:ids,exam_track:state.examTrack,queued_at:now,previous_mistakes_analysis:previousMistakes}},
+      status:"mcp_pending",retry_count:0,next_retry_at:null,last_error:null,completed_at:null,updated_at:now
+    },{onConflict:"user_id,test_id"});
+    if(queued.error)throw queued.error;
+    await refreshAIInsights();
+    return {ok:true,status:"mcp_pending",test_id:testId,image_count:ids.length};
   }
 
   function callUserFunction(name, body){
@@ -5531,7 +5547,7 @@ async function loadGoogleCalendarDay(){
       sb.from("tracker_ai_insights").select("status,mistakes_analysis").eq("user_id",state.user.id).eq("test_id",testId).order("updated_at",{ascending:false}).limit(1).maybeSingle().then(function(res){
         var row=res.data;
         if(row&&row.status==="completed"&&Array.isArray(row.mistakes_analysis)&&row.mistakes_analysis.length){compareTestWithClassNotes(testId).catch(function(e){console.info("Class-note comparison will need a retry:",e.message);});return;}
-        if(!row||row.status==="processing"||row.status==="retry_waiting")setTimeout(poll,5000);
+        if(!row||row.status==="processing"||row.status==="retry_waiting"||row.status==="mcp_pending")setTimeout(poll,5000);
       }).catch(function(){if(attempts<12)setTimeout(poll,5000);});
     }
     setTimeout(poll,5000);
@@ -5556,7 +5572,7 @@ async function loadGoogleCalendarDay(){
     function statusHtml(r){
       var status = r.status || "processing";
       var cls = status === "completed" ? "good" : (status === "failed" ? "bad" : "warn");
-      var label = status === "completed" ? "Completed" : (status === "retry_waiting" ? "Retry scheduled" : (status === "failed" ? "Failed" : "Processing"));
+      var label = status === "completed" ? "Completed" : (status === "mcp_pending" ? "Waiting for Claude via MCP" : (status === "retry_waiting" ? "Retry scheduled" : (status === "failed" ? "Failed" : "Processing")));
       var detail = "";
       if (status === "retry_waiting" && r.next_retry_at) {
         var d = new Date(r.next_retry_at);
@@ -5566,10 +5582,11 @@ async function loadGoogleCalendarDay(){
             : " · next attempt " + d.toLocaleString([], {dateStyle:"short", timeStyle:"short"});
         }
       }
+      if (status === "mcp_pending") detail = " · Ask Claude to analyze the queued images through the tracker MCP connector";
       if (status === "failed" && r.retry_deadline_at) {
         var rd = new Date(r.retry_deadline_at);
         if (!isNaN(rd.getTime()) && r.last_error && /timed out|503|busy|temporarily unavailable|429/i.test(String(r.last_error))) {
-          detail = " · Gemini unavailable during the 2-hour retry window";
+          detail = " · Previous automatic analysis is waiting for a retry";
         }
       }
       if (status === "failed" && r.last_error) detail = " · " + String(r.last_error).slice(0,180);
@@ -5915,18 +5932,16 @@ async function loadGoogleCalendarDay(){
         toast("Uploading mistake images…");
         try {
           var uploaded = await uploadMistakeImages(t.id, imageFiles);
-          if (uploaded) {
+          if (uploaded.length) {
             var analyzeImagesNow = document.getElementById("f_analyzeMistakesNow").checked;
             if (!analyzeImagesNow) {
               toast("Images saved. You can analyze them later from the test details.");
-            } else if (state.appConfig && state.appConfig.ai_enabled === false) {
-              toast("Images saved. AI is currently disabled.");
             } else {
-              toast("Images uploaded — analyzing all mistakes together…");
+              toast("Images saved and queued for Claude. Ask Claude to analyze this test through the tracker MCP connector.");
             try {
-              await withTimeout(analyzeTestAI(t.id), 30000, "AI analysis timed out. The test was saved and the images were uploaded.");
+              await withTimeout(analyzeTestAI(t.id, uploaded), 30000, "Could not queue images for Claude. The test and images were saved.");
             } catch(aiErr) {
-              toast("Test saved, but AI analysis failed: " + (aiErr.message || "unknown error"));
+              toast("Test and images saved, but Claude queueing failed: " + (aiErr.message || "unknown error"));
             }
             }
           }
@@ -5980,11 +5995,6 @@ async function loadGoogleCalendarDay(){
     if (!statusEl || !btn) return;
     btn.disabled = true;
     statusEl.textContent = "Checking stored mistake images…";
-    if (state.appConfig && state.appConfig.ai_enabled === false) {
-      statusEl.textContent = state.appConfig.ai_disabled_message || "AI analysis is temporarily disabled.";
-      btn.disabled = true;
-      return;
-    }
     if (!state.user || !sb) {
       statusEl.textContent = "Sign in to use AI analysis.";
       return;
@@ -6001,25 +6011,20 @@ async function loadGoogleCalendarDay(){
         btn.disabled = true;
         return;
       }
-      statusEl.textContent = count + " stored mistake image" + (count === 1 ? "" : "s") + " ready for analysis.";
+      statusEl.textContent = count + " stored mistake image" + (count === 1 ? "" : "s") + ". They stay stored until you choose to queue them for Claude.";
       btn.disabled = false;
       btn.onclick = async function(){
         btn.disabled = true;
-        btn.textContent = "Analyzing…";
-        statusEl.textContent = "Sending the existing stored images to Gemini…";
+        btn.textContent = "Queueing…";
+        statusEl.textContent = "Queueing the stored images for Claude through MCP…";
         try {
-          await analyzeTestAI(testId);
-          statusEl.textContent = "AI analysis request completed. Refreshing status…";
-          await refreshAIInsights();
-          setTimeout(function(){
-            var rowEl = document.getElementById("detailAIStatus");
-            if (rowEl) rowEl.textContent = "Analysis request sent. Check the AI status above or reopen this test for the latest result.";
-          }, 500);
+          var queued=await analyzeTestAI(testId);
+          statusEl.textContent = queued.image_count + " image" + (queued.image_count===1?"":"s") + " queued. Ask Claude to analyze the pending test images through the tracker MCP connector.";
         } catch (e) {
-          statusEl.textContent = "AI analysis failed: " + (e.message || "unknown error");
+          statusEl.textContent = "Could not queue images: " + (e.message || "unknown error");
         } finally {
           btn.disabled = false;
-          btn.textContent = "Analyze stored images";
+        btn.textContent = "Queue images for Claude (MCP)";
         }
       };
     } catch (e) {
@@ -6622,7 +6627,7 @@ async function loadGoogleCalendarDay(){
     el('exSave')&&el('exSave').addEventListener('click',function(){if(window.state&&window.state.examPreview)return alert('NEET preview is read-only.');var a=arr(PKEY.experiments),x={name:el('exName').value.trim(),hypothesis:el('exHypothesis').value.trim(),result:el('exResult').value.trim(),ts:Date.now()};if(!x.name)return;a.push(x);save(PKEY.experiments,a);['exName','exHypothesis','exResult'].forEach(function(id){el(id).value=''});renderExperiments()});
     el('timerPreset')&&el('timerPreset').addEventListener('change',function(){timer.sec=+this.value*60;drawTimer()});el('timerStart')&&el('timerStart').addEventListener('click',function(){if(timer.id)return;timer.id=setInterval(function(){if(timer.sec>0){timer.sec--;drawTimer()}else{clearInterval(timer.id);timer.id=null;if(window.toast)toast('Study session complete. Nice work.') }},1000)});el('timerPause')&&el('timerPause').addEventListener('click',function(){if(timer.id){clearInterval(timer.id);timer.id=null}});el('timerReset')&&el('timerReset').addEventListener('click',function(){if(timer.id)clearInterval(timer.id);timer.id=null;timer.sec=+(el('timerPreset').value||25)*60;drawTimer()});
     el('perfRefresh')&&el('perfRefresh').addEventListener('click',renderAll);
-    el('perfLatestAI')&&el('perfLatestAI').addEventListener('click',async function(){var ts=tests();if(!ts.length){alert('Add a test first.');return}try{if(typeof window.analyzeTestAI==='function'){await window.analyzeTestAI(ts[ts.length-1].id);if(typeof window.refreshAIInsights==='function')await window.refreshAIInsights();alert('AI analysis requested for the latest test.')}else alert('AI analysis is not available in this build.')}catch(e){alert(e.message||'AI analysis failed')}});
+    el('perfLatestAI')&&el('perfLatestAI').addEventListener('click',async function(){var ts=tests();if(!ts.length){alert('Add a test first.');return}try{if(typeof window.analyzeTestAI==='function'){var queued=await window.analyzeTestAI(ts[ts.length-1].id);if(typeof window.refreshAIInsights==='function')await window.refreshAIInsights();alert(queued.image_count+' image(s) queued. Ask Claude to analyze them through the tracker MCP connector.')}else alert('MCP image analysis is not available in this build.')}catch(e){alert(e.message||'Could not queue images')}});
     el('perfExport')&&el('perfExport').addEventListener('click',function(){if(window.state&&window.state.examPreview)return alert('Exit NEET preview before exporting your account data.');var backup={version:'1.8.0',exportedAt:new Date().toISOString(),tests:tests(),performance:{mastery:arr(PKEY.mastery),mistakes:arr(PKEY.mistakes),planner:arr(PKEY.planner),experiments:arr(PKEY.experiments)}};var blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='jee-tracker-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(function(){URL.revokeObjectURL(u)},1000)});
     el('perfImportBtn')&&el('perfImportBtn').addEventListener('click',function(){if(window.state&&window.state.examPreview)return alert('NEET preview is read-only.');el('perfImportFile').click()});el('perfImportFile')&&el('perfImportFile').addEventListener('change',function(){if(window.state&&window.state.examPreview){this.value='';return alert('NEET preview is read-only.')}var f=this.files&&this.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var x=JSON.parse(r.result);var p=x.performance||{};Object.keys(PKEY).forEach(function(k){if(Array.isArray(p[k]))save(PKEY[k],p[k])});renderAll();el('perfDataStatus').textContent='Backup imported successfully.'}catch(e){el('perfDataStatus').textContent='Import failed: invalid JSON backup.'}};r.readAsText(f)});
     document.addEventListener('click',function(e){if(window.state&&window.state.examPreview&&e.target.closest('[data-del-mastery],[data-del-plan]'))return;var d=e.target.closest('[data-del-mastery]');if(d){var a=arr(PKEY.mastery);a.splice(+d.dataset.delMastery,1);save(PKEY.mastery,a);renderMastery()}var p=e.target.closest('[data-del-plan]');if(p){var a2=arr(PKEY.planner);a2.splice(+p.dataset.delPlan,1);save(PKEY.planner,a2);renderPlanner()}});
