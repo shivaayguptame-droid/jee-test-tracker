@@ -5068,6 +5068,7 @@ async function loadGoogleCalendarDay(){
       if(typeof x === 'string'){ if(x.trim()) out.push(x.trim()); return; }
       if(!x || typeof x !== 'object') return;
       var parts=[];
+      if(x.question_number!==undefined&&x.question_number!==null&&String(x.question_number).trim()) parts.push('Q'+String(x.question_number));
       if(x.subject) parts.push(String(x.subject));
       if(x.topic) parts.push(String(x.topic));
       if(x.observation) parts.push(String(x.observation));
@@ -5602,7 +5603,7 @@ async function loadGoogleCalendarDay(){
       var testDate = test && test.date ? test.date : '';
       var out = '<details class="mistakeTestGroup"><summary><b>'+escapeHtml(title)+'</b>'+(testDate?'<span class="tag">'+escapeHtml(testDate)+'</span>':'')+'<span class="pill">'+ma.length+' mistake'+(ma.length===1?'':'s')+' · '+patterns.length+' pattern'+(patterns.length===1?'':'s')+' · '+plan.length+' plan item'+(plan.length===1?'':'s')+'</span>'+statusHtml(r)+'</summary><div class="mistakeTestItems">';
       if (patterns.length) out += '<div style="margin:5px 0 8px"><span class="tag">Patterns</span>'+patterns.map(function(x){return '<div style="margin:5px 0">'+escapeHtml(x.topic||'Pattern')+': '+escapeHtml(x.observation||'')+'</div>';}).join('')+'</div>';
-      if (ma.length) out += '<div style="margin:5px 0 8px"><span class="tag">Mistakes</span>'+ma.map(function(x){return '<div style="margin:5px 0">'+(x.subject?'<b>'+escapeHtml(x.subject)+'</b> — ':'')+escapeHtml(x.topic||'')+(x.observation?' — '+escapeHtml(x.observation):'')+(x.action?' <span style="color:var(--text-dim)">→ '+escapeHtml(x.action)+'</span>':'')+'</div>';}).join('')+'</div>';
+      if (ma.length) out += '<div style="margin:5px 0 8px"><span class="tag">Question-by-question mistakes</span>'+ma.map(function(x){return '<div style="margin:7px 0;padding:7px 9px;border-left:2px solid var(--accent);background:var(--surface-2,rgba(127,127,127,.08))">'+(x.question_number!==undefined&&x.question_number!==null?'<b>Q'+escapeHtml(x.question_number)+'</b> · ':'')+(x.subject?'<b>'+escapeHtml(x.subject)+'</b> — ':'')+escapeHtml(x.topic||'')+(x.mistake_type?' <span class="tag">'+escapeHtml(x.mistake_type)+'</span>':'')+(x.observation?'<div>'+escapeHtml(x.observation)+'</div>':'')+(x.action?'<div style="color:var(--text-dim);margin-top:3px">Next: '+escapeHtml(x.action)+'</div>':'')+(Array.isArray(x.duplicate_mistake_ids)&&x.duplicate_mistake_ids.length?'<div style="font-size:11px;color:var(--text-dim)">Duplicate screenshots grouped: '+x.duplicate_mistake_ids.length+'</div>':'')+'</div>';}).join('')+'</div>';
       if (plan.length) out += '<div style="margin:5px 0 8px"><span class="tag">Plan</span>'+plan.map(function(x){return '<div style="margin:5px 0"><b>'+escapeHtml((x.priority||'').toUpperCase())+'</b> — '+escapeHtml(x.topic||'')+': '+escapeHtml(x.action||'')+'</div>';}).join('')+'</div>';
       return out+'</div></details>';
     }).join('');
