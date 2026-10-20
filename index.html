@@ -1418,7 +1418,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
   </section>
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v3.4.3</span></h1> <!-- x-release-please-version -->
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v3.6.1</span></h1> <!-- x-release-please-version -->
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow headerActions">
@@ -1760,6 +1760,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
       <button class="settingsNavBtn" data-settings-page="notifications">🔔 <span>Notifications</span></button>
       <button class="settingsNavBtn" data-settings-page="data">☁ <span>Data &amp; Sync</span></button>
       <button class="settingsNavBtn" data-settings-page="ai">✦ <span>AI</span></button>
+      <button class="settingsNavBtn" data-settings-page="class-notes">📝 <span>Class Notes</span></button>
       <button class="settingsNavBtn" data-settings-page="calendar">▣ <span>Calendar</span></button>
       <button class="settingsNavBtn" data-settings-page="advanced">⚙ <span>Advanced</span></button>
     </aside>
@@ -1845,7 +1846,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
           <div class="settingsSectionTitle">System information</div>
           <div class="settingsSectionDesc">Current tracker version and how future updates will be numbered.</div>
           <div class="systemInfoGrid">
-            <div class="systemInfoItem"><span>Current version</span><b id="systemAppVersion">v3.0.0</b></div>
+            <div class="systemInfoItem"><span>Current version</span><b id="systemAppVersion">v3.6.1</b></div>
             <div class="systemInfoItem"><span>Version standard</span><b>Semantic Versioning · MAJOR.MINOR.PATCH</b></div>
             <div class="systemInfoItem"><span>Release automation</span><b>GitHub Actions + Release Please</b></div>
             <div class="systemInfoItem"><span>Release steps</span><b>Commit update → review release PR → merge</b></div>
@@ -2263,7 +2264,7 @@ window.openSmartGoals190=open;
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "3.4.3"; // x-release-please-version
+  var APP_VERSION = "3.6.1"; // x-release-please-version
   var state = { tests: [], classNotes: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, provider: "pw", examTrack: "jee", examPreview:false, previewOriginalTests:null, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   var EXAM_TRACK_KEY = "exam_track";
   var PROVIDER_KEY = "training_provider";
@@ -2497,7 +2498,7 @@ window.openSmartGoals190=open;
 
   function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
 
-  var DEFAULT_APP_CONFIG = { id:1, app_version:"3.4.3", announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
+  var DEFAULT_APP_CONFIG = { id:1, app_version:"3.6.1", announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
 
   function notificationStorageKey(){
     var uid = state.user && state.user.id ? state.user.id : "public";
@@ -2686,6 +2687,9 @@ window.openSmartGoals190=open;
     var cfg = state.appConfig || DEFAULT_APP_CONFIG;
     var remoteVersion = String(cfg.app_version || "").trim();
     if (!/^\d+\.\d+\.\d+$/.test(remoteVersion)) remoteVersion = APP_VERSION;
+    function versionParts(value){return value.split(".").map(Number);}
+    var remoteParts=versionParts(remoteVersion), builtParts=versionParts(APP_VERSION);
+    for(var i=0;i<3;i++){if(builtParts[i]>remoteParts[i]){remoteVersion=APP_VERSION;break;}if(builtParts[i]<remoteParts[i])break;}
     document.title = (isVmc()?"VMC ":"") + (isNeet()?"NEET":"JEE") + " Test Tracker v" + remoteVersion;
     var versionEl = document.getElementById("appVersion");
     if (versionEl) versionEl.textContent = "v" + remoteVersion;
