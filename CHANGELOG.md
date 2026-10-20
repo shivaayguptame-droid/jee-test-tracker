@@ -4,6 +4,13 @@ Notable changes to JEE Test Tracker are documented here. Release Please maintain
 
 <<<<<<< HEAD
 =======
+## [3.7.0](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v3.6.2...jee-test-tracker-v3.7.0) (2026-10-20)
+
+
+### Features
+
+* analyze test images through Claude MCP ([122e305](https://github.com/shivaayguptame-droid/jee-test-tracker/commit/122e305017d45d053699dac7613e69e3f134ad8b))
+
 ## [3.6.2](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v3.6.1...jee-test-tracker-v3.6.2) (2026-10-20)
 
 
