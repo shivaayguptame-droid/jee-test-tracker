@@ -4,6 +4,13 @@ Notable changes to JEE Test Tracker are documented here. Release Please maintain
 
 <<<<<<< HEAD
 =======
+## [3.8.0](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v3.7.0...jee-test-tracker-v3.8.0) (2026-10-23)
+
+
+### Features
+
+* add batch class notes with OpenRouter, Groq, and Claude MCP ([c352c3e](https://github.com/shivaayguptame-droid/jee-test-tracker/commit/c352c3ef06987641a40db32202fc796178ad1974))
+
 ## [3.7.0](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v3.6.2...jee-test-tracker-v3.7.0) (2026-10-20)
 
 
