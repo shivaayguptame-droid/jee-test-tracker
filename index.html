@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>document.documentElement.classList.add("tracker-booting");</script>
-<title>JEE Test Tracker v3.8.0</title> <!-- x-release-please-version -->
+<title>JEE Test Tracker v3.8.2</title> <!-- x-release-please-version -->
 <!-- VERSION: 1.9.1 | Smart Planner + Goals 2.0 with theme-correct notification panel and viewport-safe notifications. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -557,6 +557,20 @@ tr:hover td { background:var(--table-hover); }
 .settingsActionRow a.ghost:hover{background:var(--control-hover);border-color:var(--accent);color:var(--accent);}
 .settingsFuture { border-style:dashed; opacity:.88; }
 .settingsFuture .futureBadge { float:right; font-size:9px; padding:2px 6px; border:1px solid var(--border); border-radius:999px; color:var(--text-dim); }
+.classNoteFolder { border:1px solid var(--border); border-radius:11px; padding:9px 11px; background:var(--surface-2); }
+.classNoteFolder > summary { display:flex; align-items:center; justify-content:space-between; gap:12px; cursor:pointer; list-style:none; color:var(--text); font-size:13px; font-weight:750; }
+.classNoteFolder > summary::-webkit-details-marker { display:none; }
+.classNoteFolder > summary::before { content:"▸"; color:var(--accent); margin-right:2px; transition:transform .15s ease; }
+.classNoteFolder[open] > summary::before { content:"▾"; }
+.classNoteFolder > summary small { margin-left:auto; font-size:10.5px; line-height:1.35; color:var(--text-dim); font-weight:500; text-align:right; }
+.classNoteFolderContents,.classNoteChapterContents { display:grid; gap:8px; margin-top:9px; }
+.classNoteChapterFolder { background:color-mix(in srgb,var(--bg) 68%,var(--surface-2)); }
+.classNoteChapterFolder > summary { font-size:12px; }
+.classNoteCard { position:relative; z-index:1; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; border:1px solid var(--border); border-radius:10px; padding:10px; background:var(--surface); }
+.classNoteCardInfo { min-width:0; flex:1; overflow-wrap:anywhere; }
+.classNoteMeta { font-size:11.5px; color:var(--text-dim); margin-top:3px; overflow-wrap:anywhere; }
+.classNoteActions { position:relative; z-index:2; pointer-events:auto; }
+.classNoteActions button { pointer-events:auto; touch-action:manipulation; }
 @media(max-width:760px){
   .settingsModal { width:100%; grid-template-columns:1fr; grid-template-rows:auto minmax(0,1fr); height:94vh; max-height:94vh; min-height:0; }
   .settingsContent { min-height:0; height:100%; overflow-y:auto; }
@@ -1418,7 +1432,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
   </section>
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v3.8.0</span></h1> <!-- x-release-please-version -->
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v3.8.2</span></h1> <!-- x-release-please-version -->
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow headerActions">
@@ -1847,7 +1861,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
           <div class="settingsSectionTitle">System information</div>
           <div class="settingsSectionDesc">Current tracker version and how future updates will be numbered.</div>
           <div class="systemInfoGrid">
-            <div class="systemInfoItem"><span>Current version</span><b id="systemAppVersion">v3.8.0</b></div>
+            <div class="systemInfoItem"><span>Current version</span><b id="systemAppVersion">v3.8.2</b></div>
             <div class="systemInfoItem"><span>Version standard</span><b>Semantic Versioning · MAJOR.MINOR.PATCH</b></div>
             <div class="systemInfoItem"><span>Release automation</span><b>GitHub Actions + Release Please</b></div>
             <div class="systemInfoItem"><span>Release steps</span><b>Commit update → review release PR → merge</b></div>
@@ -2265,7 +2279,7 @@ window.openSmartGoals190=open;
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "3.8.0"; // x-release-please-version
+  var APP_VERSION = "3.8.2"; // x-release-please-version
   var state = { tests: [], classNotes: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, provider: "pw", examTrack: "jee", examPreview:false, previewOriginalTests:null, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   var EXAM_TRACK_KEY = "exam_track";
   var PROVIDER_KEY = "training_provider";
@@ -2500,7 +2514,7 @@ window.openSmartGoals190=open;
 
   function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
 
-  var DEFAULT_APP_CONFIG = { id:1, app_version:"3.8.0", announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
+  var DEFAULT_APP_CONFIG = { id:1, app_version:"3.8.2", announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
 
   function notificationStorageKey(){
     var uid = state.user && state.user.id ? state.user.id : "public";
@@ -5480,7 +5494,44 @@ async function loadGoogleCalendarDay(){
     if(state.examPreview){list.innerHTML='<span style="color:var(--text-dim)">Class notes are hidden in preview mode.</span>';return;}
     if(!state.user){list.innerHTML='<span style="color:var(--text-dim)">Sign in to load your private class notes.</span>';return;}
     if(!state.classNotes.length){list.innerHTML='<span style="color:var(--text-dim)">No notes saved yet.</span>';return;}
-    list.innerHTML=state.classNotes.map(function(n){var status=n.extraction_status==="ready"?"Ready":n.extraction_status==="processing"?"Reading…":n.extraction_status==="mcp_pending"?"Waiting for Claude MCP":n.extraction_status==="failed"?"Needs retry":"Waiting to read";var color=n.extraction_status==="ready"?"var(--success,#16803c)":n.extraction_status==="failed"?"var(--danger,#b42318)":"var(--text-dim)";return '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border:1px solid var(--border);border-radius:10px;padding:10px"><div style="min-width:0;flex:1"><b>'+escapeHtml(n.title)+'</b><div style="font-size:11.5px;color:var(--text-dim)">'+escapeHtml(n.subject)+(n.chapter?' · '+escapeHtml(n.chapter):'')+' · <span style="color:'+color+'">'+escapeHtml(status)+'</span>'+(n.extraction_error?' · '+escapeHtml(n.extraction_error):'')+'</div></div><div class="settingsActionRow">'+(n.extraction_status!=="ready"?'<button type="button" class="ghost small" data-note-retry="'+escapeHtml(n.id)+'">'+(n.extraction_status==="mcp_pending"?"Queue again":"Retry")+'</button>':'')+'<button type="button" class="ghost small" data-note-delete="'+escapeHtml(n.id)+'">Delete</button></div></div>';}).join("");
+    var expanded=Object.create(null);
+    list.querySelectorAll('details[data-note-group-key]').forEach(function(node){expanded[node.getAttribute('data-note-group-key')]=node.open;});
+    var grouped=Object.create(null);
+    state.classNotes.forEach(function(n){
+      var subject=String(n.subject||'other'),chapter=String(n.chapter||'').replace(/\b(?:pdf|photo|image|jpe?g|png|webp)\b/ig,'').replace(/\s+/g,' ').trim()||'Unsorted';
+      if(!grouped[subject])grouped[subject]=Object.create(null);
+      if(!grouped[subject][chapter])grouped[subject][chapter]=[];
+      grouped[subject][chapter].push(n);
+    });
+    var subjectKeys=Object.keys(grouped).sort(function(a,b){var ai=activeSubjects().indexOf(a),bi=activeSubjects().indexOf(b);return (ai<0?99:ai)-(bi<0?99:bi)||a.localeCompare(b);});
+    function noteCard(n){
+      var status=n.extraction_status==="ready"?"Ready":n.extraction_status==="processing"?"Reading…":n.extraction_status==="mcp_pending"?"Waiting for Claude MCP":n.extraction_status==="failed"?"Needs retry":"Waiting to read";
+      var color=n.extraction_status==="ready"?"var(--success,#16803c)":n.extraction_status==="failed"?"var(--danger,#b42318)":"var(--text-dim)";
+      return '<article class="classNoteCard"><div class="classNoteCardInfo"><b>'+escapeHtml(n.title)+'</b><div class="classNoteMeta"><span style="color:'+color+'">'+escapeHtml(status)+'</span>'+(n.extraction_error?' · '+escapeHtml(n.extraction_error):'')+'</div></div><div class="settingsActionRow classNoteActions">'+(n.extraction_status!=="ready"?'<button type="button" class="ghost small" data-note-retry="'+escapeHtml(n.id)+'">'+(n.extraction_status==="mcp_pending"?"Queue again":"Retry")+'</button>':'')+'<button type="button" class="ghost small" data-note-delete="'+escapeHtml(n.id)+'">Delete</button></div></article>';
+    }
+    list.innerHTML=subjectKeys.map(function(subject){
+      var chapters=grouped[subject],chapterNames=Object.keys(chapters).sort(function(a,b){return a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'});}),subjectKey='subject:'+subject;
+      var readyCount=chapters?Object.keys(chapters).reduce(function(sum,key){return sum+chapters[key].filter(function(n){return n.extraction_status==='ready';}).length;},0):0;
+      return '<details class="classNoteFolder classNoteSubjectFolder" data-note-group-key="'+escapeHtml(subjectKey)+'"'+(expanded[subjectKey]?' open':'')+'><summary><span>'+escapeHtml(SUBJECT_LABELS[subject]||subject)+'</span><small>'+state.classNotes.filter(function(n){return String(n.subject||'other')===subject;}).length+' notes · '+readyCount+' ready</small></summary><div class="classNoteFolderContents">'+chapterNames.map(function(chapter){
+        var chapterKey='chapter:'+subject+':'+chapter;
+        return '<details class="classNoteFolder classNoteChapterFolder" data-note-group-key="'+escapeHtml(chapterKey)+'"'+(expanded[chapterKey]?' open':'')+'><summary><span>'+escapeHtml(chapter)+'</span><small>'+chapters[chapter].length+' note'+(chapters[chapter].length===1?'':'s')+'</small></summary><div class="classNoteChapterContents">'+chapters[chapter].map(noteCard).join('')+'</div></details>';
+      }).join('')+'</div></details>';
+    }).join('');
+    bindClassNoteActions(list);
+  }
+
+  function bindClassNoteActions(list){
+    list.querySelectorAll('[data-note-retry]').forEach(function(button){button.addEventListener('click',async function(event){
+      event.preventDefault();event.stopPropagation();if(button.disabled)return;button.disabled=true;
+      var id=button.getAttribute('data-note-retry'),provider=(document.getElementById('classNoteProvider')||{}).value||'auto';
+      try{await invokeNoteExtraction(id,provider);await loadClassNotes();toast(provider==='claude_mcp'?'Note queued for Claude MCP':'Note retry started');}
+      catch(err){toast('Note retry failed: '+(err.message||'unknown error'));loadClassNotes().catch(function(){});}
+      finally{button.disabled=false;}
+    });});
+    list.querySelectorAll('[data-note-delete]').forEach(function(button){button.addEventListener('click',function(event){
+      event.preventDefault();event.stopPropagation();if(button.disabled)return;button.disabled=true;
+      deleteClassNote(button.getAttribute('data-note-delete')).catch(function(err){toast('Could not delete note: '+(err.message||'unknown error'));}).finally(function(){button.disabled=false;});
+    });});
   }
 
   async function invokeNoteExtraction(noteId,provider){return callUserFunction("ingest-class-note",{note_id:noteId,provider:provider||"auto"});}
@@ -6616,7 +6667,6 @@ async function loadGoogleCalendarDay(){
   document.getElementById("settingsImportBtn").addEventListener("click", function(){ closeSettings(); var b=document.getElementById("importLocalBtn"); if(b) b.click(); });
   document.getElementById("settingsAIOpenBtn").addEventListener("click", function(){ closeSettings(); var b=document.querySelector('#mainTabNav .tabbtn[data-tab="analysis"]'); if(b) b.click(); });
   document.getElementById("classNoteUploadBtn").addEventListener("click",function(){window.uploadClassNote();});
-  document.getElementById("classNotesList").addEventListener("click",function(e){var retry=e.target.closest("[data-note-retry]"),del=e.target.closest("[data-note-delete]");if(retry){retry.disabled=true;var id=retry.getAttribute("data-note-retry");invokeNoteExtraction(id).then(loadClassNotes).catch(function(err){toast("Note retry failed: "+(err.message||"unknown error"));loadClassNotes().catch(function(){});}).finally(function(){retry.disabled=false;});}if(del)deleteClassNote(del.getAttribute("data-note-delete")).catch(function(err){toast("Could not delete note: "+(err.message||"unknown error"));});});
   document.getElementById("settingsCalendarBtn").addEventListener("click", function(){ closeSettings(); var b=document.querySelector('#mainTabNav .tabbtn[data-tab="schedule"]'); if(b) b.click(); });
   document.getElementById("settingsAdvancedAdminBtn").addEventListener("click", function(){ closeSettings(); var b=document.getElementById("adminTabBtn"); if(b && b.style.display !== "none") b.click(); else toast("Control Center is available to the admin account only"); });
 
