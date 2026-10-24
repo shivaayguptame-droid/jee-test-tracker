@@ -2302,7 +2302,8 @@ window.openSmartGoals190=open;
         if(series.indexOf(selected)>=0)type.value=selected;
       } else if(type.tagName!=="INPUT") {var input=document.createElement("input"); input.id="f_type"; input.placeholder="PW Batch Mains / JRTS Advanced / AITS"; type.replaceWith(input);}
     }
-    var diff=document.getElementById("f_difficulty"); if(diff){var wrap=diff.closest('.field'); if(wrap)wrap.style.display=isNeet()?"none":"";}
+    // PW/JRTS/AITS tiers do not apply to VMC or NEET tests.
+    var diff=document.getElementById("f_difficulty"); if(diff){var wrap=diff.closest('.field'); if(wrap)wrap.style.display=(isNeet()||isVmc())?"none":"";if(isNeet()||isVmc())diff.value="0";}
     var marking=document.getElementById("f_markingScheme"); if(marking) marking.placeholder=isNeet()?"e.g. NEET marking scheme (+4/-1)":"e.g. MCQ +4/-1, Integer +4/0, Numerical +3/-1";
     var subjectBlocks=document.querySelectorAll("#testForm .sectionBlock");
     if(subjectBlocks.length>=3){
@@ -2313,7 +2314,7 @@ window.openSmartGoals190=open;
       if(subjectBlocks[4])subjectBlocks[4].querySelector("h4").textContent="Biology · Zoology";
     }
     var testName=document.getElementById("f_name"); if(testName && !testName.value) testName.placeholder=isNeet()?"e.g. AITS NEET 04":"Full Syllabus Test 5";
-    var tierCanvas=document.getElementById("tierChart"),tierEmpty=document.getElementById("tierEmpty"); if(tierCanvas){tierCanvas.style.display=isNeet()?"none":"";var tierCard=tierCanvas.closest(".card");if(tierCard)tierCard.style.display=isNeet()?"none":"";} if(tierEmpty)tierEmpty.style.display=isNeet()?"none":"";
+    var tierUnavailable=isNeet()||isVmc();var tierCanvas=document.getElementById("tierChart"),tierEmpty=document.getElementById("tierEmpty"); if(tierCanvas){tierCanvas.style.display=tierUnavailable?"none":"";var tierCard=tierCanvas.closest(".card");if(tierCard)tierCard.style.display=tierUnavailable?"none":"";} if(tierEmpty)tierEmpty.style.display=tierUnavailable?"none":"";
     var trajectoryContent=document.getElementById("trajectoryContent"),trajectoryTitle=trajectoryContent&&trajectoryContent.parentElement.querySelector(".sectionTitle"),trajectoryHint=trajectoryContent&&trajectoryContent.parentElement.querySelector(".hint"); if(trajectoryTitle)trajectoryTitle.textContent=exam+" percentile trajectory";
     if(trajectoryHint)trajectoryHint.textContent=isNeet()?"Track your recorded NEET percentiles over time. This trend is descriptive, not a prediction of an exam result.":"A simple historical trend projection toward your JEE Main target date. It is a trend estimate, not a prediction of an exam result.";
     var goalHint=document.querySelector("#goalsModalBg .hint"); if(goalHint)goalHint.textContent=isNeet()?"Set a percentile target for NEET. There is one NEET exam track.":"JEE runs on percentile, not raw marks — these targets show up on the dashboard and as a dashed line on the trend chart.";
@@ -4952,8 +4953,8 @@ async function loadGoogleCalendarDay(){
   }
 
   function renderTierChart(tests){
-    if(isNeet()){var hiddenCanvas=document.getElementById("tierChart"),hiddenEmpty=document.getElementById("tierEmpty");if(hiddenCanvas)hiddenCanvas.style.display="none";if(hiddenEmpty)hiddenEmpty.style.display="none";return;}
-    var tiered = tests.filter(function(t){ return t.difficulty; });
+    if(isNeet()||isVmc()){var hiddenCanvas=document.getElementById("tierChart"),hiddenEmpty=document.getElementById("tierEmpty");if(hiddenCanvas)hiddenCanvas.style.display="none";if(hiddenEmpty)hiddenEmpty.style.display="none";return;}
+    var tiered = isVmc()?[]:tests.filter(function(t){ return t.difficulty; });
     var canvas = document.getElementById("tierChart"), empty = document.getElementById("tierEmpty");
     if (tiered.length < 1){
       if (tierChartInst){ tierChartInst.destroy(); tierChartInst = null; }
@@ -5365,7 +5366,7 @@ async function loadGoogleCalendarDay(){
     if (overTime.length){
       lines.push("<b>Pacing:</b> you ran over time in " + overTime.length + " of " + tests.length + " test(s) — practise timed sectional tests for the weaker section to build speed.");
     }
-    var tiered = tests.filter(function(t){ return t.difficulty; });
+    var tiered = isVmc()?[]:tests.filter(function(t){ return t.difficulty; });
     if (tiered.length >= 2){
       var last3 = tiered.slice(-3);
       var avgTier = last3.reduce(function(s,t){return s+t.difficulty;},0)/last3.length;
@@ -5728,7 +5729,7 @@ async function loadGoogleCalendarDay(){
     var rows = historyOrderedTests().map(function(t, idx, arr){
       var typeLabel = (t.type||"").trim();
       var pill = typeLabel ? '<span class="pill" style="background:'+colorForSeries(typeLabel)+'22;color:'+colorForSeries(typeLabel)+'" title="'+(t.markingScheme?("Marking: "+t.markingScheme):"")+'">'+typeLabel+"</span>" : "—";
-      var tierBadge = !isNeet()&&t.difficulty ? ' <span class="pill" style="background:var(--accent-soft);color:var(--accent)">T'+t.difficulty+'</span>' : "";
+      var tierBadge = !isNeet()&&!isVmc()&&t.difficulty ? ' <span class="pill" style="background:var(--accent-soft);color:var(--accent)">T'+t.difficulty+'</span>' : "";
       var tagPills = (t.tags||[]).map(function(tag){ return '<span class="pill" style="background:#7c5cbf22;color:#7c5cbf;margin-right:3px;">'+tag+'</span>'; }).join("");
       var flags = divergenceFlag(t) + (tagPills ? " " + tagPills : "");
       var up = idx > 0 ? '<button class="small ghost" title="Move up" onclick="TT.up(\''+t.id+'\')">↑</button>' : '';
@@ -5763,7 +5764,7 @@ async function loadGoogleCalendarDay(){
     f("f_serialNo").value = test && test.serialNo ? test.serialNo : "";
     f("f_date").value = test ? test.date : new Date().toISOString().slice(0,10);
     f("f_type").value = test ? (test.type||"") : "";
-    f("f_difficulty").value = test && test.difficulty !== undefined && test.difficulty !== null ? String(test.difficulty) : "0";
+    f("f_difficulty").value = (isNeet()||isVmc()) ? "0" : (test && test.difficulty !== undefined && test.difficulty !== null ? String(test.difficulty) : "0");
     f("f_markingScheme").value = test ? (test.markingScheme||"") : "";
     f("f_totalMarks").value = test ? test.totalMarks : "";
     f("f_marksObtained").value = test ? test.marksObtained : "";
@@ -5886,11 +5887,12 @@ async function loadGoogleCalendarDay(){
     document.getElementById("f_manualAccuracy").disabled = !this.checked;
   });
   document.getElementById("f_type").addEventListener("input", function(){
+    if(isNeet()||isVmc()) return;
     var guess = guessDifficulty(this.value);
     if (guess !== null) document.getElementById("f_difficulty").value = String(guess);
   });
   document.getElementById("f_type").addEventListener("change", function(){
-    if(isNeet()) return;
+    if(isNeet()||isVmc()) return;
     var guess = guessDifficulty(this.value);
     if (guess !== null) document.getElementById("f_difficulty").value = String(guess);
   });
@@ -5910,7 +5912,7 @@ async function loadGoogleCalendarDay(){
       serialNo: num(f("f_serialNo")) || null,
       date: f("f_date"),
       type: f("f_type"),
-      difficulty: parseInt(f("f_difficulty"),10) || 0,
+      difficulty: (isNeet()||isVmc()) ? 0 : (parseInt(f("f_difficulty"),10) || 0),
       markingScheme: f("f_markingScheme"),
       totalMarks: num(f("f_totalMarks")),
       marksObtained: num(f("f_marksObtained")),
@@ -6231,11 +6233,11 @@ async function loadGoogleCalendarDay(){
       f("f_manualAccuracy").disabled = false;
       f("f_manualAccuracy").value = data.accuracy;
     }
-    if (data.difficultyTier !== undefined && data.difficultyTier !== null && data.difficultyTier !== "") {
+    if (!isNeet()&&!isVmc() && data.difficultyTier !== undefined && data.difficultyTier !== null && data.difficultyTier !== "") {
       f("f_difficulty").value = String(data.difficultyTier);
     } else {
       var guess = guessDifficulty(data.type || "");
-      if (guess !== null) f("f_difficulty").value = String(guess);
+      if (!isNeet()&&!isVmc() && guess !== null) f("f_difficulty").value = String(guess);
     }
     if (Array.isArray(data.mistakes) && data.mistakes.length) f("f_mistakes").value = data.mistakes.join("\n");
     toast("Screenshot read — check the fields, then save");
@@ -6315,11 +6317,11 @@ async function loadGoogleCalendarDay(){
       document.getElementById("f_manualAccuracy").disabled = false;
       document.getElementById("f_manualAccuracy").value = parseFloat(map["accuracy"]) || "";
     }
-    if (map["difficulty"] !== undefined || map["difficulty tier"] !== undefined) {
+    if (!isNeet()&&!isVmc() && (map["difficulty"] !== undefined || map["difficulty tier"] !== undefined)) {
       document.getElementById("f_difficulty").value = (map["difficulty"] || map["difficulty tier"]).match(/\d/) ? (map["difficulty"]||map["difficulty tier"]).match(/\d/)[0] : "0";
     } else {
       var guess = guessDifficulty(map["type"] || "");
-      if (guess !== null) document.getElementById("f_difficulty").value = String(guess);
+      if (!isNeet()&&!isVmc() && guess !== null) document.getElementById("f_difficulty").value = String(guess);
     }
     set("f_totalMarks","total marks"); set("f_marksObtained","marks obtained");
     set("f_totalQ","total questions"); set("f_correct","correct"); set("f_incorrect","incorrect");
