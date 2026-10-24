@@ -4,6 +4,14 @@ Notable changes to JEE Test Tracker are documented here. Release Please maintain
 
 <<<<<<< HEAD
 =======
+## [3.8.1](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v3.8.0...jee-test-tracker-v3.8.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* hide PW-only difficulty tiers for VMC test ([0714aac](https://github.com/shivaayguptame-droid/jee-test-tracker/commit/0714aac1435da1ea75200b233e513d0c29a25a94))
+* organize class notes and restore retry/delete actions - ([3b7e4dc](https://github.com/shivaayguptame-droid/jee-test-tracker/commit/3b7e4dc7ef88a7197c507bfcfa386e8c77217e4c))
+
 ## [3.8.0](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v3.7.0...jee-test-tracker-v3.8.0) (2026-10-23)
 
 
