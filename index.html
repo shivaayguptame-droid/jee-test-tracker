@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>document.documentElement.classList.add("tracker-booting");</script>
-<title>JEE Test Tracker v3.8.6</title> <!-- x-release-please-version -->
+<title>JEE Test Tracker v4.0.1</title> <!-- x-release-please-version -->
 <!-- VERSION: 1.9.1 | Smart Planner + Goals 2.0 with theme-correct notification panel and viewport-safe notifications. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -575,6 +575,8 @@ tr:hover td { background:var(--table-hover); }
 .classNoteLibraryTools label,.classNoteBulkEditor label { display:grid; gap:4px; font-size:10.5px; color:var(--text-dim); }
 .classNoteLibraryTools select,.classNoteBulkEditor select,.classNoteBulkEditor input[type="text"] { min-width:150px; }
 .classNoteBulkEditor[hidden] { display:none; }
+.classNoteBulkEditor { position:relative; z-index:12; isolation:isolate; pointer-events:auto; }
+.classNoteBulkEditor button { position:relative; z-index:13; pointer-events:auto !important; cursor:pointer; }
 .classNoteBulkStatus { min-height:0; margin:7px 2px 0; font-size:12px; line-height:1.45; color:var(--text-dim); }
 .classNoteBulkStatus.error { color:var(--danger,#b42318); }
 .classNoteBulkStatus.success { color:var(--success,#16803c); }
@@ -1461,7 +1463,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
   </section>
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v3.8.6</span></h1> <!-- x-release-please-version -->
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v4.0.1</span></h1> <!-- x-release-please-version -->
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow headerActions">
@@ -1866,7 +1868,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
         </div>
         <div class="settingsSection"><div class="settingsSectionTitle">Your notes</div><div class="settingsSectionDesc">Each note shows whether it is ready to use. Edit one note or select several to update their subject and chapter together.</div>
           <div class="classNoteLibraryTools"><label>Show<select id="classNoteStatusFilter"><option value="all">All notes</option><option value="ready">Ready</option><option value="not_ready">Not ready</option><option value="failed">Needs retry</option></select></label><button type="button" class="ghost small" id="classNoteSelectAll">Select all visible</button><button type="button" class="ghost small" id="classNoteClearSelection">Clear selection</button><span id="classNoteVisibleCount" class="classNoteMeta"></span></div>
-          <div class="classNoteBulkEditor" id="classNoteBulkEditor" hidden><b id="classNoteSelectionCount">0 selected</b><label>Set subject<select id="classNoteBulkSubject"><option value="">Keep existing</option></select></label><label class="classNoteChapterToggle"><input type="checkbox" id="classNoteBulkChapterEnabled"> Set chapter</label><input type="text" id="classNoteBulkChapter" maxlength="160" placeholder="Chapter name; leave blank to clear" aria-label="Chapter to set for selected notes" disabled><button type="button" class="primary small" id="classNoteApplyMetadata">Save changes</button></div><div id="classNoteBulkStatus" class="classNoteBulkStatus" role="status" aria-live="polite"></div>
+          <div class="classNoteBulkEditor" id="classNoteBulkEditor" hidden><b id="classNoteSelectionCount">0 selected</b><label>Set subject<select id="classNoteBulkSubject"><option value="">Keep existing</option></select></label><label class="classNoteChapterToggle"><input type="checkbox" id="classNoteBulkChapterEnabled"> Set chapter</label><input type="text" id="classNoteBulkChapter" maxlength="160" placeholder="Chapter name; leave blank to clear" aria-label="Chapter to set for selected notes" disabled><button type="button" class="primary small" id="classNoteApplyMetadata" onclick="window.saveClassNoteMetadataFromUI(event); return false;">Save changes</button></div><div id="classNoteBulkStatus" class="classNoteBulkStatus" role="status" aria-live="polite"></div>
           <div id="classNotesList" style="display:grid;gap:8px"><span style="color:var(--text-dim)">Sign in to load your class notes.</span></div></div>
       </div>
       <div class="settingsPage" data-settings-content="calendar">
@@ -1893,7 +1895,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
           <div class="settingsSectionTitle">System information</div>
           <div class="settingsSectionDesc">Current tracker version and how future updates will be numbered.</div>
           <div class="systemInfoGrid">
-            <div class="systemInfoItem"><span>Current version</span><b id="systemAppVersion">v3.8.6</b></div>
+            <div class="systemInfoItem"><span>Current version</span><b id="systemAppVersion">v4.0.1</b></div>
             <div class="systemInfoItem"><span>Version standard</span><b>Semantic Versioning · MAJOR.MINOR.PATCH</b></div>
             <div class="systemInfoItem"><span>Release automation</span><b>GitHub Actions + Release Please</b></div>
             <div class="systemInfoItem"><span>Release steps</span><b>Commit update → review release PR → merge</b></div>
@@ -2311,7 +2313,7 @@ window.openSmartGoals190=open;
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "3.8.6"; // x-release-please-version
+  var APP_VERSION = "4.0.1"; // x-release-please-version
   var state = { tests: [], classNotes: [], classNoteSelection: [], classNoteFilter: "all", db: null, ready: false, subjectTab: "physics", user: null, cloud: false, provider: "pw", examTrack: "jee", examPreview:false, previewOriginalTests:null, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   var EXAM_TRACK_KEY = "exam_track";
   var PROVIDER_KEY = "training_provider";
@@ -2547,7 +2549,7 @@ window.openSmartGoals190=open;
 
   function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
 
-  var DEFAULT_APP_CONFIG = { id:1, app_version:"3.8.6", announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
+  var DEFAULT_APP_CONFIG = { id:1, app_version:"4.0.1", announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
 
   function notificationStorageKey(){
     var uid = state.user && state.user.id ? state.user.id : "public";
@@ -5609,6 +5611,18 @@ async function loadGoogleCalendarDay(){
     await loadClassNotes();return updated;
   }
 
+  window.saveClassNoteMetadataFromUI=async function(event){
+    if(event){event.preventDefault();event.stopPropagation();}
+    var button=document.getElementById('classNoteApplyMetadata');if(!button||button.disabled)return false;
+    button.disabled=true;
+    var selectedCount=state.classNoteSelection.length;
+    setClassNoteBulkStatus('Saving changes for '+selectedCount+' note'+(selectedCount===1?'':'s')+'…');
+    try{var updated=await saveClassNoteMetadata();setClassNoteBulkStatus('Saved changes to '+updated+' note'+(updated===1?'':'s')+'.','success');}
+    catch(error){var message='Could not update notes: '+(error.message||'unknown error');setClassNoteBulkStatus(message,'error');toast(message);}
+    finally{button.disabled=false;}
+    return false;
+  };
+
   async function invokeNoteExtraction(noteId,provider){return callUserFunction("ingest-class-note",{note_id:noteId,provider:provider||"auto"});}
 
   function noteMetadataFromFilename(fileName){
@@ -6746,7 +6760,6 @@ async function loadGoogleCalendarDay(){
   document.getElementById("classNoteSelectAll").addEventListener("click",function(){state.classNoteSelection=getVisibleClassNotes().map(function(n){return String(n.id);});renderClassNotesList();});
   document.getElementById("classNoteClearSelection").addEventListener("click",function(){state.classNoteSelection=[];document.getElementById("classNoteBulkSubject").value="";document.getElementById("classNoteBulkChapter").value="";document.getElementById("classNoteBulkChapter").disabled=true;document.getElementById("classNoteBulkChapterEnabled").checked=false;setClassNoteBulkStatus('');renderClassNotesList();});
   document.getElementById("classNoteBulkChapterEnabled").addEventListener("change",function(){var chapter=document.getElementById("classNoteBulkChapter");if(chapter)chapter.disabled=!this.checked;});
-  document.getElementById("classNoteApplyMetadata").addEventListener("click",async function(event){event.preventDefault();var button=this;if(button.disabled)return;button.disabled=true;var selectedCount=state.classNoteSelection.length;setClassNoteBulkStatus('Saving changes for '+selectedCount+' note'+(selectedCount===1?'':'s')+'…');try{var updated=await saveClassNoteMetadata();setClassNoteBulkStatus('Saved changes to '+updated+' note'+(updated===1?'':'s')+'.','success');}catch(error){var message='Could not update notes: '+(error.message||'unknown error');setClassNoteBulkStatus(message,'error');toast(message);}finally{button.disabled=false;}});
   document.getElementById("settingsCalendarBtn").addEventListener("click", function(){ closeSettings(); var b=document.querySelector('#mainTabNav .tabbtn[data-tab="schedule"]'); if(b) b.click(); });
   document.getElementById("settingsAdvancedAdminBtn").addEventListener("click", function(){ closeSettings(); var b=document.getElementById("adminTabBtn"); if(b && b.style.display !== "none") b.click(); else toast("Control Center is available to the admin account only"); });
 
