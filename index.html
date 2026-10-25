@@ -569,6 +569,20 @@ tr:hover td { background:var(--table-hover); }
 .classNoteCard { position:relative; z-index:1; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; border:1px solid var(--border); border-radius:10px; padding:10px; background:var(--surface); }
 .classNoteCardInfo { min-width:0; flex:1; overflow-wrap:anywhere; }
 .classNoteMeta { font-size:11.5px; color:var(--text-dim); margin-top:3px; overflow-wrap:anywhere; }
+.classNoteLibraryTools,.classNoteBulkEditor { display:flex; align-items:end; gap:9px; flex-wrap:wrap; padding:10px; border:1px solid var(--border); border-radius:10px; background:var(--surface-2); margin-bottom:9px; }
+.classNoteLibraryTools label,.classNoteBulkEditor label { display:grid; gap:4px; font-size:10.5px; color:var(--text-dim); }
+.classNoteLibraryTools select,.classNoteBulkEditor select,.classNoteBulkEditor input[type="text"] { min-width:150px; }
+.classNoteBulkEditor[hidden] { display:none; }
+.classNoteSelectAll { display:flex!important; align-items:center; gap:6px; padding:7px 2px; }
+.classNoteBulkEditor .classNoteChapterToggle { display:flex; align-items:center; gap:6px; padding:7px 2px; }
+.classNoteCardSelect { align-self:flex-start; margin:3px 0 0; accent-color:var(--accent); }
+.classNoteStatusBadge { display:inline-flex; align-items:center; border:1px solid currentColor; border-radius:999px; padding:2px 7px; font-size:9.5px; font-weight:800; letter-spacing:.035em; white-space:nowrap; }
+.classNoteStatusBadge.ready { color:var(--success,#16803c); }
+.classNoteStatusBadge.notReady { color:var(--danger,#b42318); }
+.classNoteCardInfo { display:flex; align-items:flex-start; gap:9px; }
+.classNoteCardText { min-width:0; flex:1; }
+.classNoteCardStatus { margin-top:5px; }
+.classNoteChapterToggle input { accent-color:var(--accent); }
 .classNoteActions { position:relative; z-index:2; pointer-events:auto; }
 .classNoteActions button { pointer-events:auto; touch-action:manipulation; }
 @media(max-width:760px){
@@ -1835,7 +1849,10 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
           <div class="hint" style="margin:-2px 0 10px">Claude MCP queues selected files for you to process in Claude; the tracker cannot start your Claude chat automatically. Scanned PDF OCR through OpenRouter may incur a provider charge. API keys stay in Supabase Function Secrets.</div>
           <div class="settingsActionRow"><button class="primary" id="classNoteUploadBtn">Save selected notes</button></div><div id="classNoteUploadStatus" role="status" aria-live="polite" style="font-size:12px;color:var(--text-dim);margin-top:8px"></div>
         </div>
-        <div class="settingsSection"><div class="settingsSectionTitle">Your notes</div><div class="settingsSectionDesc">Ready notes can be matched against mistake-image analysis from a test. Delete a note here to remove its private file and extracted text.</div><div id="classNotesList" style="display:grid;gap:8px"><span style="color:var(--text-dim)">Sign in to load your class notes.</span></div></div>
+        <div class="settingsSection"><div class="settingsSectionTitle">Your notes</div><div class="settingsSectionDesc">Each note shows whether it is ready to use. Edit one note or select several to update their subject and chapter together.</div>
+          <div class="classNoteLibraryTools"><label>Show<select id="classNoteStatusFilter"><option value="all">All notes</option><option value="ready">Ready</option><option value="not_ready">Not ready</option><option value="failed">Needs retry</option></select></label><button type="button" class="ghost small" id="classNoteSelectAll">Select all visible</button><button type="button" class="ghost small" id="classNoteClearSelection">Clear selection</button><span id="classNoteVisibleCount" class="classNoteMeta"></span></div>
+          <div class="classNoteBulkEditor" id="classNoteBulkEditor" hidden><b id="classNoteSelectionCount">0 selected</b><label>Set subject<select id="classNoteBulkSubject"><option value="">Keep existing</option></select></label><label class="classNoteChapterToggle"><input type="checkbox" id="classNoteBulkChapterEnabled"> Set chapter</label><input type="text" id="classNoteBulkChapter" maxlength="160" placeholder="Chapter name; leave blank to clear" aria-label="Chapter to set for selected notes"><button type="button" class="primary small" id="classNoteApplyMetadata">Save changes</button></div>
+          <div id="classNotesList" style="display:grid;gap:8px"><span style="color:var(--text-dim)">Sign in to load your class notes.</span></div></div>
       </div>
       <div class="settingsPage" data-settings-content="calendar">
         <div class="settingsSection"><div class="settingsSectionTitle">Google Calendar</div><div class="settingsSectionDesc">Open the tracker schedule to connect and manage your calendar view.</div><div class="settingsActionRow"><button class="primary" id="settingsCalendarBtn">Open calendar</button></div></div>
@@ -2280,7 +2297,7 @@ window.openSmartGoals190=open;
 (function(){
   "use strict";
   var APP_VERSION = "3.8.2"; // x-release-please-version
-  var state = { tests: [], classNotes: [], db: null, ready: false, subjectTab: "physics", user: null, cloud: false, provider: "pw", examTrack: "jee", examPreview:false, previewOriginalTests:null, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
+  var state = { tests: [], classNotes: [], classNoteSelection: [], classNoteFilter: "all", db: null, ready: false, subjectTab: "physics", user: null, cloud: false, provider: "pw", examTrack: "jee", examPreview:false, previewOriginalTests:null, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   var EXAM_TRACK_KEY = "exam_track";
   var PROVIDER_KEY = "training_provider";
   var VMC_SERIES = ["JEE Main","JEE Advanced"];
@@ -2303,6 +2320,7 @@ window.openSmartGoals190=open;
     var settingsBrand=document.querySelector(".settingsBrandSub"); if(settingsBrand) settingsBrand.textContent=(isVmc()?"VMC ":"")+exam+" Command Center";
     var subjects=document.getElementById("subjectSubNav"); if(subjects){ subjects.innerHTML=activeSubjects().map(function(key,i){return '<button class="subjectbtn'+(i===0?' active':'')+'" data-subject="'+key+'">'+SUBJECT_LABELS[key]+'</button>';}).join(""); state.subjectTab=activeSubjects()[0]; }
     var noteSubject=document.getElementById("classNoteSubject");if(noteSubject){var previous=noteSubject.value;noteSubject.innerHTML=activeSubjects().map(function(key){return '<option value="'+key+'">'+SUBJECT_LABELS[key]+'</option>';}).join("");if(activeSubjects().indexOf(previous)>=0)noteSubject.value=previous;}
+    var bulkSubject=document.getElementById("classNoteBulkSubject");if(bulkSubject){var previousBulk=bulkSubject.value;bulkSubject.innerHTML='<option value="">Keep existing</option>'+activeSubjects().map(function(key){return '<option value="'+key+'">'+SUBJECT_LABELS[key]+'</option>';}).join("");if(activeSubjects().indexOf(previousBulk)>=0)bulkSubject.value=previousBulk;}
     renderClassNotesList();
     var mastery=document.getElementById("pmSubject"); if(mastery) mastery.innerHTML=activeSubjectLabels().map(function(x){return '<option>'+x+'</option>';}).join("");
     ["plSubject","p190Subject"].forEach(function(id){var s=document.getElementById(id); if(s){var extras=id==="plSubject"?['Revision','Test']:['Mixed']; s.innerHTML=activeSubjectLabels().concat(extras).map(function(x){return '<option>'+x+'</option>';}).join("");}});
@@ -5491,13 +5509,20 @@ async function loadGoogleCalendarDay(){
 
   function renderClassNotesList(){
     var list=document.getElementById("classNotesList");if(!list)return;
-    if(state.examPreview){list.innerHTML='<span style="color:var(--text-dim)">Class notes are hidden in preview mode.</span>';return;}
-    if(!state.user){list.innerHTML='<span style="color:var(--text-dim)">Sign in to load your private class notes.</span>';return;}
-    if(!state.classNotes.length){list.innerHTML='<span style="color:var(--text-dim)">No notes saved yet.</span>';return;}
+    var tools=document.querySelector('.classNoteLibraryTools'),bulk=document.getElementById('classNoteBulkEditor');
+    if(state.examPreview){state.classNoteSelection=[];if(tools)tools.style.display='none';if(bulk)bulk.hidden=true;list.innerHTML='<span style="color:var(--text-dim)">Class notes are hidden in preview mode.</span>';return;}
+    if(tools)tools.style.display='flex';
+    if(!state.user){state.classNoteSelection=[];if(bulk)bulk.hidden=true;list.innerHTML='<span style="color:var(--text-dim)">Sign in to load your private class notes.</span>';return;}
+    if(!state.classNotes.length){state.classNoteSelection=[];if(bulk)bulk.hidden=true;list.innerHTML='<span style="color:var(--text-dim)">No notes saved yet.</span>';updateClassNoteLibrarySummary(0,0);return;}
     var expanded=Object.create(null);
     list.querySelectorAll('details[data-note-group-key]').forEach(function(node){expanded[node.getAttribute('data-note-group-key')]=node.open;});
+    var visibleNotes=getVisibleClassNotes();
+    state.classNoteSelection=state.classNoteSelection.filter(function(id){return state.classNotes.some(function(n){return String(n.id)===String(id);});});
+    updateClassNoteLibrarySummary(visibleNotes.length,state.classNotes.length);
+    if(bulk){bulk.hidden=!state.classNoteSelection.length;var count=document.getElementById('classNoteSelectionCount');if(count)count.textContent=state.classNoteSelection.length+' selected';}
+    if(!visibleNotes.length){list.innerHTML='<span style="color:var(--text-dim)">No notes match this status filter.</span>';return;}
     var grouped=Object.create(null);
-    state.classNotes.forEach(function(n){
+    visibleNotes.forEach(function(n){
       var subject=String(n.subject||'other'),chapter=String(n.chapter||'').replace(/\b(?:pdf|photo|image|jpe?g|png|webp)\b/ig,'').replace(/\s+/g,' ').trim()||'Unsorted';
       if(!grouped[subject])grouped[subject]=Object.create(null);
       if(!grouped[subject][chapter])grouped[subject][chapter]=[];
@@ -5505,14 +5530,15 @@ async function loadGoogleCalendarDay(){
     });
     var subjectKeys=Object.keys(grouped).sort(function(a,b){var ai=activeSubjects().indexOf(a),bi=activeSubjects().indexOf(b);return (ai<0?99:ai)-(bi<0?99:bi)||a.localeCompare(b);});
     function noteCard(n){
-      var status=n.extraction_status==="ready"?"Ready":n.extraction_status==="processing"?"Reading…":n.extraction_status==="mcp_pending"?"Waiting for Claude MCP":n.extraction_status==="failed"?"Needs retry":"Waiting to read";
-      var color=n.extraction_status==="ready"?"var(--success,#16803c)":n.extraction_status==="failed"?"var(--danger,#b42318)":"var(--text-dim)";
-      return '<article class="classNoteCard"><div class="classNoteCardInfo"><b>'+escapeHtml(n.title)+'</b><div class="classNoteMeta"><span style="color:'+color+'">'+escapeHtml(status)+'</span>'+(n.extraction_error?' · '+escapeHtml(n.extraction_error):'')+'</div></div><div class="settingsActionRow classNoteActions">'+(n.extraction_status!=="ready"?'<button type="button" class="ghost small" data-note-retry="'+escapeHtml(n.id)+'">'+(n.extraction_status==="mcp_pending"?"Queue again":"Retry")+'</button>':'')+'<button type="button" class="ghost small" data-note-delete="'+escapeHtml(n.id)+'">Delete</button></div></article>';
+      var status=n.extraction_status==="ready"?"Ready to use":n.extraction_status==="processing"?"Reading note…":n.extraction_status==="mcp_pending"?"Waiting for Claude MCP":n.extraction_status==="failed"?"Needs retry":n.extraction_status==="pending"?"Waiting to read":"Not ready";
+      var ready=n.extraction_status==="ready",badge=ready?'<span class="classNoteStatusBadge ready">READY</span>':'<span class="classNoteStatusBadge notReady">NOT READY</span>';
+      var checked=state.classNoteSelection.some(function(id){return String(id)===String(n.id);})?' checked':'';
+      return '<article class="classNoteCard"><div class="classNoteCardInfo"><input class="classNoteCardSelect" type="checkbox" aria-label="Select '+escapeHtml(n.title)+'" data-note-select="'+escapeHtml(n.id)+'"'+checked+'><div class="classNoteCardText"><b>'+escapeHtml(n.title)+'</b><div class="classNoteMeta">'+escapeHtml(SUBJECT_LABELS[n.subject]||n.subject||'Unsorted')+(n.chapter?' · '+escapeHtml(n.chapter):'')+'</div><div class="classNoteCardStatus">'+badge+' <span class="classNoteMeta">'+escapeHtml(status)+'</span></div>'+(n.extraction_error?'<div class="classNoteMeta" style="color:var(--danger,#b42318)">'+escapeHtml(n.extraction_error)+'</div>':'')+'</div></div><div class="settingsActionRow classNoteActions"><button type="button" class="ghost small" data-note-edit="'+escapeHtml(n.id)+'">Edit</button>'+(n.extraction_status!=="ready"?'<button type="button" class="ghost small" data-note-retry="'+escapeHtml(n.id)+'">'+(n.extraction_status==="mcp_pending"?"Queue again":"Retry")+'</button>':'')+'<button type="button" class="ghost small" data-note-delete="'+escapeHtml(n.id)+'">Delete</button></div></article>';
     }
     list.innerHTML=subjectKeys.map(function(subject){
       var chapters=grouped[subject],chapterNames=Object.keys(chapters).sort(function(a,b){return a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'});}),subjectKey='subject:'+subject;
-      var readyCount=chapters?Object.keys(chapters).reduce(function(sum,key){return sum+chapters[key].filter(function(n){return n.extraction_status==='ready';}).length;},0):0;
-      return '<details class="classNoteFolder classNoteSubjectFolder" data-note-group-key="'+escapeHtml(subjectKey)+'"'+(expanded[subjectKey]?' open':'')+'><summary><span>'+escapeHtml(SUBJECT_LABELS[subject]||subject)+'</span><small>'+state.classNotes.filter(function(n){return String(n.subject||'other')===subject;}).length+' notes · '+readyCount+' ready</small></summary><div class="classNoteFolderContents">'+chapterNames.map(function(chapter){
+      var subjectNotes=visibleNotes.filter(function(n){return String(n.subject||'other')===subject;}),readyCount=subjectNotes.filter(function(n){return n.extraction_status==='ready';}).length,notReadyCount=subjectNotes.length-readyCount;
+      return '<details class="classNoteFolder classNoteSubjectFolder" data-note-group-key="'+escapeHtml(subjectKey)+'"'+(expanded[subjectKey]?' open':'')+'><summary><span>'+escapeHtml(SUBJECT_LABELS[subject]||subject)+'</span><small>'+subjectNotes.length+' notes · '+readyCount+' ready · '+notReadyCount+' not ready</small></summary><div class="classNoteFolderContents">'+chapterNames.map(function(chapter){
         var chapterKey='chapter:'+subject+':'+chapter;
         return '<details class="classNoteFolder classNoteChapterFolder" data-note-group-key="'+escapeHtml(chapterKey)+'"'+(expanded[chapterKey]?' open':'')+'><summary><span>'+escapeHtml(chapter)+'</span><small>'+chapters[chapter].length+' note'+(chapters[chapter].length===1?'':'s')+'</small></summary><div class="classNoteChapterContents">'+chapters[chapter].map(noteCard).join('')+'</div></details>';
       }).join('')+'</div></details>';
@@ -5520,7 +5546,19 @@ async function loadGoogleCalendarDay(){
     bindClassNoteActions(list);
   }
 
+  function getVisibleClassNotes(){
+    var filter=(document.getElementById('classNoteStatusFilter')||{}).value||state.classNoteFilter||'all';
+    state.classNoteFilter=filter;
+    return state.classNotes.filter(function(n){if(filter==='ready')return n.extraction_status==='ready';if(filter==='failed')return n.extraction_status==='failed';if(filter==='not_ready')return n.extraction_status!=='ready';return true;});
+  }
+
+  function updateClassNoteLibrarySummary(visible,total){
+    var shown=document.getElementById('classNoteVisibleCount');if(shown)shown.textContent=visible+' shown · '+total+' total';
+  }
+
   function bindClassNoteActions(list){
+    list.querySelectorAll('[data-note-select]').forEach(function(box){box.addEventListener('change',function(){var id=String(box.getAttribute('data-note-select'));if(box.checked){if(!state.classNoteSelection.some(function(x){return String(x)===id;}))state.classNoteSelection.push(id);}else state.classNoteSelection=state.classNoteSelection.filter(function(x){return String(x)!==id;});renderClassNotesList();});});
+    list.querySelectorAll('[data-note-edit]').forEach(function(button){button.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();var id=String(button.getAttribute('data-note-edit')),note=state.classNotes.find(function(n){return String(n.id)===id;});if(!note)return;state.classNoteSelection=[id];var subject=document.getElementById('classNoteBulkSubject'),chapter=document.getElementById('classNoteBulkChapter'),chapterEnabled=document.getElementById('classNoteBulkChapterEnabled');if(subject)subject.value=activeSubjects().indexOf(note.subject)>=0?note.subject:'';if(chapter)chapter.value=note.chapter||'';if(chapterEnabled)chapterEnabled.checked=true;renderClassNotesList();var panel=document.getElementById('classNoteBulkEditor');if(panel)panel.scrollIntoView({behavior:'smooth',block:'nearest'});});});
     list.querySelectorAll('[data-note-retry]').forEach(function(button){button.addEventListener('click',async function(event){
       event.preventDefault();event.stopPropagation();if(button.disabled)return;button.disabled=true;
       var id=button.getAttribute('data-note-retry'),provider=(document.getElementById('classNoteProvider')||{}).value||'auto';
@@ -5532,6 +5570,23 @@ async function loadGoogleCalendarDay(){
       event.preventDefault();event.stopPropagation();if(button.disabled)return;button.disabled=true;
       deleteClassNote(button.getAttribute('data-note-delete')).catch(function(err){toast('Could not delete note: '+(err.message||'unknown error'));}).finally(function(){button.disabled=false;});
     });});
+  }
+
+  async function saveClassNoteMetadata(){
+    if(state.examPreview||!state.user||!sb)throw new Error('Sign in to edit your private notes.');
+    var ids=state.classNoteSelection.map(String).filter(function(id){return state.classNotes.some(function(n){return String(n.id)===id;});});
+    if(!ids.length)throw new Error('Select at least one note.');
+    var subject=(document.getElementById('classNoteBulkSubject')||{}).value||'',chapterEnabled=!!((document.getElementById('classNoteBulkChapterEnabled')||{}).checked),chapter=(document.getElementById('classNoteBulkChapter')||{}).value||'';
+    if(!subject&&!chapterEnabled)throw new Error('Choose a subject or enable Set chapter.');
+    if(subject&&activeSubjects().indexOf(subject)<0)throw new Error('Choose a subject from your current exam list.');
+    var changes={};if(subject)changes.subject=subject;if(chapterEnabled)changes.chapter=chapter.trim().slice(0,160);
+    var result=await sb.from('tracker_class_notes').update(changes).in('id',ids).eq('user_id',state.user.id).select('id');
+    if(result.error)throw result.error;
+    var updated=(result.data||[]).length;
+    if(updated!==ids.length)throw new Error('Only '+updated+' of '+ids.length+' selected notes were updated. Refresh and try again.');
+    state.classNoteSelection=[];
+    var subjectInput=document.getElementById('classNoteBulkSubject'),chapterInput=document.getElementById('classNoteBulkChapter'),chapterToggle=document.getElementById('classNoteBulkChapterEnabled');if(subjectInput)subjectInput.value='';if(chapterInput)chapterInput.value='';if(chapterToggle)chapterToggle.checked=false;
+    await loadClassNotes();toast(updated===1?'Note details updated':'Updated '+updated+' notes');
   }
 
   async function invokeNoteExtraction(noteId,provider){return callUserFunction("ingest-class-note",{note_id:noteId,provider:provider||"auto"});}
@@ -6667,6 +6722,10 @@ async function loadGoogleCalendarDay(){
   document.getElementById("settingsImportBtn").addEventListener("click", function(){ closeSettings(); var b=document.getElementById("importLocalBtn"); if(b) b.click(); });
   document.getElementById("settingsAIOpenBtn").addEventListener("click", function(){ closeSettings(); var b=document.querySelector('#mainTabNav .tabbtn[data-tab="analysis"]'); if(b) b.click(); });
   document.getElementById("classNoteUploadBtn").addEventListener("click",function(){window.uploadClassNote();});
+  document.getElementById("classNoteStatusFilter").addEventListener("change",function(){state.classNoteFilter=this.value;state.classNoteSelection=[];renderClassNotesList();});
+  document.getElementById("classNoteSelectAll").addEventListener("click",function(){state.classNoteSelection=getVisibleClassNotes().map(function(n){return String(n.id);});renderClassNotesList();});
+  document.getElementById("classNoteClearSelection").addEventListener("click",function(){state.classNoteSelection=[];document.getElementById("classNoteBulkSubject").value="";document.getElementById("classNoteBulkChapter").value="";document.getElementById("classNoteBulkChapterEnabled").checked=false;renderClassNotesList();});
+  document.getElementById("classNoteApplyMetadata").addEventListener("click",async function(){var button=this;button.disabled=true;try{await saveClassNoteMetadata();}catch(error){toast("Could not update notes: "+(error.message||"unknown error"));}finally{button.disabled=false;}});
   document.getElementById("settingsCalendarBtn").addEventListener("click", function(){ closeSettings(); var b=document.querySelector('#mainTabNav .tabbtn[data-tab="schedule"]'); if(b) b.click(); });
   document.getElementById("settingsAdvancedAdminBtn").addEventListener("click", function(){ closeSettings(); var b=document.getElementById("adminTabBtn"); if(b && b.style.display !== "none") b.click(); else toast("Control Center is available to the admin account only"); });
 
