@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>document.documentElement.classList.add("tracker-booting");</script>
-<title>JEE Test Tracker v3.8.2</title> <!-- x-release-please-version -->
+<title>JEE Test Tracker v3.8.3</title> <!-- x-release-please-version -->
 <!-- VERSION: 1.9.1 | Smart Planner + Goals 2.0 with theme-correct notification panel and viewport-safe notifications. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -560,14 +560,16 @@ tr:hover td { background:var(--table-hover); }
 .classNoteFolder { border:1px solid var(--border); border-radius:11px; padding:9px 11px; background:var(--surface-2); }
 .classNoteFolder > summary { display:flex; align-items:center; justify-content:space-between; gap:12px; cursor:pointer; list-style:none; color:var(--text); font-size:13px; font-weight:750; }
 .classNoteFolder > summary::-webkit-details-marker { display:none; }
+.classNoteFolder > summary > span { min-width:0; flex:1 1 auto; overflow-wrap:break-word; word-break:normal; }
 .classNoteFolder > summary::before { content:"▸"; color:var(--accent); margin-right:2px; transition:transform .15s ease; }
 .classNoteFolder[open] > summary::before { content:"▾"; }
-.classNoteFolder > summary small { margin-left:auto; font-size:10.5px; line-height:1.35; color:var(--text-dim); font-weight:500; text-align:right; }
-.classNoteFolderContents,.classNoteChapterContents { display:grid; gap:8px; margin-top:9px; }
+.classNoteFolder > summary small { min-width:0; max-width:48%; margin-left:auto; font-size:10.5px; line-height:1.35; color:var(--text-dim); font-weight:500; text-align:right; }
+.classNoteFolderContents,.classNoteChapterContents { display:grid; gap:8px; min-width:0; margin-top:9px; }
+.classNoteFolder,.classNoteChapterFolder { min-width:0; }
 .classNoteChapterFolder { background:color-mix(in srgb,var(--bg) 68%,var(--surface-2)); }
 .classNoteChapterFolder > summary { font-size:12px; }
-.classNoteCard { position:relative; z-index:1; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; border:1px solid var(--border); border-radius:10px; padding:10px; background:var(--surface); }
-.classNoteCardInfo { min-width:0; flex:1; overflow-wrap:anywhere; }
+.classNoteCard { position:relative; z-index:1; display:grid; grid-template-columns:minmax(0,1fr) max-content; align-items:start; gap:10px 12px; width:100%; min-width:0; box-sizing:border-box; border:1px solid var(--border); border-radius:10px; padding:10px; background:var(--surface); }
+.classNoteCardInfo { min-width:0; width:100%; overflow-wrap:break-word; }
 .classNoteMeta { font-size:11.5px; color:var(--text-dim); margin-top:3px; overflow-wrap:anywhere; }
 .classNoteLibraryTools,.classNoteBulkEditor { display:flex; align-items:end; gap:9px; flex-wrap:wrap; padding:10px; border:1px solid var(--border); border-radius:10px; background:var(--surface-2); margin-bottom:9px; }
 .classNoteLibraryTools label,.classNoteBulkEditor label { display:grid; gap:4px; font-size:10.5px; color:var(--text-dim); }
@@ -580,11 +582,17 @@ tr:hover td { background:var(--table-hover); }
 .classNoteStatusBadge.ready { color:var(--success,#16803c); }
 .classNoteStatusBadge.notReady { color:var(--danger,#b42318); }
 .classNoteCardInfo { display:flex; align-items:flex-start; gap:9px; }
-.classNoteCardText { min-width:0; flex:1; }
+.classNoteCardText { min-width:0; flex:1; overflow-wrap:break-word; word-break:normal; }
+.classNoteCardText > b { display:block; max-width:100%; overflow-wrap:anywhere; word-break:normal; }
 .classNoteCardStatus { margin-top:5px; }
 .classNoteChapterToggle input { accent-color:var(--accent); }
-.classNoteActions { position:relative; z-index:2; pointer-events:auto; }
+.classNoteActions { position:relative; z-index:2; justify-content:flex-end; align-self:start; max-width:100%; pointer-events:auto; }
 .classNoteActions button { pointer-events:auto; touch-action:manipulation; }
+#classNotesList { container-type:inline-size; }
+@container (max-width:520px) {
+  .classNoteCard { grid-template-columns:minmax(0,1fr); }
+  .classNoteActions { grid-column:1; justify-content:flex-start; width:100%; }
+}
 @media(max-width:760px){
   .settingsModal { width:100%; grid-template-columns:1fr; grid-template-rows:auto minmax(0,1fr); height:94vh; max-height:94vh; min-height:0; }
   .settingsContent { min-height:0; height:100%; overflow-y:auto; }
@@ -1446,7 +1454,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
   </section>
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v3.8.2</span></h1> <!-- x-release-please-version -->
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v3.8.3</span></h1> <!-- x-release-please-version -->
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow headerActions">
@@ -1878,7 +1886,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
           <div class="settingsSectionTitle">System information</div>
           <div class="settingsSectionDesc">Current tracker version and how future updates will be numbered.</div>
           <div class="systemInfoGrid">
-            <div class="systemInfoItem"><span>Current version</span><b id="systemAppVersion">v3.8.2</b></div>
+            <div class="systemInfoItem"><span>Current version</span><b id="systemAppVersion">v3.8.3</b></div>
             <div class="systemInfoItem"><span>Version standard</span><b>Semantic Versioning · MAJOR.MINOR.PATCH</b></div>
             <div class="systemInfoItem"><span>Release automation</span><b>GitHub Actions + Release Please</b></div>
             <div class="systemInfoItem"><span>Release steps</span><b>Commit update → review release PR → merge</b></div>
@@ -2296,7 +2304,7 @@ window.openSmartGoals190=open;
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "3.8.2"; // x-release-please-version
+  var APP_VERSION = "3.8.3"; // x-release-please-version
   var state = { tests: [], classNotes: [], classNoteSelection: [], classNoteFilter: "all", db: null, ready: false, subjectTab: "physics", user: null, cloud: false, provider: "pw", examTrack: "jee", examPreview:false, previewOriginalTests:null, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   var EXAM_TRACK_KEY = "exam_track";
   var PROVIDER_KEY = "training_provider";
@@ -2532,7 +2540,7 @@ window.openSmartGoals190=open;
 
   function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
 
-  var DEFAULT_APP_CONFIG = { id:1, app_version:"3.8.2", announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
+  var DEFAULT_APP_CONFIG = { id:1, app_version:"3.8.3", announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
 
   function notificationStorageKey(){
     var uid = state.user && state.user.id ? state.user.id : "public";
