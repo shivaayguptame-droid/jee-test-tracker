@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>document.documentElement.classList.add("tracker-booting");</script>
-<title>JEE Test Tracker v4.0.1</title> <!-- x-release-please-version -->
+<title>JEE Test Tracker v4.1.0</title> <!-- x-release-please-version -->
 <!-- VERSION: 1.9.1 | Smart Planner + Goals 2.0 with theme-correct notification panel and viewport-safe notifications. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1463,7 +1463,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
   </section>
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v4.0.1</span></h1> <!-- x-release-please-version -->
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v4.1.0</span></h1> <!-- x-release-please-version -->
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow headerActions">
@@ -1526,6 +1526,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
     <button class="tabbtn" data-tab="plan">Plan &amp; Mistakes</button>
     <button class="tabbtn" data-tab="tests">All Tests</button>
     <button class="tabbtn" data-tab="schedule">Schedule</button>
+    <button class="tabbtn" data-tab="class-notes">Class Notes</button>
     <button class="tabbtn" data-tab="admin" id="adminTabBtn" style="display:none;">Control Center</button>
   </div>
 
@@ -1795,6 +1796,27 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
   </div>
 </div>
 
+<div class="tabpanel" data-panel="class-notes" style="display:none;">
+  <div class="card">
+    <div class="sectionTitle">Class Notes</div>
+    <div class="hint" style="margin:-3px 0 14px">Upload, organize, and compare your class materials with test mistakes. Your notes are private to your signed-in account.</div>
+    <div class="settingsSection">
+      <div class="settingsSectionTitle">Add class notes</div>
+      <div class="settingsSectionDesc">Add several PDFs or clear photos at once. The tracker uses each filename for the note title and chapter. Choose the subject from the list; no title or chapter typing is needed. Supported: PDF, JPG, PNG or WebP, up to 10 MB each.</div>
+      <div class="fieldGrid" style="margin-bottom:10px"><label>Subject<select id="classNoteSubject"></select></label><label>Read notes with<select id="classNoteProvider"><option value="auto">Automatic (OpenRouter, then Groq for photos)</option><option value="openrouter">OpenRouter</option><option value="groq">Groq (photos only)</option><option value="claude_mcp">Claude through MCP</option></select></label><label style="grid-column:1/-1">PDFs or photos<input id="classNoteFile" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple></label></div>
+      <div class="hint" style="margin:-2px 0 10px">Claude MCP queues selected files for you to process in Claude; the tracker cannot start your Claude chat automatically. Scanned PDF OCR through OpenRouter may incur a provider charge. API keys stay in Supabase Function Secrets.</div>
+      <div class="settingsActionRow"><button class="primary" id="classNoteUploadBtn">Save selected notes</button></div><div id="classNoteUploadStatus" role="status" aria-live="polite" style="font-size:12px;color:var(--text-dim);margin-top:8px"></div>
+    </div>
+    <div class="settingsSection">
+      <div class="settingsSectionTitle">Your notes</div>
+      <div class="settingsSectionDesc">See readiness without opening folders. Edit one note or select several notes, chapters, or subjects to update metadata together.</div>
+      <div class="classNoteLibraryTools"><label>Show<select id="classNoteStatusFilter"><option value="all">All notes</option><option value="ready">Ready</option><option value="not_ready">Not ready</option><option value="failed">Needs retry</option></select></label><button type="button" class="ghost small" id="classNoteSelectAll">Select all visible</button><button type="button" class="ghost small" id="classNoteClearSelection">Clear selection</button><span id="classNoteVisibleCount" class="classNoteMeta"></span></div>
+      <div class="classNoteBulkEditor" id="classNoteBulkEditor" hidden><b id="classNoteSelectionCount">0 selected</b><label>Set subject<select id="classNoteBulkSubject"><option value="">Keep existing</option></select></label><label class="classNoteChapterToggle"><input type="checkbox" id="classNoteBulkChapterEnabled"> Set chapter</label><input type="text" id="classNoteBulkChapter" maxlength="160" placeholder="Chapter name; leave blank to clear" aria-label="Chapter to set for selected notes" disabled><button type="button" class="primary small" id="classNoteApplyMetadata" onclick="window.saveClassNoteMetadataFromUI(event); return false;">Save changes</button></div><div id="classNoteBulkStatus" class="classNoteBulkStatus" role="status" aria-live="polite"></div>
+      <div id="classNotesList" style="display:grid;gap:8px"><span style="color:var(--text-dim)">Sign in to load your private class notes.</span></div>
+    </div>
+  </div>
+</div>
+
 <!-- Universal Settings -->
 <div class="settingsModalBg" id="settingsModalBg" aria-hidden="true">
   <div class="settingsModal" role="dialog" aria-modal="true" aria-label="Settings">
@@ -1805,7 +1827,6 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
       <button class="settingsNavBtn" data-settings-page="notifications">🔔 <span>Notifications</span></button>
       <button class="settingsNavBtn" data-settings-page="data">☁ <span>Data &amp; Sync</span></button>
       <button class="settingsNavBtn" data-settings-page="ai">✦ <span>AI</span></button>
-      <button class="settingsNavBtn" data-settings-page="class-notes">📝 <span>Class Notes</span></button>
       <button class="settingsNavBtn" data-settings-page="calendar">▣ <span>Calendar</span></button>
       <button class="settingsNavBtn" data-settings-page="advanced">⚙ <span>Advanced</span></button>
     </aside>
@@ -1860,17 +1881,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
         <div class="settingsSection"><div class="settingsSectionTitle">AI analysis</div><div class="settingsSectionDesc">AI analysis status is controlled by the tracker and, for operational switches, the remote Control Center.</div><div id="settingsAIStatus" style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">Status will appear here.</div><div class="settingsActionRow"><button class="primary" id="settingsAIOpenBtn">Open AI analysis</button></div></div>
         <div class="settingsSection settingsFuture"><span class="futureBadge">FUTURE</span><div class="settingsSectionTitle">AI preferences</div><div class="settingsSectionDesc">Model selection, analysis limits, automatic-analysis preferences and privacy controls can be added here later.</div></div>
       </div>
-      <div class="settingsPage" data-settings-content="class-notes">
-        <div class="settingsSection"><div class="settingsSectionTitle">Class notes library</div><div class="settingsSectionDesc">Add several PDFs or clear photos at once. The tracker uses each filename for the note title and chapter. Choose the subject from the list; no title or chapter typing is needed. Your files stay in your private account. Supported: PDF, JPG, PNG or WebP, up to 10 MB each.</div>
-          <div class="fieldGrid" style="margin-bottom:10px"><label>Subject<select id="classNoteSubject"></select></label><label>Read notes with<select id="classNoteProvider"><option value="auto">Automatic (OpenRouter, then Groq for photos)</option><option value="openrouter">OpenRouter</option><option value="groq">Groq (photos only)</option><option value="claude_mcp">Claude through MCP</option></select></label><label style="grid-column:1/-1">PDFs or photos<input id="classNoteFile" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple></label></div>
-          <div class="hint" style="margin:-2px 0 10px">Claude MCP queues selected files for you to process in Claude; the tracker cannot start your Claude chat automatically. Scanned PDF OCR through OpenRouter may incur a provider charge. API keys stay in Supabase Function Secrets.</div>
-          <div class="settingsActionRow"><button class="primary" id="classNoteUploadBtn">Save selected notes</button></div><div id="classNoteUploadStatus" role="status" aria-live="polite" style="font-size:12px;color:var(--text-dim);margin-top:8px"></div>
-        </div>
-        <div class="settingsSection"><div class="settingsSectionTitle">Your notes</div><div class="settingsSectionDesc">Each note shows whether it is ready to use. Edit one note or select several to update their subject and chapter together.</div>
-          <div class="classNoteLibraryTools"><label>Show<select id="classNoteStatusFilter"><option value="all">All notes</option><option value="ready">Ready</option><option value="not_ready">Not ready</option><option value="failed">Needs retry</option></select></label><button type="button" class="ghost small" id="classNoteSelectAll">Select all visible</button><button type="button" class="ghost small" id="classNoteClearSelection">Clear selection</button><span id="classNoteVisibleCount" class="classNoteMeta"></span></div>
-          <div class="classNoteBulkEditor" id="classNoteBulkEditor" hidden><b id="classNoteSelectionCount">0 selected</b><label>Set subject<select id="classNoteBulkSubject"><option value="">Keep existing</option></select></label><label class="classNoteChapterToggle"><input type="checkbox" id="classNoteBulkChapterEnabled"> Set chapter</label><input type="text" id="classNoteBulkChapter" maxlength="160" placeholder="Chapter name; leave blank to clear" aria-label="Chapter to set for selected notes" disabled><button type="button" class="primary small" id="classNoteApplyMetadata" onclick="window.saveClassNoteMetadataFromUI(event); return false;">Save changes</button></div><div id="classNoteBulkStatus" class="classNoteBulkStatus" role="status" aria-live="polite"></div>
-          <div id="classNotesList" style="display:grid;gap:8px"><span style="color:var(--text-dim)">Sign in to load your class notes.</span></div></div>
-      </div>
+
       <div class="settingsPage" data-settings-content="calendar">
         <div class="settingsSection"><div class="settingsSectionTitle">Google Calendar</div><div class="settingsSectionDesc">Open the tracker schedule to connect and manage your calendar view.</div><div class="settingsActionRow"><button class="primary" id="settingsCalendarBtn">Open calendar</button></div></div>
         <div class="settingsSection settingsFuture"><span class="futureBadge">FUTURE</span><div class="settingsSectionTitle">Calendar automation</div><div class="settingsSectionDesc">Revision blocks, reminders, study-plan sync and calendar preferences can be grouped here later.</div></div>
@@ -1895,7 +1906,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
           <div class="settingsSectionTitle">System information</div>
           <div class="settingsSectionDesc">Current tracker version and how future updates will be numbered.</div>
           <div class="systemInfoGrid">
-            <div class="systemInfoItem"><span>Current version</span><b id="systemAppVersion">v4.0.1</b></div>
+            <div class="systemInfoItem"><span>Current version</span><b id="systemAppVersion">v4.1.0</b></div>
             <div class="systemInfoItem"><span>Version standard</span><b>Semantic Versioning · MAJOR.MINOR.PATCH</b></div>
             <div class="systemInfoItem"><span>Release automation</span><b>GitHub Actions + Release Please</b></div>
             <div class="systemInfoItem"><span>Release steps</span><b>Commit update → review release PR → merge</b></div>
@@ -2313,7 +2324,7 @@ window.openSmartGoals190=open;
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "4.0.1"; // x-release-please-version
+  var APP_VERSION = "4.1.0"; // x-release-please-version
   var state = { tests: [], classNotes: [], classNoteSelection: [], classNoteFilter: "all", db: null, ready: false, subjectTab: "physics", user: null, cloud: false, provider: "pw", examTrack: "jee", examPreview:false, previewOriginalTests:null, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   var EXAM_TRACK_KEY = "exam_track";
   var PROVIDER_KEY = "training_provider";
@@ -2549,7 +2560,7 @@ window.openSmartGoals190=open;
 
   function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
 
-  var DEFAULT_APP_CONFIG = { id:1, app_version:"4.0.1", announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
+  var DEFAULT_APP_CONFIG = { id:1, app_version:"4.1.0", announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
 
   function notificationStorageKey(){
     var uid = state.user && state.user.id ? state.user.id : "public";
@@ -5687,7 +5698,7 @@ async function loadGoogleCalendarDay(){
   async function compareTestWithClassNotes(testId){
     if(state.examPreview)throw new Error("Preview is read-only.");
     if(!state.user||!sb)throw new Error("Sign in to compare with your private notes.");
-    if(!state.classNotes.some(function(n){return n.extraction_status==="ready";}))throw new Error("Add at least one ready class note in Settings → Class Notes first.");
+    if(!state.classNotes.some(function(n){return n.extraction_status==="ready";}))throw new Error("Add at least one ready class note in Class Notes dock tab first.");
     var provider=(document.getElementById("classNoteProvider")||{}).value||"auto";
     var result=await callUserFunction("compare-class-notes",{test_id:testId,exam_track:state.examTrack,provider:provider});
     var status=document.getElementById("detailClassNotesStatus");
@@ -6314,7 +6325,7 @@ async function loadGoogleCalendarDay(){
     document.getElementById("detailModalBg").classList.add("open");
     renderClassNotesAnalysis(t.class_notes_analysis);
     var notesStatus=document.getElementById("detailClassNotesStatus"),notesBtn=document.getElementById("detailCompareClassNotesBtn");
-    if(notesStatus)notesStatus.textContent=state.examPreview?"Notes are unavailable in read-only preview.":!state.user?"Sign in to compare against your private notes.":!state.classNotes.some(function(n){return n.extraction_status==="ready";})?"Add a PDF or photo in Settings → Class Notes to enable matching.":t.class_notes_analysis&&t.class_notes_analysis.status==="mcp_pending"?"Waiting for Claude MCP to finish the queued comparison.":t.class_notes_analysis&&t.class_notes_analysis.generated_at?"Last compared "+new Date(t.class_notes_analysis.generated_at).toLocaleString():"Your ready notes are available for matching.";
+    if(notesStatus)notesStatus.textContent=state.examPreview?"Notes are unavailable in read-only preview.":!state.user?"Sign in to compare against your private notes.":!state.classNotes.some(function(n){return n.extraction_status==="ready";})?"Add a PDF or photo in Class Notes dock tab to enable matching.":t.class_notes_analysis&&t.class_notes_analysis.status==="mcp_pending"?"Waiting for Claude MCP to finish the queued comparison.":t.class_notes_analysis&&t.class_notes_analysis.generated_at?"Last compared "+new Date(t.class_notes_analysis.generated_at).toLocaleString():"Your ready notes are available for matching.";
     if(notesBtn){notesBtn.disabled=state.examPreview||!state.user;notesBtn.onclick=async function(){notesBtn.disabled=true;notesBtn.textContent="Comparing…";if(notesStatus)notesStatus.textContent="Checking mistake questions against your extracted notes…";try{await compareTestWithClassNotes(t.id);}catch(e){if(notesStatus)notesStatus.textContent=e.message||"Comparison failed.";}finally{notesBtn.disabled=state.examPreview||!state.user;notesBtn.textContent="Compare with my notes";}};}
     loadDetailMistakeImages(t.id);
     prepareDetailAI(t.id);
@@ -6490,6 +6501,7 @@ async function loadGoogleCalendarDay(){
       if (state.ready) {
         renderPanel(target, sortedTests());
       }
+      if (target === "class-notes") loadClassNotes().catch(function(e){var list=document.getElementById("classNotesList");if(list)list.innerHTML='<span style="color:var(--danger,#b42318)">Could not load your notes: '+escapeHtml(e.message||"check your connection")+'</span>';console.warn("Class notes unavailable:",e);});
     });
   });
 
@@ -6678,7 +6690,6 @@ async function loadGoogleCalendarDay(){
     notifications:{title:"Notifications",sub:"Control how tracker updates are surfaced."},
     data:{title:"Data & Sync",sub:"Manage local data, cloud sync and future backups."},
     ai:{title:"AI",sub:"AI analysis status and future AI preferences."},
-    "class-notes":{title:"Class Notes",sub:"Save private PDFs and photos to match against mistakes."},
     calendar:{title:"Calendar",sub:"Google Calendar connection and future automation."},
     advanced:{title:"Advanced",sub:"System controls, diagnostics and future developer options."}
   };
@@ -6712,7 +6723,6 @@ async function loadGoogleCalendarDay(){
       var st=document.getElementById("settingsAIStatus");
       if(st) st.textContent = state.appConfig && state.appConfig.ai_enabled === false ? "AI analysis is currently disabled by remote settings." : "AI analysis is currently enabled.";
     }
-    if(page === "class-notes")loadClassNotes().catch(function(e){var list=document.getElementById("classNotesList");if(list)list.innerHTML='<span style="color:var(--danger,#b42318)">Could not load class notes. Apply the class-notes database setup first if this is a new install.</span>';console.warn("Class notes unavailable:",e);});
   }
   loadTrackerTheme();
   document.getElementById("settingsBtn").addEventListener("click", function(){ openSettings("appearance"); });
