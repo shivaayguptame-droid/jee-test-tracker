@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>document.documentElement.classList.add("tracker-booting");</script>
-<title>JEE Test Tracker v3.8.4</title> <!-- x-release-please-version -->
+<title>JEE Test Tracker v3.8.5</title> <!-- x-release-please-version -->
 <!-- VERSION: 1.9.1 | Smart Planner + Goals 2.0 with theme-correct notification panel and viewport-safe notifications. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -578,6 +578,10 @@ tr:hover td { background:var(--table-hover); }
 .classNoteSelectAll { display:flex!important; align-items:center; gap:6px; padding:7px 2px; }
 .classNoteBulkEditor .classNoteChapterToggle { display:flex; align-items:center; gap:6px; padding:7px 2px; }
 .classNoteCardSelect { display:block; width:16px !important; min-width:16px !important; max-width:16px !important; height:16px; flex:0 0 16px; align-self:flex-start; margin:3px 0 0 !important; padding:0 !important; accent-color:var(--accent); }
+.classNoteFolderRow,.classNoteCardRow { display:grid; grid-template-columns:18px minmax(0,1fr); align-items:start; gap:7px; min-width:0; width:100%; }
+.classNoteGroupSelect { width:16px !important; min-width:16px !important; max-width:16px !important; height:16px; margin:14px 0 0 !important; padding:0 !important; accent-color:var(--accent); }
+.classNoteCardRow > .classNoteCardSelect { margin:13px 0 0 !important; }
+.classNoteCardRow > .classNoteCard { min-width:0; }
 .classNoteStatusBadge { display:inline-flex; align-items:center; border:1px solid currentColor; border-radius:999px; padding:2px 7px; font-size:9.5px; font-weight:800; letter-spacing:.035em; white-space:nowrap; }
 .classNoteStatusBadge.ready { color:var(--success,#16803c); }
 .classNoteStatusBadge.notReady { color:var(--danger,#b42318); }
@@ -1454,7 +1458,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
   </section>
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v3.8.4</span></h1> <!-- x-release-please-version -->
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v3.8.5</span></h1> <!-- x-release-please-version -->
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow headerActions">
@@ -1886,7 +1890,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
           <div class="settingsSectionTitle">System information</div>
           <div class="settingsSectionDesc">Current tracker version and how future updates will be numbered.</div>
           <div class="systemInfoGrid">
-            <div class="systemInfoItem"><span>Current version</span><b id="systemAppVersion">v3.8.4</b></div>
+            <div class="systemInfoItem"><span>Current version</span><b id="systemAppVersion">v3.8.5</b></div>
             <div class="systemInfoItem"><span>Version standard</span><b>Semantic Versioning · MAJOR.MINOR.PATCH</b></div>
             <div class="systemInfoItem"><span>Release automation</span><b>GitHub Actions + Release Please</b></div>
             <div class="systemInfoItem"><span>Release steps</span><b>Commit update → review release PR → merge</b></div>
@@ -2304,7 +2308,7 @@ window.openSmartGoals190=open;
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "3.8.4"; // x-release-please-version
+  var APP_VERSION = "3.8.5"; // x-release-please-version
   var state = { tests: [], classNotes: [], classNoteSelection: [], classNoteFilter: "all", db: null, ready: false, subjectTab: "physics", user: null, cloud: false, provider: "pw", examTrack: "jee", examPreview:false, previewOriginalTests:null, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   var EXAM_TRACK_KEY = "exam_track";
   var PROVIDER_KEY = "training_provider";
@@ -2540,7 +2544,7 @@ window.openSmartGoals190=open;
 
   function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
 
-  var DEFAULT_APP_CONFIG = { id:1, app_version:"3.8.4", announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
+  var DEFAULT_APP_CONFIG = { id:1, app_version:"3.8.5", announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
 
   function notificationStorageKey(){
     var uid = state.user && state.user.id ? state.user.id : "public";
@@ -5537,19 +5541,21 @@ async function loadGoogleCalendarDay(){
       grouped[subject][chapter].push(n);
     });
     var subjectKeys=Object.keys(grouped).sort(function(a,b){var ai=activeSubjects().indexOf(a),bi=activeSubjects().indexOf(b);return (ai<0?99:ai)-(bi<0?99:bi)||a.localeCompare(b);});
+    function groupSelect(ids,label){var selected=ids.filter(function(id){return state.classNoteSelection.some(function(value){return String(value)===String(id);});}).length;return '<input class="classNoteGroupSelect" type="checkbox" aria-label="Select all notes in '+escapeHtml(label)+'" data-note-group-ids="'+escapeHtml(JSON.stringify(ids.map(String)))+'"'+(selected===ids.length&&ids.length?' checked':'')+'>';}
     function noteCard(n){
       var status=n.extraction_status==="ready"?"Ready to use":n.extraction_status==="processing"?"Reading note…":n.extraction_status==="mcp_pending"?"Waiting for Claude MCP":n.extraction_status==="failed"?"Needs retry":n.extraction_status==="pending"?"Waiting to read":"Not ready";
       var ready=n.extraction_status==="ready",badge=ready?'<span class="classNoteStatusBadge ready">READY</span>':'<span class="classNoteStatusBadge notReady">NOT READY</span>';
       var checked=state.classNoteSelection.some(function(id){return String(id)===String(n.id);})?' checked':'';
-      return '<article class="classNoteCard"><div class="classNoteCardInfo"><input class="classNoteCardSelect" type="checkbox" aria-label="Select '+escapeHtml(n.title)+'" data-note-select="'+escapeHtml(n.id)+'"'+checked+'><div class="classNoteCardText"><b>'+escapeHtml(n.title)+'</b><div class="classNoteMeta">'+escapeHtml(SUBJECT_LABELS[n.subject]||n.subject||'Unsorted')+(n.chapter?' · '+escapeHtml(n.chapter):'')+'</div><div class="classNoteCardStatus">'+badge+' <span class="classNoteMeta">'+escapeHtml(status)+'</span></div>'+(n.extraction_error?'<div class="classNoteMeta" style="color:var(--danger,#b42318)">'+escapeHtml(n.extraction_error)+'</div>':'')+'</div></div><div class="settingsActionRow classNoteActions"><button type="button" class="ghost small" data-note-edit="'+escapeHtml(n.id)+'">Edit</button>'+(n.extraction_status!=="ready"?'<button type="button" class="ghost small" data-note-retry="'+escapeHtml(n.id)+'">'+(n.extraction_status==="mcp_pending"?"Queue again":"Retry")+'</button>':'')+'<button type="button" class="ghost small" data-note-delete="'+escapeHtml(n.id)+'">Delete</button></div></article>';
+      return '<div class="classNoteCardRow"><input class="classNoteCardSelect" type="checkbox" aria-label="Select '+escapeHtml(n.title)+'" data-note-select="'+escapeHtml(n.id)+'"'+checked+'><article class="classNoteCard"><div class="classNoteCardInfo"><div class="classNoteCardText"><b>'+escapeHtml(n.title)+'</b><div class="classNoteMeta">'+escapeHtml(SUBJECT_LABELS[n.subject]||n.subject||'Unsorted')+(n.chapter?' · '+escapeHtml(n.chapter):'')+'</div><div class="classNoteCardStatus">'+badge+' <span class="classNoteMeta">'+escapeHtml(status)+'</span></div>'+(n.extraction_error?'<div class="classNoteMeta" style="color:var(--danger,#b42318)">'+escapeHtml(n.extraction_error)+'</div>':'')+'</div></div><div class="settingsActionRow classNoteActions"><button type="button" class="ghost small" data-note-edit="'+escapeHtml(n.id)+'">Edit</button>'+(n.extraction_status!=="ready"?'<button type="button" class="ghost small" data-note-retry="'+escapeHtml(n.id)+'">'+(n.extraction_status==="mcp_pending"?"Queue again":"Retry")+'</button>':'')+'<button type="button" class="ghost small" data-note-delete="'+escapeHtml(n.id)+'">Delete</button></div></article></div>';
     }
     list.innerHTML=subjectKeys.map(function(subject){
       var chapters=grouped[subject],chapterNames=Object.keys(chapters).sort(function(a,b){return a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'});}),subjectKey='subject:'+subject;
       var subjectNotes=visibleNotes.filter(function(n){return String(n.subject||'other')===subject;}),readyCount=subjectNotes.filter(function(n){return n.extraction_status==='ready';}).length,notReadyCount=subjectNotes.length-readyCount;
-      return '<details class="classNoteFolder classNoteSubjectFolder" data-note-group-key="'+escapeHtml(subjectKey)+'"'+(expanded[subjectKey]?' open':'')+'><summary><span>'+escapeHtml(SUBJECT_LABELS[subject]||subject)+'</span><small>'+subjectNotes.length+' notes · '+readyCount+' ready · '+notReadyCount+' not ready</small></summary><div class="classNoteFolderContents">'+chapterNames.map(function(chapter){
+      return '<div class="classNoteFolderRow">'+groupSelect(subjectNotes.map(function(n){return n.id;}),SUBJECT_LABELS[subject]||subject)+'<details class="classNoteFolder classNoteSubjectFolder" data-note-group-key="'+escapeHtml(subjectKey)+'"'+(expanded[subjectKey]?' open':'')+'><summary><span>'+escapeHtml(SUBJECT_LABELS[subject]||subject)+'</span><small>'+subjectNotes.length+' notes · '+readyCount+' ready · '+notReadyCount+' not ready</small></summary><div class="classNoteFolderContents">'+chapterNames.map(function(chapter){
         var chapterKey='chapter:'+subject+':'+chapter;
-        return '<details class="classNoteFolder classNoteChapterFolder" data-note-group-key="'+escapeHtml(chapterKey)+'"'+(expanded[chapterKey]?' open':'')+'><summary><span>'+escapeHtml(chapter)+'</span><small>'+chapters[chapter].length+' note'+(chapters[chapter].length===1?'':'s')+'</small></summary><div class="classNoteChapterContents">'+chapters[chapter].map(noteCard).join('')+'</div></details>';
-      }).join('')+'</div></details>';
+        var chapterNotes=chapters[chapter],chapterReady=chapterNotes.filter(function(n){return n.extraction_status==='ready';}).length,chapterNotReady=chapterNotes.length-chapterReady;
+        return '<div class="classNoteFolderRow">'+groupSelect(chapterNotes.map(function(n){return n.id;}),chapter)+'<details class="classNoteFolder classNoteChapterFolder" data-note-group-key="'+escapeHtml(chapterKey)+'"'+(expanded[chapterKey]?' open':'')+'><summary><span>'+escapeHtml(chapter)+'</span><small>'+chapterNotes.length+' note'+(chapterNotes.length===1?'':'s')+' · '+chapterReady+' ready · '+chapterNotReady+' not ready</small></summary><div class="classNoteChapterContents">'+chapterNotes.map(noteCard).join('')+'</div></details></div>';
+      }).join('')+'</div></details></div>';
     }).join('');
     bindClassNoteActions(list);
   }
@@ -5565,6 +5571,7 @@ async function loadGoogleCalendarDay(){
   }
 
   function bindClassNoteActions(list){
+    list.querySelectorAll('[data-note-group-ids]').forEach(function(box){var ids=[];try{ids=JSON.parse(box.getAttribute('data-note-group-ids')||'[]');}catch(_){}var selected=ids.filter(function(id){return state.classNoteSelection.some(function(value){return String(value)===String(id);});}).length;box.indeterminate=selected>0&&selected<ids.length;box.addEventListener('change',function(){var groupIds=ids.map(String);if(box.checked){state.classNoteSelection=Array.from(new Set(state.classNoteSelection.map(String).concat(groupIds)));}else{state.classNoteSelection=state.classNoteSelection.filter(function(id){return groupIds.indexOf(String(id))<0;});}renderClassNotesList();});});
     list.querySelectorAll('[data-note-select]').forEach(function(box){box.addEventListener('change',function(){var id=String(box.getAttribute('data-note-select'));if(box.checked){if(!state.classNoteSelection.some(function(x){return String(x)===id;}))state.classNoteSelection.push(id);}else state.classNoteSelection=state.classNoteSelection.filter(function(x){return String(x)!==id;});renderClassNotesList();});});
     list.querySelectorAll('[data-note-edit]').forEach(function(button){button.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();var id=String(button.getAttribute('data-note-edit')),note=state.classNotes.find(function(n){return String(n.id)===id;});if(!note)return;state.classNoteSelection=[id];var subject=document.getElementById('classNoteBulkSubject'),chapter=document.getElementById('classNoteBulkChapter'),chapterEnabled=document.getElementById('classNoteBulkChapterEnabled');if(subject)subject.value=activeSubjects().indexOf(note.subject)>=0?note.subject:'';if(chapter)chapter.value=note.chapter||'';if(chapterEnabled)chapterEnabled.checked=true;renderClassNotesList();var panel=document.getElementById('classNoteBulkEditor');if(panel)panel.scrollIntoView({behavior:'smooth',block:'nearest'});});});
     list.querySelectorAll('[data-note-retry]').forEach(function(button){button.addEventListener('click',async function(event){
