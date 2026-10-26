@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>document.documentElement.classList.add("tracker-booting");</script>
-<title>JEE Test Tracker v4.1.0</title> <!-- x-release-please-version -->
+<title>JEE Test Tracker v4.1.1</title> <!-- x-release-please-version -->
 <!-- VERSION: 1.9.1 | Smart Planner + Goals 2.0 with theme-correct notification panel and viewport-safe notifications. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -632,6 +632,15 @@ tr:hover td { background:var(--table-hover); }
 .trajectorySummary{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;margin-top:9px;border-radius:11px;background:var(--accent-soft);color:var(--text);font-size:12px;line-height:1.5;}
 .trajectorySummary strong{color:var(--accent);}
 .trajectoryDisclaimer{font-size:10.5px;line-height:1.45;color:var(--text-dim);margin-top:9px;}
+.overviewCharts{margin-top:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface);overflow:hidden;}
+.overviewCharts>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;cursor:pointer;list-style:none;color:var(--text);font-size:13px;font-weight:700;}
+.overviewCharts>summary::-webkit-details-marker{display:none;}
+.overviewCharts>summary:before{content:"＋";display:grid;place-items:center;width:22px;height:22px;border-radius:7px;background:var(--surface-2);color:var(--accent);font-size:14px;}
+.overviewCharts[open]>summary:before{content:"−";}
+.overviewCharts>summary small{margin-left:auto;color:var(--text-dim);font-size:11px;font-weight:500;text-align:right;}
+.overviewChartsBody{padding:0 12px 12px;border-top:1px solid var(--border);}
+.overviewChartsBody .grid2{margin-top:12px;}
+@media(max-width:560px){.overviewCharts>summary{align-items:flex-start;flex-wrap:wrap}.overviewCharts>summary small{width:100%;margin-left:34px;text-align:left}}
 @media(max-width:560px){.trajectoryMetric{padding:9px;}.trajectoryMetric b{font-size:15px;}.trajectoryChartWrap{padding:7px 4px 2px;}}
 .firstRunWelcome{display:none;max-width:1120px;margin:0 auto;padding:clamp(26px,6vw,68px) 0 30px;}
 body.first-run-active .wrap{display:block;width:min(1120px,calc(100% - 36px));padding:clamp(14px,4vw,36px) 0 48px;}
@@ -1463,7 +1472,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
   </section>
   <header>
     <div>
-      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v4.1.0</span></h1> <!-- x-release-please-version -->
+      <h1>JEE Command Center <span id="appVersion" style="font-size:11px;font-weight:600;color:var(--text-dim);vertical-align:middle;">v4.1.1</span></h1> <!-- x-release-please-version -->
       <div class="sub" id="subhead">Loading…</div>
     </div>
     <div class="btnrow headerActions">
@@ -1547,7 +1556,10 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
     <div id="preTestBriefingContent"></div>
   </div>
 
-  <div class="grid2">
+  <details class="overviewCharts">
+    <summary><span>Performance charts</span><small>Score, percentile, and accuracy over time</small></summary>
+    <div class="overviewChartsBody">
+      <div class="grid2">
       <div class="card">
         <div class="sectionTitle" style="display:flex;justify-content:space-between;align-items:center;">
           <span>Score trend</span>
@@ -1560,7 +1572,9 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
         <div class="sectionTitle">Section accuracy (avg)</div>
         <canvas id="accChart" height="200"></canvas>
       </div>
+      </div>
     </div>
+  </details>
   </div>
 
   <div class="tabpanel" data-panel="subjects" style="display:none;">
@@ -1906,7 +1920,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
           <div class="settingsSectionTitle">System information</div>
           <div class="settingsSectionDesc">Current tracker version and how future updates will be numbered.</div>
           <div class="systemInfoGrid">
-            <div class="systemInfoItem"><span>Current version</span><b id="systemAppVersion">v4.1.0</b></div>
+            <div class="systemInfoItem"><span>Current version</span><b id="systemAppVersion">v4.1.1</b></div>
             <div class="systemInfoItem"><span>Version standard</span><b>Semantic Versioning · MAJOR.MINOR.PATCH</b></div>
             <div class="systemInfoItem"><span>Release automation</span><b>GitHub Actions + Release Please</b></div>
             <div class="systemInfoItem"><span>Release steps</span><b>Commit update → review release PR → merge</b></div>
@@ -1938,7 +1952,7 @@ body.first-run-active #authModalBg .modal button:hover{filter:brightness(1.03);}
   <div class="modal">
     <h2 id="modalTitle">Add a test</h2>
     <div class="hint">Percentage and accuracy are calculated automatically.</div>
-    <div id="neetPreviewReadOnlyNote" class="hint" style="display:none;padding:8px 10px;margin:8px 0;border:1px solid var(--border);border-radius:8px;background:var(--accent-soft);">Read-only preview: you can inspect this form, but saving test data and uploading images are disabled.</div>
+<div id="neetPreviewReadOnlyNote" class="hint" style="display:none;padding:8px 10px;margin:8px 0;border:1px solid var(--border);border-radius:8px;background:var(--accent-soft);">Read-only preview: you can inspect this form, but saving test data and uploading images are disabled.</div>
     <form id="testForm">
       <input type="hidden" id="f_id">
       <div class="formgrid">
@@ -2324,7 +2338,7 @@ window.openSmartGoals190=open;
 <script>
 (function(){
   "use strict";
-  var APP_VERSION = "4.1.0"; // x-release-please-version
+  var APP_VERSION = "4.1.1"; // x-release-please-version
   var state = { tests: [], classNotes: [], classNoteSelection: [], classNoteFilter: "all", db: null, ready: false, subjectTab: "physics", user: null, cloud: false, provider: "pw", examTrack: "jee", examPreview:false, previewOriginalTests:null, authMode: "signin", realtime: null, renderedPanels: {}, renderSignature: null, gcalAccessToken: null, gcalTokenClient: null, gcalEvents: [], gcalUpcomingTestEvents: [], gcalCalendars: {}, scheduleWeekStart: null, appConfig: null, isAdmin: false, appConfigTimer: null, notifications: [], notificationOpen: false };
   var EXAM_TRACK_KEY = "exam_track";
   var PROVIDER_KEY = "training_provider";
@@ -2560,7 +2574,7 @@ window.openSmartGoals190=open;
 
   function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
 
-  var DEFAULT_APP_CONFIG = { id:1, app_version:"4.1.0", announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
+  var DEFAULT_APP_CONFIG = { id:1, app_version:"4.1.1", announcement_enabled:false, announcement_type:"info", announcement_text:"", ai_enabled:true, ai_disabled_message:"AI analysis is temporarily unavailable. Your mistake images are still being saved." };
 
   function notificationStorageKey(){
     var uid = state.user && state.user.id ? state.user.id : "public";
@@ -5001,11 +5015,16 @@ async function loadGoogleCalendarDay(){
   function renderScoreConsistencyChart(tests){
     var canvas=document.getElementById('scoreConsistencyChart'),summary=document.getElementById('scoreConsistencySummary');if(!canvas)return;
     if(scoreConsistencyChartInst){scoreConsistencyChartInst.destroy();scoreConsistencyChartInst=null;}
-    var rows=tests.slice().sort(function(a,b){return new Date(a.date)-new Date(b.date);}).filter(function(t){return typeof t.score==='number'&&isFinite(t.score);});
+    var rows=tests.map(function(t){
+      var value=typeof t.score==='number'&&isFinite(t.score)?t.score:
+        (typeof t.marksObtained==='number'&&isFinite(t.marksObtained)?t.marksObtained:
+        (typeof t.percentage==='number'&&isFinite(t.percentage)?t.percentage:null));
+      return value===null?null:{test:t,value:value};
+    }).filter(Boolean).sort(function(a,b){return new Date(a.test.date)-new Date(b.test.date);});
     if(!rows.length){canvas.style.display='none';summary.innerHTML='<div class="empty">Log test scores to see consistency.</div>';return;}
     canvas.style.display='block';
-    var labels=rows.map(function(t){return (t.name||'Test').length>16?(t.name||'Test').slice(0,15)+'…':(t.name||'Test');});
-    var scores=rows.map(function(t){return Number(t.score);});
+    var labels=rows.map(function(row){var name=row.test.name||'Test';return name.length>16?name.slice(0,15)+'…':name;});
+    var scores=rows.map(function(row){return Number(row.value);});
     var rolling=scores.map(function(v,i){var group=scores.slice(Math.max(0,i-2),i+1);return +(group.reduce(function(a,b){return a+b;},0)/group.length).toFixed(2);});
     scoreConsistencyChartInst=new Chart(canvas.getContext('2d'),{type:'line',data:{labels:labels,datasets:[{label:'Score',data:scores,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.10)',pointRadius:4,tension:.2},{label:'Rolling average (up to 3 tests)',data:rolling,borderColor:'#c66a20',borderDash:[5,4],pointRadius:2,tension:.25}]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:getComputedStyle(document.body).color,boxWidth:10,font:{size:10}}}},scales:{x:{ticks:{color:getComputedStyle(document.body).color,maxRotation:35,minRotation:0}},y:{beginAtZero:false,ticks:{color:getComputedStyle(document.body).color},grid:{color:'rgba(127,127,127,.16)'}}}}});
     var mean=scores.reduce(function(a,b){return a+b;},0)/scores.length,variance=scores.reduce(function(a,b){return a+Math.pow(b-mean,2);},0)/scores.length,sd=Math.sqrt(variance),delta=scores.length>1?scores[scores.length-1]-scores[scores.length-2]:null;
@@ -6823,6 +6842,9 @@ function render(){var d=coachData(), stats=q('coachStats');if(!stats)return;stat
 function open(){var b=q('aiCoachBg');if(b){b.classList.add('open');b.setAttribute('aria-hidden','false');render()}}function close(){var b=q('aiCoachBg');if(b){b.classList.remove('open');b.setAttribute('aria-hidden','true')}}
 document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('#openAICoach'))open();if(e.target.closest&&e.target.closest('#aiCoachClose'))close();if(e.target.closest&&e.target.closest('#coachRefresh'))render();if(e.target.closest&&e.target.closest('#coachOpenPerformance')){close();var b=q('performanceOSBg');if(b)b.classList.add('open')}if(e.target.closest&&e.target.closest('#coachOpenPlanner')){close();var b=q('performanceOSBg');if(b){b.classList.add('open');var t=document.querySelector('.perfTab[data-perf-tab="planner"]');if(t)t.click()}}});
 })();
+</script>
+<script>
+(function(){var charts=document.querySelector(".overviewCharts");if(charts)charts.addEventListener("toggle",function(){if(charts.open)window.setTimeout(function(){window.dispatchEvent(new Event("resize"));},40);});})();
 </script>
 </body>
 </html>
