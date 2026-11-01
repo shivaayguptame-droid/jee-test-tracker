@@ -4,6 +4,18 @@ Notable changes to JEE Test Tracker are documented here. Release Please maintain
 
 <<<<<<< HEAD
 =======
+## [4.1.0](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v4.0.1...jee-test-tracker-v4.1.0) (2026-10-26)
+
+
+### Features
+
+* move class notes into the main workspace ([f0a3bd1](https://github.com/shivaayguptame-droid/jee-test-tracker/commit/f0a3bd135c2e0b447c932fc021f4bf5a457ce575))
+
+
+### Bug Fixes
+
+* show saved test marks in score consistency chart ([1e44d07](https://github.com/shivaayguptame-droid/jee-test-tracker/commit/1e44d07c97b724c5d9d5398c48ba842918f40526))
+
 ## [4.0.1](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v4.0.0...jee-test-tracker-v4.0.1) (2026-10-25)
 
 
