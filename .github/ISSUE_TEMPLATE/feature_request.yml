@@ -1,0 +1,35 @@
+name: Feature request
+description: Suggest an improvement for JEE Test Tracker
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Please describe the student need. Do not include private test results,
+        personal notes, credentials, or API keys.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem should this solve?
+      placeholder: Describe the task or difficulty you want to improve.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to happen?
+      placeholder: Describe your preferred behavior or workflow.
+    validations:
+      required: true
+  - type: dropdown
+    id: exam_track
+    attributes:
+      label: Who is this for?
+      options:
+        - JEE
+        - NEET
+        - Both JEE and NEET
+        - Other / not sure
+    validations:
+      required: true
