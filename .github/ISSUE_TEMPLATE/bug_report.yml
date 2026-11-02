@@ -1,0 +1,52 @@
+name: Bug report
+description: Report a problem in the tracker
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Please remove personal information before submitting. Never include passwords,
+        API keys, OAuth secrets, access tokens, or private test/notes data.
+  - type: input
+    id: version
+    attributes:
+      label: Tracker version
+      placeholder: "For example, 4.1.2"
+    validations:
+      required: true
+  - type: dropdown
+    id: exam_track
+    attributes:
+      label: Exam track
+      options:
+        - JEE
+        - NEET
+        - VMC
+        - Other / not sure
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and device
+      placeholder: "For example, Chrome on Windows 11"
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Describe the problem and what you expected to happen.
+      placeholder: Steps to reproduce, actual result, expected result
+    validations:
+      required: true
+  - type: textarea
+    id: errors
+    attributes:
+      label: Error message (if any)
+      description: Remove emails, IDs, tokens, and private data before pasting.
+      render: text
+    validations:
+      required: false
+
