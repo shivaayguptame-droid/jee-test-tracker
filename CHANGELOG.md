@@ -4,6 +4,14 @@ Notable changes to JEE Test Tracker are documented here. Release Please maintain
 
 <<<<<<< HEAD
 =======
+## [4.1.1](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v4.1.0...jee-test-tracker-v4.1.1) (2026-11-02)
+
+
+### Bug Fixes
+
+* initialize Google Calendar account maps ([bffcfd5](https://github.com/shivaayguptame-droid/jee-test-tracker/commit/bffcfd5ca17a1f3b48ab25444ede4b1868be912b))
+* request Google Calendar List read scope ([d2aa4e4](https://github.com/shivaayguptame-droid/jee-test-tracker/commit/d2aa4e4b6fdb5495c7e4511bc2e9f5ac6bb6c915))
+
 ## [4.1.0](https://github.com/shivaayguptame-droid/jee-test-tracker/compare/jee-test-tracker-v4.0.1...jee-test-tracker-v4.1.0) (2026-10-26)
 
 
